@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
+#![feature(test)]
+
 #[macro_use]
 extern crate lazy_static;
 extern crate regex;
+extern crate test;
 
 use regex::Regex;
 use std::fmt;
@@ -180,6 +183,13 @@ impl<'a> From<&'a str> for Type {
             _ => Type::None,
         }
     }
+}
+
+#[bench]
+fn bench_test(b: &mut test::Bencher) {
+    let gga = "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76";
+    let mut nmea = Nmea::new();
+    b.iter(|| nmea.parse(gga).ok());
 }
 
 #[test]
