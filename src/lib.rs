@@ -186,8 +186,10 @@ fn test_checksum() {
     let nmea = Nmea::new();
     let valid = "$GNGSA,A,1,,,,,,,,,,,,,99.99,99.99,99.99*2E";
     let invalid = "$GNZDA,165118.00,13,05,2016,00,00*71";
+    let parse_error = "";
     assert_eq!(nmea.checksum(valid).unwrap(), true);
     assert_eq!(nmea.checksum(invalid).unwrap(), false);
+    assert!(nmea.checksum(parse_error).is_err());
 }
 
 #[test]
