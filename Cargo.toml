@@ -1,0 +1,7 @@
+[package]
+name = "nmea"
+version = "0.1.0"
+authors = ["Felix Obenhuber <felix.obenhuber@esrlabs.com>"]
+
+[dependencies]
+regex = "0.1"
