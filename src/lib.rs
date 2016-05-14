@@ -14,19 +14,31 @@
  * limitations under the License.
  */
 
+#[macro_use]
+extern crate lazy_static;
 extern crate regex;
 
 use regex::Regex;
 use std::fmt;
 
+lazy_static! {
+    static ref REGEX_CHECKSUM: Regex = {
+        Regex::new(r"^\$(?P<sentence>.*)\*(?P<checksum>..)$").unwrap()
+    };
+    static ref REGEX_TYPE: Regex = {
+        Regex::new(r"^\$\D{2}(?P<type>\D{3}).*$").unwrap()
+    };
+
+    // $GNGGA,101240.00,4807.48553,N,01133.05879,E,1,12,0.64,533.8,M,46.3,M,,*4E
+    static ref REGEX_GGA: Regex = {
+        Regex::new(r"^\$\D\DGGA,(?P<timestamp>\d+\.\d+),(?P<lat>\d+\.\d+),(?P<lat_dir>[NS]),(?P<lon>\d+\.\d+),(?P<lon_dir>[WE]),(\d),(\d+),(\d+\.\d+),(?P<alt>\d+\.\d+),\D,(\d+\.\d+),\D,,\*([0-9a-fA-F][0-9a-fA-F])").unwrap()
+    };
+}
+
 pub struct Nmea {
     latitude: Option<f32>,
     longitude: Option<f32>,
     altitude: Option<f32>,
-
-    regex_checksum: Regex,
-    regex_type: Regex,
-    regex_gga: Regex,
 }
 
 impl Nmea {
@@ -35,10 +47,6 @@ impl Nmea {
             latitude: None,
             longitude: None,
             altitude: None,
-            regex_checksum: Regex::new(r"^\$(?P<sentence>.*)\*(?P<checksum>..)$").unwrap(),
-            regex_type: Regex::new(r"^\$\D{2}(?P<type>\D{3}).*$").unwrap(),
-            // $GNGGA,101240.00,4807.48553,N,01133.05879,E,1,12,0.64,533.8,M,46.3,M,,*4E
-            regex_gga: Regex::new(r"^\$\D\DGGA,(?P<timestamp>\d+\.\d+),(?P<lat>\d+\.\d+),(?P<lat_dir>[NS]),(?P<lon>\d+\.\d+),(?P<lon_dir>[WE]),(\d),(\d+),(\d+\.\d+),(?P<alt>\d+\.\d+),\D,(\d+\.\d+),\D,,\*([0-9a-fA-F][0-9a-fA-F])").unwrap(),
         }
     }
 
@@ -55,7 +63,7 @@ impl Nmea {
     }
 
     fn checksum(&self, s: &str) -> Result<bool, &'static str> {
-        let caps = match self.regex_checksum.captures(s) {
+        let caps = match REGEX_CHECKSUM.captures(s) {
             Some(c) => c,
             None => return Err("Checksum parsing failed"),
         };
@@ -71,7 +79,7 @@ impl Nmea {
     }
 
     pub fn sentence_type(&self, s: &str) -> Result<Type, &'static str> {
-        match self.regex_type.captures(s) {
+        match REGEX_TYPE.captures(s) {
             Some(c) => match c.name("type") {
                 Some(s) => match Type::from(s) {
                     Type::None => Err("Unknown type"),
@@ -105,7 +113,7 @@ impl Nmea {
             Ok(t) => {
                 match t {
                     Type::GGA => {
-                        match self.regex_gga.captures(s) {
+                        match REGEX_GGA.captures(s) {
                             Some(caps) => {
                                 self.latitude = Self::parse_numeric::<f32>(caps.name("lat"), 0.01);
                                 self.longitude= Self::parse_numeric::<f32>(caps.name("lon"), 0.01);
