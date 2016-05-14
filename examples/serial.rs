@@ -35,7 +35,7 @@ fn main() {
         match input.read_line(&mut buffer) {
             Ok(s) => if s > 0 {
                 for l in buffer.lines() {
-                    nmea.parse(&l);
+                    nmea.parse(&l).ok();
                 }
                 if loops % 100 == 0 { println!("{:?}", nmea); }
                 loops += 1;

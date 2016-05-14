@@ -30,7 +30,6 @@ pub struct Nmea {
 }
 
 impl Nmea {
-    #[allow(dead_code)]
     pub fn new() -> Nmea {
         Nmea {
             latitude: None,
@@ -43,55 +42,52 @@ impl Nmea {
         }
     }
 
-    #[allow(dead_code)]
     pub fn latitude(&self) -> Option<f32> {
         self.latitude
     }
-    #[allow(dead_code)]
+
     pub fn longitude(&self) -> Option<f32> {
         self.longitude
     }
-    #[allow(dead_code)]
+
     pub fn altitude(&self) -> Option<f32> {
         self.altitude
     }
 
-    #[allow(dead_code)]
-    fn checksum(&self, s: &str) -> bool {
+    fn checksum(&self, s: &str) -> Result<bool, &'static str> {
         let caps = match self.regex_checksum.captures(s) {
             Some(c) => c,
-            None => return false,
+            None => return Err("Checksum parsing failed"),
         };
-
         let sentence = match caps.name(&"sentence") {
             Some(v) => v,
-            None => return false,
+            None => return Err("Checksum parsing failed"),
         };
         let checksum = match u8::from_str_radix(caps.name(&"checksum").unwrap_or(""), 16) {
             Ok(v) => v,
-            Err(_) => return false,
+            Err(_) => return Err("Checksum parsing failed"),
         };
-
-        sentence.bytes().fold(0, |c, x| c ^ x) == checksum
+        Ok(sentence.bytes().fold(0, |c, x| c ^ x) == checksum)
     }
 
-    #[allow(dead_code)]
-    pub fn parse_type(&self, s: &str) -> Type {
+    pub fn sentence_type(&self, s: &str) -> Result<Type, &'static str> {
         match self.regex_type.captures(s) {
             Some(c) => match c.name("type") {
-                Some(s) => Type::from(s),
-                _ => Type::None,
+                Some(s) => match Type::from(s) {
+                    Type::None => Err("Unknown type"),
+                    _ => Ok(Type::from(s)),
+                },
+                _ => Err("Failed to parse type"),
             },
-            None => Type::None,
+            None => Err("Failed to parse type")
         }
     }
 
-    #[allow(dead_code)]
-    pub fn parse(&mut self, s: &str) {
-        if !self.checksum(s) {
-            return;
+    pub fn parse(&mut self, s: &str) -> Result<Type, &'static str> {
+        match self.checksum(s) {
+            Ok(_) => (),
+            Err(e) => return Err(e),
         }
-
 
         let cap_to_f32 = |c: Option<&str>, f: f32 | -> Option<f32> {
             match c {
@@ -103,18 +99,24 @@ impl Nmea {
             }
         };
 
-        match self.parse_type(s) {
-            Type::GGA => {
-                match self.regex_gga.captures(s) {
-                    Some(caps) => {
-                        self.latitude = cap_to_f32(caps.name("lat"), 0.01);
-                        self.longitude = cap_to_f32(caps.name("lon"), 0.01);
-                        self.altitude = cap_to_f32(caps.name("alt"), 1.0);
+        match self.sentence_type(s) {
+            Ok(t) => {
+                match t {
+                    Type::GGA => {
+                        match self.regex_gga.captures(s) {
+                            Some(caps) => {
+                                self.latitude = cap_to_f32(caps.name("lat"), 0.01);
+                                self.longitude = cap_to_f32(caps.name("lon"), 0.01);
+                                self.altitude = cap_to_f32(caps.name("alt"), 1.0);
+                                return Ok(Type::GGA)
+                            },
+                            None => return Err("Failed to parse GGA sentence"),
+                        }
                     },
-                    None => return,
+                    _ => Err("Unknown or implemented type"),
                 }
             },
-            Type::None => return,
+            Err(e) => Err(e),
         }
     }
 }
@@ -134,22 +136,6 @@ impl fmt::Display for Nmea {
     }
 }
 
-#[test]
-fn test_checksum() {
-    let nmea = Nmea::new();
-    let valid = "$GNGSA,A,1,,,,,,,,,,,,,99.99,99.99,99.99*2E";
-    let invalid = "$GNZDA,165118.00,13,05,2016,00,00*71";
-    assert_eq!(nmea.checksum(valid), true);
-    assert_eq!(nmea.checksum(invalid), false);
-}
-
-#[test]
-fn test_message_type() {
-    let nmea = Nmea::new();
-    let gga = "$GPGGA,A,1,,,,,,,,,,,,,99.99,99.99,99.99*2E";
-    assert_eq!(nmea.parse_type(gga), Type::GGA);
-}
-
 #[derive(PartialEq, Debug)]
 pub enum Type {
     None,
@@ -166,9 +152,26 @@ impl<'a> From<&'a str> for Type {
 }
 
 #[test]
-fn test_parse() {
+fn test_checksum() {
     let nmea = Nmea::new();
+    let valid = "$GNGSA,A,1,,,,,,,,,,,,,99.99,99.99,99.99*2E";
+    let invalid = "$GNZDA,165118.00,13,05,2016,00,00*71";
+    assert_eq!(nmea.checksum(valid).unwrap(), true);
+    assert_eq!(nmea.checksum(invalid).unwrap(), false);
+}
 
+#[test]
+fn test_message_type() {
+    let nmea = Nmea::new();
+    let gga = "$GPGGA,A,1,,,,,,,,,,,,,99.99,99.99,99.99*2E";
+    let fail = "$GPXXX,A,1,,,,,,,,,,,,,99.99,99.99,99.99*2E";
+    assert_eq!(nmea.sentence_type(gga).unwrap(), Type::GGA);
+    assert!(nmea.sentence_type(fail).is_err());
+}
+
+#[test]
+fn test_parse() {
+    // sample NMEA sentences from https://en.wikipedia.org/wiki/NMEA_0183
     let sentences = vec![
         "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76",
         "$GPGSA,A,3,10,07,05,02,29,04,08,13,,,,,1.72,1.03,1.38*0A",
@@ -184,12 +187,12 @@ fn test_parse() {
         "$GPRMC,092751.000,A,5321.6802,N,00630.3371,W,0.06,31.66,280511,,,A*45",
     ];
 
+    let mut nmea = Nmea::new();
     for s in &sentences {
-        nmea.parse(s);
+        nmea.parse(s).ok();
     }
 
     assert_eq!(nmea.latitude().unwrap(), 53.216802);
-    assert_eq!(nmea.longitude().unwrap(), 63.03372);
+    assert_eq!(nmea.longitude().unwrap(), 6.303371);
     assert_eq!(nmea.altitude().unwrap(), 61.7);
-
 }
