@@ -83,21 +83,23 @@ impl Nmea {
         }
     }
 
+    fn parse_numeric<T>(input: Option<&str>, factor: T) -> Option<T> where T: std::str::FromStr + std::ops::Mul<Output=T> + Copy {
+        match input {
+            Some(s) => {
+                match s.parse::<T>() {
+                    Ok(v) => Some(v * factor),
+                    Err(_) => None,
+                }
+            },
+            None => None,
+        }
+    }
+
     pub fn parse(&mut self, s: &str) -> Result<Type, &'static str> {
         match self.checksum(s) {
             Ok(_) => (),
             Err(e) => return Err(e),
         }
-
-        let cap_to_f32 = |c: Option<&str>, f: f32 | -> Option<f32> {
-            match c {
-                Some(e) => match e.parse::<f32>() {
-                    Ok(v) => Some(v * f),
-                    Err(_) => None,
-                },
-                None => None,
-            }
-        };
 
         match self.sentence_type(s) {
             Ok(t) => {
@@ -105,9 +107,9 @@ impl Nmea {
                     Type::GGA => {
                         match self.regex_gga.captures(s) {
                             Some(caps) => {
-                                self.latitude = cap_to_f32(caps.name("lat"), 0.01);
-                                self.longitude = cap_to_f32(caps.name("lon"), 0.01);
-                                self.altitude = cap_to_f32(caps.name("alt"), 1.0);
+                                self.latitude = Self::parse_numeric::<f32>(caps.name("lat"), 0.01);
+                                self.longitude= Self::parse_numeric::<f32>(caps.name("lon"), 0.01);
+                                self.altitude = Self::parse_numeric::<f32>(caps.name("alt"), 1.0);
                                 return Ok(Type::GGA)
                             },
                             None => return Err("Failed to parse GGA sentence"),
@@ -149,6 +151,26 @@ impl<'a> From<&'a str> for Type {
             _ => Type::None,
         }
     }
+}
+
+#[test]
+fn test_parse_numeric() {
+    assert_eq!(Nmea::parse_numeric::<f32>(Some("123.1"), 1.0), Some(123.1));
+    assert_eq!(Nmea::parse_numeric::<f32>(Some("123.a"), 1.0), None);
+    assert_eq!(Nmea::parse_numeric::<f32>(Some("100.1"), 2.0), Some(200.2));
+    assert_eq!(Nmea::parse_numeric::<f32>(Some("-10.0"), 1.0), Some(-10.0));
+    assert_eq!(Nmea::parse_numeric::<f64>(Some("123.1"), 1.0), Some(123.1));
+    assert_eq!(Nmea::parse_numeric::<f64>(Some("123.a"), 1.0), None);
+    assert_eq!(Nmea::parse_numeric::<f64>(Some("100.1"), 2.0), Some(200.2));
+    assert_eq!(Nmea::parse_numeric::<f64>(Some("-10.0"), 1.0), Some(-10.0));
+    assert_eq!(Nmea::parse_numeric::<i32>(Some("0"), 0), Some(0));
+    assert_eq!(Nmea::parse_numeric::<i32>(Some("-10"), 1), Some(-10));
+    assert_eq!(Nmea::parse_numeric::<u32>(Some("0"), 0), Some(0));
+    assert_eq!(Nmea::parse_numeric::<u32>(Some("-1"), 0), None);
+    assert_eq!(Nmea::parse_numeric::<i8>(Some("0"), 0), Some(0));
+    assert_eq!(Nmea::parse_numeric::<i8>(Some("-10"), 1), Some(-10));
+    assert_eq!(Nmea::parse_numeric::<u8>(Some("0"), 0), Some(0));
+    assert_eq!(Nmea::parse_numeric::<u8>(Some("-1"), 0), None);
 }
 
 #[test]
