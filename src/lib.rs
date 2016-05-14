@@ -42,6 +42,20 @@ pub struct Nmea {
 }
 
 impl Nmea {
+    /// Constructs a new `Nmea`.
+    /// This struct parses NMEA sentences, including checksum checks and sentence
+    /// validation.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use nmea::Nmea;
+    ///
+    /// let nmea= Nmea::new();
+    /// let gga = "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76",
+    /// nmea.parse(gga).ok();
+    /// println!("{}", nmea);
+    /// ```
     pub fn new() -> Nmea {
         Nmea {
             latitude: None,
@@ -50,34 +64,22 @@ impl Nmea {
         }
     }
 
+    /// Returns last fixed latitude in degress. None if not fixed.
     pub fn latitude(&self) -> Option<f32> {
         self.latitude
     }
 
+    /// Returns last fixed longitude in degress. None if not fixed.
     pub fn longitude(&self) -> Option<f32> {
         self.longitude
     }
 
+    /// Returns latitude from last fix. None if not available.
     pub fn altitude(&self) -> Option<f32> {
         self.altitude
     }
 
-    fn checksum(&self, s: &str) -> Result<bool, &'static str> {
-        let caps = match REGEX_CHECKSUM.captures(s) {
-            Some(c) => c,
-            None => return Err("Checksum parsing failed"),
-        };
-        let sentence = match caps.name(&"sentence") {
-            Some(v) => v,
-            None => return Err("Checksum parsing failed"),
-        };
-        let checksum = match u8::from_str_radix(caps.name(&"checksum").unwrap_or(""), 16) {
-            Ok(v) => v,
-            Err(_) => return Err("Checksum parsing failed"),
-        };
-        Ok(sentence.bytes().fold(0, |c, x| c ^ x) == checksum)
-    }
-
+    /// Returns the NMEA sentence type.
     pub fn sentence_type(&self, s: &str) -> Result<Type, &'static str> {
         match REGEX_TYPE.captures(s) {
             Some(c) => match c.name("type") {
@@ -91,18 +93,8 @@ impl Nmea {
         }
     }
 
-    fn parse_numeric<T>(input: Option<&str>, factor: T) -> Option<T> where T: std::str::FromStr + std::ops::Mul<Output=T> + Copy {
-        match input {
-            Some(s) => {
-                match s.parse::<T>() {
-                    Ok(v) => Some(v * factor),
-                    Err(_) => None,
-                }
-            },
-            None => None,
-        }
-    }
-
+    /// Parse any NMEA sentence and stores the result. The type of sentence
+    /// is returnd if implemented and valid.
     pub fn parse(&mut self, s: &str) -> Result<Type, &'static str> {
         match self.checksum(s) {
             Ok(_) => (),
@@ -129,6 +121,35 @@ impl Nmea {
             Err(e) => Err(e),
         }
     }
+
+    fn checksum(&self, s: &str) -> Result<bool, &'static str> {
+        let caps = match REGEX_CHECKSUM.captures(s) {
+            Some(c) => c,
+            None => return Err("Checksum parsing failed"),
+        };
+        let sentence = match caps.name(&"sentence") {
+            Some(v) => v,
+            None => return Err("Checksum parsing failed"),
+        };
+        let checksum = match u8::from_str_radix(caps.name(&"checksum").unwrap_or(""), 16) {
+            Ok(v) => v,
+            Err(_) => return Err("Checksum parsing failed"),
+        };
+        Ok(sentence.bytes().fold(0, |c, x| c ^ x) == checksum)
+    }
+
+    fn parse_numeric<T>(input: Option<&str>, factor: T) -> Option<T> where T: std::str::FromStr + std::ops::Mul<Output=T> + Copy {
+        match input {
+            Some(s) => {
+                match s.parse::<T>() {
+                    Ok(v) => Some(v * factor),
+                    Err(_) => None,
+                }
+            },
+            None => None,
+        }
+    }
+
 }
 
 impl fmt::Debug for Nmea {
