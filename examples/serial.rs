@@ -18,11 +18,18 @@ extern crate nmea;
 
 use std::io::{BufRead, BufReader};
 use std::fs::File;
-
+use std::env;
 
 fn main() {
     let mut nmea = nmea::Nmea::new();
-    let f = match File::open("/dev/ttyACM0") {
+    let file = match env::args().nth(1) {
+        Some(f) => f,
+        None => panic!("No file argument"),
+    };
+
+    println!("Reading {}", file);
+
+    let f = match File::open(file) {
         Ok(f) => f,
         Err(e) => panic!("{}", e),
     };
@@ -40,6 +47,7 @@ fn main() {
                 if loops % 100 == 0 { println!("{:?}", nmea); }
                 loops += 1;
             } else {
+                println!("{:?}", nmea);
                 return
             },
             Err(e) => panic!("{}", e),
