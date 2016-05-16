@@ -8,6 +8,8 @@
 
 NMEA 0183 sentence parser for Rust. 
 
+Currently only _GGA_ sentences are supported.
+
 [Complete Documentation][doc]
 
 [doc]: https://flxo.github.io/rust-nmea/nmea
@@ -26,6 +28,8 @@ And put this in your crate root:
 ```rust
 extern crate nmea;
 ```
+
+To use the NMEA parser create a Nmea struct and feed it with NMEA sentences:
 
 ```rust
 use nmea::Nmea;
