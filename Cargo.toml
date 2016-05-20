@@ -1,7 +1,12 @@
 [package]
 name = "nmea"
-version = "0.1.0"
-authors = ["Felix Obenhuber <felix.obenhuber@esrlabs.com>"]
+version = "0.0.1"
+authors = ["Felix Obenhuber <felix@obenhuber.de>"]
+description = "Simple NMEA 0183 parser"
+documentation = "http://flxo.github.io/rust-nmea/nmea"
+homepage = "https://github.com/flxo/rust-nmea"
+license = "Apache-2.0"
+keywords = ["NMEA", "gps", "glonass", "coordinate", "position"]
 
 [dependencies]
 regex = "0.1"
