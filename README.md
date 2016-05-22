@@ -1,4 +1,3 @@
-
 [NMEA][doc] 0.0.1
 ====================
 
@@ -10,7 +9,7 @@
 
 NMEA 0183 sentence parser for Rust. 
 
-Currently only _GGA_ sentences are supported.
+Currently only _GGA_ and _GSV_ sentences are supported. Feel free to add others.
 
 [Complete Documentation][doc]
 
