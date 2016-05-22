@@ -24,25 +24,6 @@ use std::vec::Vec;
 use std::collections::HashMap;
 use chrono::{DateTime, UTC, Timelike};
 
-lazy_static! {
-    static ref REGEX_CHECKSUM: Regex = {
-        Regex::new(r"^\$(?P<sentence>.*)\*(?P<checksum>..)$").unwrap()
-    };
-    static ref REGEX_TYPE: Regex = {
-        Regex::new(r"^\$\D{2}(?P<type>\D{3}).*$").unwrap()
-    };
-
-    static ref REGEX_GGA: Regex = {
-        Regex::new(r"^\$\D\DGGA,(?P<timestamp>\d{6})\.?\d*,(?P<lat>\d+\.\d+),(?P<lat_dir>[NS]),(?P<lon>\d+\.\d+),(?P<lon_dir>[WE]),(?P<fix_type>\d),(?P<fix_satellites>\d+),(?P<hdop>\d+\.\d+),(?P<alt>\d+\.\d+),\D,(?P<geoid_height>\d+\.\d+),\D,,\*([0-9a-fA-F][0-9a-fA-F])").unwrap()
-    };
-    static ref REGEX_HMS: Regex = {
-        Regex::new(r"^(?P<hour>\d\d)(?P<minute>\d\d)(?P<second>\d\d)$").unwrap()
-    };
-    static ref REGEX_GSV: Regex = {
-        Regex::new(r"^\$(?P<type>\D\D)GSV,(?P<number>\d+),(?P<index>\d+),(?P<sat_num>\d+),(?P<sats>.*)\*\d\d$").unwrap()
-    };
-}
-
 /// ! NMEA parser
 pub struct Nmea {
     fix_timestamp: Option<DateTime<UTC>>,
@@ -757,6 +738,26 @@ impl<'a> From<&'a str> for FixType {
 
     }
 }
+
+lazy_static! {
+    static ref REGEX_CHECKSUM: Regex = {
+        Regex::new(r"^\$(?P<sentence>.*)\*(?P<checksum>..)$").unwrap()
+    };
+    static ref REGEX_TYPE: Regex = {
+        Regex::new(r"^\$\D{2}(?P<type>\D{3}).*$").unwrap()
+    };
+
+    static ref REGEX_GGA: Regex = {
+        Regex::new(r"^\$\D\DGGA,(?P<timestamp>\d{6})\.?\d*,(?P<lat>\d+\.\d+),(?P<lat_dir>[NS]),(?P<lon>\d+\.\d+),(?P<lon_dir>[WE]),(?P<fix_type>\d),(?P<fix_satellites>\d+),(?P<hdop>\d+\.\d+),(?P<alt>\d+\.\d+),\D,(?P<geoid_height>\d+\.\d+),\D,,\*([0-9a-fA-F][0-9a-fA-F])").unwrap()
+    };
+    static ref REGEX_HMS: Regex = {
+        Regex::new(r"^(?P<hour>\d\d)(?P<minute>\d\d)(?P<second>\d\d)$").unwrap()
+    };
+    static ref REGEX_GSV: Regex = {
+        Regex::new(r"^\$(?P<type>\D\D)GSV,(?P<number>\d+),(?P<index>\d+),(?P<sat_num>\d+),(?P<sats>.*)\*\d\d$").unwrap()
+    };
+}
+
 
 #[test]
 fn test_fix_type() {
