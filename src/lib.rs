@@ -43,58 +43,6 @@ lazy_static! {
     };
 }
 
-#[derive (Clone)]
-/// ! A Satellite
-pub struct Satellite {
-    gnss_type: GnssType,
-    prn: u32,
-    elevation: f32,
-    azimuth: f32,
-    snr: f32,
-}
-
-impl Satellite {
-    pub fn gnss_type(&self) -> GnssType {
-        self.gnss_type.clone()
-    }
-    pub fn prn(&self) -> u32 {
-        self.prn
-    }
-    pub fn elevation(&self) -> f32 {
-        self.elevation
-    }
-    pub fn azimuth(&self) -> f32 {
-        self.azimuth
-    }
-    pub fn snr(&self) -> f32 {
-        self.snr
-    }
-}
-
-impl fmt::Display for Satellite {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f,
-               "{}: {} elv: {} ath: {} snr: {}",
-               self.gnss_type,
-               self.prn,
-               self.elevation,
-               self.azimuth,
-               self.snr)
-    }
-}
-
-impl fmt::Debug for Satellite {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f,
-               "[{},{},{},{},{}]",
-               self.gnss_type,
-               self.prn,
-               self.elevation,
-               self.azimuth,
-               self.snr)
-    }
-}
-
 /// ! NMEA parser
 pub struct Nmea {
     fix_timestamp: Option<DateTime<UTC>>,
@@ -451,25 +399,298 @@ impl fmt::Display for Nmea {
     }
 }
 
-/// ! NMEA sentence type
+#[derive (Clone)]
+///! A Satellite
+pub struct Satellite {
+    gnss_type: GnssType,
+    prn: u32,
+    elevation: f32,
+    azimuth: f32,
+    snr: f32,
+}
+
+impl Satellite {
+    pub fn gnss_type(&self) -> GnssType {
+        self.gnss_type.clone()
+    }
+
+    pub fn prn(&self) -> u32 {
+        self.prn
+    }
+
+    pub fn elevation(&self) -> f32 {
+        self.elevation
+    }
+
+    pub fn azimuth(&self) -> f32 {
+        self.azimuth
+    }
+
+    pub fn snr(&self) -> f32 {
+        self.snr
+    }
+}
+
+impl fmt::Display for Satellite {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f,
+               "{}: {} elv: {} ath: {} snr: {}",
+               self.gnss_type,
+               self.prn,
+               self.elevation,
+               self.azimuth,
+               self.snr)
+    }
+}
+
+impl fmt::Debug for Satellite {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f,
+               "[{},{},{},{},{}]",
+               self.gnss_type,
+               self.prn,
+               self.elevation,
+               self.azimuth,
+               self.snr)
+    }
+}
+
+///! NMEA sentence type
+///! General: OSD | 
+///! Autopilot: APA | APB | ASD | 
+///! Decca: DCN | 
+///! D-GPS: MSK 
+///! Echo: DBK | DBS | DBT | 
+///! Radio: FSI | SFI | TLL 
+///! Speed: VBW | VHW | VLW | 
+///! GPS: ALM | GBS | GGA | GNS | GSA | GSV | 
+///! Course: DPT | HDG | HDM | HDT | HSC | ROT | VDR | 
+///! Loran-C: GLC | LCD | 
+///! Machine: RPM | 
+///! Navigation: RMA | RMB | RMC | 
+///! Omega: OLN | 
+///! Position: GLL | DTM 
+///! Radar: RSD | TLL | TTM | 
+///! Rudder: RSA | 
+///! Temperature: MTW | 
+///! Transit: GXA | RTF | 
+///! Waypoints and tacks: AAM | BEC | BOD | BWC | BWR | BWW | ROO | RTE | VTG | WCV | WNC | WPL | XDR | XTE | XTR | 
+///! Wind: MWV | VPW | VWR | 
+///! Date and Time: GDT | ZDA | ZFO | ZTG |
 #[derive(PartialEq, Debug)]
 pub enum SentenceType {
     None,
+    AAM,
+    ABK,
+    ACA,
+    ACK,
+    ACS,
+    AIR,
+    ALM,
+    ALR,
+    APA,
+    APB,
+    ASD,
+    BEC,
+    BOD,
+    BWC,
+    BWR,
+    BWW,
+    CUR,
+    DBK,
+    DBS,
+    DBT,
+    DCN,
+    DPT,
+    DSC,
+    DSE,
+    DSI,
+    DSR,
+    DTM,
+    FSI,
+    GBS,
     GGA,
+    GLC,
+    GLL,
+    GMP,
+    GNS,
+    GRS,
+    GSA,
+    GST,
     GSV,
+    GTD,
+    GXA,
+    HDG,
+    HDM,
+    HDT,
+    HMR,
+    HMS,
+    HSC,
+    HTC,
+    HTD,
+    LCD,
+    LRF,
+    LRI,
+    LR1,
+    LR2,
+    LR3,
+    MLA,
+    MSK,
+    MSS,
+    MWD,
+    MTW,
+    MWV,
+    OLN,
+    OSD,
+    ROO,
+    RMA,
+    RMB,
+    RMC,
+    ROT,
+    RPM,
+    RSA,
+    RSD,
+    RTE,
+    SFI,
+    SSD,
+    STN,
+    TLB,
+    TLL,
+    TRF,
+    TTM,
+    TUT,
+    TXT,
+    VBW,
+    VDM,
+    VDO,
+    VDR,
+    VHW,
+    VLW,
+    VPW,
+    VSD,
+    VTG,
+    VWR,
+    WCV,
+    WNC,
+    WPL,
+    XDR,
+    XTE,
+    XTR,
+    ZDA,
+    ZDL,
+    ZFO,
+    ZTG,
 }
 
 impl<'a> From<&'a str> for SentenceType {
     fn from(s: &str) -> Self {
         match s {
+            "AAM" => SentenceType::AAM,
+            "ABK" => SentenceType::ACA,
+            "ACA" => SentenceType::ACA,
+            "ACK" => SentenceType::ACK,
+            "ACS" => SentenceType::ACS,
+            "AIR" => SentenceType::AIR,
+            "ALM" => SentenceType::ALM,
+            "ALR" => SentenceType::ALR,
+            "APA" => SentenceType::APA,
+            "APB" => SentenceType::APB,
+            "ASD" => SentenceType::ASD,
+            "BEC" => SentenceType::BEC,
+            "BOD" => SentenceType::BOD,
+            "BWC" => SentenceType::BWC,
+            "BWR" => SentenceType::BWR,
+            "BWW" => SentenceType::BWW,
+            "CUR" => SentenceType::CUR,
+            "DBK" => SentenceType::DBK,
+            "DBS" => SentenceType::DBS,
+            "DBT" => SentenceType::DBT,
+            "DCN" => SentenceType::DCN,
+            "DPT" => SentenceType::DPT,
+            "DSC" => SentenceType::DSC,
+            "DSE" => SentenceType::DSE,
+            "DSI" => SentenceType::DSI,
+            "DSR" => SentenceType::DSR,
+            "DTM" => SentenceType::DTM,
+            "FSI" => SentenceType::FSI,
+            "GBS" => SentenceType::GBS,
             "GGA" => SentenceType::GGA,
+            "GLC" => SentenceType::GLC,
+            "GLL" => SentenceType::GLL,
+            "GMP" => SentenceType::GMP,
+            "GNS" => SentenceType::GNS,
+            "GRS" => SentenceType::GRS,
+            "GSA" => SentenceType::GSA,
+            "GST" => SentenceType::GST,
             "GSV" => SentenceType::GSV,
+            "GTD" => SentenceType::GTD,
+            "GXA" => SentenceType::GXA,
+            "HDG" => SentenceType::HDG,
+            "HDM" => SentenceType::HDM,
+            "HDT" => SentenceType::HDT,
+            "HMR" => SentenceType::HMR,
+            "HMS" => SentenceType::HMS,
+            "HSC" => SentenceType::HSC,
+            "HTC" => SentenceType::HTC,
+            "HTD" => SentenceType::HTD,
+            "LCD" => SentenceType::LCD,
+            "LRF" => SentenceType::LRF,
+            "LRI" => SentenceType::LRI,
+            "LR1" => SentenceType::LR1,
+            "LR2" => SentenceType::LR2,
+            "LR3" => SentenceType::LR3,
+            "MLA" => SentenceType::MLA,
+            "MSK" => SentenceType::MSK,
+            "MSS" => SentenceType::MSS,
+            "MWD" => SentenceType::MWD,
+            "MTW" => SentenceType::MTW,
+            "MWV" => SentenceType::MWV,
+            "OLN" => SentenceType::OLN,
+            "OSD" => SentenceType::OSD,
+            "ROO" => SentenceType::ROO,
+            "RMA" => SentenceType::RMA,
+            "RMB" => SentenceType::RMB,
+            "RMC" => SentenceType::RMC,
+            "ROT" => SentenceType::ROT,
+            "RPM" => SentenceType::RPM,
+            "RSA" => SentenceType::RSA,
+            "RSD" => SentenceType::RSD,
+            "RTE" => SentenceType::RTE,
+            "SFI" => SentenceType::SFI,
+            "SSD" => SentenceType::SSD,
+            "STN" => SentenceType::STN,
+            "TLB" => SentenceType::TLB,
+            "TLL" => SentenceType::TLL,
+            "TRF" => SentenceType::TRF,
+            "TTM" => SentenceType::TTM,
+            "TUT" => SentenceType::TUT,
+            "TXT" => SentenceType::TXT,
+            "VBW" => SentenceType::VBW,
+            "VDM" => SentenceType::VDO,
+            "VDO" => SentenceType::VDO,
+            "VDR" => SentenceType::VDR,
+            "VHW" => SentenceType::VHW,
+            "VLW" => SentenceType::VLW,
+            "VPW" => SentenceType::VPW,
+            "VSD" => SentenceType::VSD,
+            "VTG" => SentenceType::VTG,
+            "VWR" => SentenceType::VWR,
+            "WCV" => SentenceType::WCV,
+            "WNC" => SentenceType::WNC,
+            "WPL" => SentenceType::WPL,
+            "XDR" => SentenceType::XDR,
+            "XTE" => SentenceType::XTE,
+            "XTR" => SentenceType::XTR,
+            "ZDA" => SentenceType::ZDA,
+            "ZDL" => SentenceType::ZDL,
+            "ZFO" => SentenceType::ZFO,
+            "ZTG" => SentenceType::ZTG,
             _ => SentenceType::None,
         }
     }
 }
 
-/// ! Fix type
+///! Fix type
 #[derive(Clone, PartialEq, Debug)]
 pub enum FixType {
     Invalid,
@@ -483,7 +704,7 @@ pub enum FixType {
     Simulation,
 }
 
-/// ! GNSS type
+///! GNSS type
 #[derive (Debug, Clone, Hash, Eq, PartialEq)]
 pub enum GnssType {
     Galileo,
@@ -695,14 +916,12 @@ fn test_gsv_two_of_three() {
 
 #[test]
 fn test_parse() {
-    let sentences = [
-        "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76",
-        "$GPGSA,A,3,10,07,05,02,29,04,08,13,,,,,1.72,1.03,1.38*0A",
-        "$GPGSV,3,1,11,10,63,137,17,07,61,098,15,05,59,290,20,08,54,157,30*70",
-        "$GPGSV,3,2,11,02,39,223,19,13,28,070,17,26,23,252,,04,14,186,14*79",
-        "$GPGSV,3,3,11,29,09,301,24,16,09,020,,36,,,*76",
-        "$GPRMC,092750.000,A,5321.6802,N,00630.3372,W,0.02,31.66,280511,,,A*43",
-    ];
+    let sentences = ["$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76",
+                     "$GPGSA,A,3,10,07,05,02,29,04,08,13,,,,,1.72,1.03,1.38*0A",
+                     "$GPGSV,3,1,11,10,63,137,17,07,61,098,15,05,59,290,20,08,54,157,30*70",
+                     "$GPGSV,3,2,11,02,39,223,19,13,28,070,17,26,23,252,,04,14,186,14*79",
+                     "$GPGSV,3,3,11,29,09,301,24,16,09,020,,36,,,*76",
+                     "$GPRMC,092750.000,A,5321.6802,N,00630.3372,W,0.02,31.66,280511,,,A*43"];
 
     let mut nmea = Nmea::new();
     for s in &sentences {
