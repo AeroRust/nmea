@@ -1,5 +1,5 @@
-[NMEA][doc] 0.0.1
-====================
+[NMEA][doc]
+===========
 
 [![NMEA on Travis CI][travis-image]][travis] [![Version](https://img.shields.io/crates/v/nmea.svg)](https://crates.io/crates/nmea)
 [travis-image]: https://travis-ci.org/flxo/rust-nmea.png
@@ -21,7 +21,7 @@ Put this in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nmea = "0.0.1"
+nmea = "0.0.2"
 ```
 
 And put this in your crate root:
