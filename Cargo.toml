@@ -1,6 +1,6 @@
 [package]
 name = "nmea"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["Felix Obenhuber <felix@obenhuber.de>"]
 description = "Simple NMEA 0183 parser"
 documentation = "http://flxo.github.io/rust-nmea/nmea"
@@ -9,6 +9,6 @@ license = "Apache-2.0"
 keywords = ["NMEA", "gps", "glonass", "coordinate", "position"]
 
 [dependencies]
-regex = "0.1"
-lazy_static = "0.1.*"
-chrono = "0.2.22"
+regex = "0.2.1"
+lazy_static = "0.2.2"
+chrono = "0.2.25"
