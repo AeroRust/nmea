@@ -339,9 +339,7 @@ impl Nmea {
             Ok(v) => v,
             Err(_) => return false,
         };
-        let c = sentence.bytes().fold(0, |c, x| c ^ x);
-        println!("{}: {}", s, c);
-        c == checksum
+        checksum == sentence.bytes().fold(0, |c, x| c ^ x)
     }
 
     fn parse_numeric<T>(input: Option<&str>, factor: T) -> Option<T>
