@@ -223,7 +223,7 @@ impl<'a> Nmea {
                     d.resize(number, vec!());
                     // Replace data at index with new scan data
                     d.push(sats);
-                    d.swap_remove(index -1);
+                    d.swap_remove(index - 1);
                 }
 
                 self.satellites.clear();
@@ -254,13 +254,13 @@ impl<'a> Nmea {
                     .and_then(|a| Self::parse_numeric::<u32>(a, 1))?,
                 elevation: s.next()
                     .ok_or("Failed to parse elevation")
-                    .and_then(|a| Self::parse_numeric::<f32>(a, 1.0))?,
+                    .and_then(|a| Self::parse_numeric::<f32>(a, 1.0)).ok(),
                 azimuth: s.next()
                     .ok_or("Failed to parse azimuth")
-                    .and_then(|a| Self::parse_numeric::<f32>(a, 1.0))?,
+                    .and_then(|a| Self::parse_numeric::<f32>(a, 1.0)).ok(),
                 snr: s.next()
                     .ok_or("Failed to parse SNR")
-                    .and_then(|a| Self::parse_numeric::<f32>(a, 1.0))?,
+                    .and_then(|a| Self::parse_numeric::<f32>(a, 1.0)).ok(),
             };
             if s.prn != 0 {
                 sats.push(s);
@@ -305,7 +305,7 @@ impl<'a> Nmea {
 
 impl fmt::Debug for Nmea {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self)
+        write!(f, "{:?}", self)
     }
 }
 
@@ -313,13 +313,10 @@ impl fmt::Display for Nmea {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f,
                "{}: lat: {:3.3} lon: {:3.3} alt: {:5.3} {:?}",
-               match self.fix_timestamp {
-                   Some(d) => d.to_string(),
-                   None => "no date".to_string(),
-               },
-               self.latitude.unwrap_or(0.0),
-               self.longitude.unwrap_or(0.0),
-               self.altitude.unwrap_or(0.0),
+               self.fix_timestamp.map(|l| format!("{}", l)).unwrap_or("None".to_owned()),
+               self.latitude.map(|l| format!("{}", l)).unwrap_or("None".to_owned()),
+               self.longitude.map(|l| format!("{}", l)).unwrap_or("None".to_owned()),
+               self.altitude.map(|l| format!("{}", l)).unwrap_or("None".to_owned()),
                self.satellites())
     }
 }
@@ -329,9 +326,9 @@ impl fmt::Display for Nmea {
 pub struct Satellite {
     gnss_type: GnssType,
     prn: u32,
-    elevation: f32,
-    azimuth: f32,
-    snr: f32,
+    elevation: Option<f32>,
+    azimuth: Option<f32>,
+    snr: Option<f32>,
 }
 
 impl Satellite {
@@ -343,15 +340,15 @@ impl Satellite {
         self.prn
     }
 
-    pub fn elevation(&self) -> f32 {
+    pub fn elevation(&self) -> Option<f32> {
         self.elevation
     }
 
-    pub fn azimuth(&self) -> f32 {
+    pub fn azimuth(&self) -> Option<f32> {
         self.azimuth
     }
 
-    pub fn snr(&self) -> f32 {
+    pub fn snr(&self) -> Option<f32> {
         self.snr
     }
 }
@@ -362,16 +359,16 @@ impl fmt::Display for Satellite {
                "{}: {} elv: {} ath: {} snr: {}",
                self.gnss_type,
                self.prn,
-               self.elevation,
-               self.azimuth,
-               self.snr)
+               self.elevation.unwrap_or(0.0),
+               self.azimuth.unwrap_or(0.0),
+               self.snr.unwrap_or(0.0))
     }
 }
 
 impl fmt::Debug for Satellite {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f,
-               "[{},{},{},{},{}]",
+               "[{},{},{:?},{:?},{:?}]",
                self.gnss_type,
                self.prn,
                self.elevation,
@@ -828,9 +825,9 @@ fn test_gsv() {
     let sat: &Satellite = &(nmea.satellites()[0]);
     assert_eq!(sat.gnss_type, GnssType::Gps);
     assert_eq!(sat.prn, 10);
-    assert_eq!(sat.elevation, 63.0);
-    assert_eq!(sat.azimuth, 137.0);
-    assert_eq!(sat.snr, 17.0);
+    assert_eq!(sat.elevation, Some(63.0));
+    assert_eq!(sat.azimuth, Some(137.0));
+    assert_eq!(sat.snr, Some(17.0));
 }
 
 #[test]
@@ -844,9 +841,9 @@ fn test_gsv_order() {
     let sat: &Satellite = &(nmea.satellites()[0]);
     assert_eq!(sat.gnss_type, GnssType::Gps);
     assert_eq!(sat.prn, 10);
-    assert_eq!(sat.elevation, 63.0);
-    assert_eq!(sat.azimuth, 137.0);
-    assert_eq!(sat.snr, 17.0);
+    assert_eq!(sat.elevation, Some(63.0));
+    assert_eq!(sat.azimuth, Some(137.0));
+    assert_eq!(sat.snr, Some(17.0));
 }
 
 #[test]
