@@ -24,7 +24,7 @@ use std::vec::Vec;
 use std::collections::HashMap;
 use chrono::{DateTime, UTC, Timelike};
 
-/// ! NMEA parser
+/// NMEA parser
 #[derive(Default)]
 pub struct Nmea {
     fix_timestamp: Option<DateTime<UTC>>,
