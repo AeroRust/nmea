@@ -18,24 +18,24 @@ extern crate lazy_static;
 extern crate regex;
 extern crate chrono;
 
+use chrono::{DateTime, Timelike, UTC};
 use regex::Regex;
+use std::collections::HashMap;
 use std::fmt;
 use std::vec::Vec;
-use std::collections::HashMap;
-use chrono::{DateTime, UTC, Timelike};
 
 /// NMEA parser
 #[derive(Default)]
 pub struct Nmea {
-    fix_timestamp: Option<DateTime<UTC>>,
-    fix_type: Option<FixType>,
-    latitude: Option<f32>,
-    longitude: Option<f32>,
-    altitude: Option<f32>,
-    fix_satellites: Option<u32>,
-    hdop: Option<f32>,
-    geoid_height: Option<f32>,
-    satellites: Vec<Satellite>,
+    pub fix_timestamp: Option<DateTime<UTC>>,
+    pub fix_type: Option<FixType>,
+    pub latitude: Option<f32>,
+    pub longitude: Option<f32>,
+    pub altitude: Option<f32>,
+    pub fix_satellites: Option<u32>,
+    pub hdop: Option<f32>,
+    pub geoid_height: Option<f32>,
+    pub satellites: Vec<Satellite>,
     satellites_scan: HashMap<GnssType, Vec<Vec<Satellite>>>,
 }
 
@@ -127,22 +127,22 @@ impl<'a> Nmea {
 
     /// Parse a HHMMSS string into todays UTC datetime
     fn parse_hms(s: &'a str) -> Result<DateTime<UTC>, &'a str> {
-
         REGEX_HMS.captures(s)
             .and_then(|caps| {
-                UTC::now().with_hour(
-                    caps.get(1)
-                        .and_then(|l| Self::parse_numeric::<u32>(l.as_str(), 1).ok()).unwrap_or(0))
-                .unwrap()
-                .with_minute(
-                    caps.get(2)
-                        .and_then(|l| Self::parse_numeric::<u32>(l.as_str(), 1).ok()).unwrap_or(0))
-                .unwrap()
-                .with_second(
-                    caps.get(3)
-                        .and_then(|l| Self::parse_numeric::<u32>(l.as_str(), 1).ok()).unwrap_or(0))
-                .unwrap()
-                .with_nanosecond(0)
+                UTC::now()
+                    .with_hour(caps.get(1)
+                        .and_then(|l| Self::parse_numeric::<u32>(l.as_str(), 1).ok())
+                        .unwrap_or(0))
+                    .unwrap()
+                    .with_minute(caps.get(2)
+                        .and_then(|l| Self::parse_numeric::<u32>(l.as_str(), 1).ok())
+                        .unwrap_or(0))
+                    .unwrap()
+                    .with_second(caps.get(3)
+                        .and_then(|l| Self::parse_numeric::<u32>(l.as_str(), 1).ok())
+                        .unwrap_or(0))
+                    .unwrap()
+                    .with_nanosecond(0)
             })
             .ok_or("Failed to parse time")
     }
@@ -220,7 +220,7 @@ impl<'a> Nmea {
                         .and_then(|s| Self::parse_satellites(s.as_str(), &gnss_type))?;
                     let d = self.satellites_scan.get_mut(&gnss_type).ok_or("Invalid GNSS type")?;
                     // Adjust size to this scan
-                    d.resize(number, vec!());
+                    d.resize(number, vec![]);
                     // Replace data at index with new scan data
                     d.push(sats);
                     d.swap_remove(index - 1);
@@ -244,26 +244,29 @@ impl<'a> Nmea {
     fn parse_satellites(satellites: &'a str,
                         gnss_type: &GnssType)
                         -> Result<Vec<Satellite>, &'a str> {
-        let mut sats = vec!();
+        let mut sats = vec![];
         let mut s = satellites.split(',');
         for _ in 0..3 {
-            let s = Satellite {
-                gnss_type: gnss_type.clone(),
-                prn: s.next()
-                    .ok_or("Failed to parse PRN")
-                    .and_then(|a| Self::parse_numeric::<u32>(a, 1))?,
-                elevation: s.next()
-                    .ok_or("Failed to parse elevation")
-                    .and_then(|a| Self::parse_numeric::<f32>(a, 1.0)).ok(),
-                azimuth: s.next()
-                    .ok_or("Failed to parse azimuth")
-                    .and_then(|a| Self::parse_numeric::<f32>(a, 1.0)).ok(),
-                snr: s.next()
-                    .ok_or("Failed to parse SNR")
-                    .and_then(|a| Self::parse_numeric::<f32>(a, 1.0)).ok(),
-            };
-            if s.prn != 0 {
-                sats.push(s);
+            if let Some(prn) = s.next()
+                .and_then(|a| Self::parse_numeric::<u32>(a, 1).ok()) {
+                    sats.push(Satellite {
+                        gnss_type: gnss_type.clone(),
+                        prn: prn,
+                        elevation: s.next()
+                            .ok_or("Failed to parse elevation")
+                            .and_then(|a| Self::parse_numeric::<f32>(a, 1.0))
+                            .ok(),
+                        azimuth: s.next()
+                            .ok_or("Failed to parse azimuth")
+                            .and_then(|a| Self::parse_numeric::<f32>(a, 1.0))
+                            .ok(),
+                        snr: s.next()
+                            .ok_or("Failed to parse SNR")
+                            .and_then(|a| Self::parse_numeric::<f32>(a, 1.0))
+                            .ok(),
+                    });
+            } else {
+                return Err("Failed to parse prn");
             }
         }
 
@@ -273,14 +276,14 @@ impl<'a> Nmea {
     /// Parse any NMEA sentence and stores the result. The type of sentence
     /// is returnd if implemented and valid.
     pub fn parse(&mut self, s: &'a str) -> Result<SentenceType, &'a str> {
-        if !Nmea::checksum(s)? {
-            return Err("Checksum mismatch");
-        }
-
-        match self.sentence_type(&s)? {
-            SentenceType::GGA => self.parse_gga(s),
-            SentenceType::GSV => self.parse_gsv(s),
-            _ => Err("Unknown or implemented type"),
+        if Nmea::checksum(s)? {
+            match self.sentence_type(&s)? {
+                SentenceType::GGA => self.parse_gga(s),
+                SentenceType::GSV => self.parse_gsv(s),
+                _ => Err("Unknown or implemented sentence type"),
+            }
+        } else {
+            Err("Checksum mismatch")
         }
     }
 
@@ -312,11 +315,11 @@ impl fmt::Debug for Nmea {
 impl fmt::Display for Nmea {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f,
-               "{}: lat: {:3.3} lon: {:3.3} alt: {:5.3} {:?}",
+               "{}: lat: {} lon: {} alt: {} {:?}",
                self.fix_timestamp.map(|l| format!("{}", l)).unwrap_or("None".to_owned()),
-               self.latitude.map(|l| format!("{}", l)).unwrap_or("None".to_owned()),
-               self.longitude.map(|l| format!("{}", l)).unwrap_or("None".to_owned()),
-               self.altitude.map(|l| format!("{}", l)).unwrap_or("None".to_owned()),
+               self.latitude.map(|l| format!("{:3.8}", l)).unwrap_or("None".to_owned()),
+               self.longitude.map(|l| format!("{:3.8}", l)).unwrap_or("None".to_owned()),
+               self.altitude.map(|l| format!("{:.3}", l)).unwrap_or("None".to_owned()),
                self.satellites())
     }
 }
@@ -359,16 +362,16 @@ impl fmt::Display for Satellite {
                "{}: {} elv: {} ath: {} snr: {}",
                self.gnss_type,
                self.prn,
-               self.elevation.unwrap_or(0.0),
-               self.azimuth.unwrap_or(0.0),
-               self.snr.unwrap_or(0.0))
+               self.elevation.map(|e| format!("{}", e)).unwrap_or("--".to_owned()),
+               self.azimuth.map(|e| format!("{}", e)).unwrap_or("--".to_owned()),
+               self.snr.map(|e| format!("{}", e)).unwrap_or("--".to_owned()))
     }
 }
 
 impl fmt::Debug for Satellite {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f,
-               "[{},{},{:?},{:?},{:?}]",
+               "[{:?},{:?},{:?},{:?},{:?}]",
                self.gnss_type,
                self.prn,
                self.elevation,
