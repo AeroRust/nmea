@@ -769,7 +769,7 @@ fn test_gga_north_west() {
         .unwrap();
 
     let mut nmea = Nmea::new();
-    nmea.parse("$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76").ok();
+    nmea.parse("$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76").unwrap();
     assert_eq!(nmea.fix_timestamp().unwrap(), date);
     assert_eq!(nmea.latitude().unwrap(), 53.216802);
     assert_eq!(nmea.longitude().unwrap(), -6.303372);
@@ -782,7 +782,7 @@ fn test_gga_north_west() {
 #[test]
 fn test_gga_north_east() {
     let mut nmea = Nmea::new();
-    nmea.parse("$GPGGA,092750.000,5321.6802,N,00630.3372,E,1,8,1.03,61.7,M,55.2,M,,*64").ok();
+    nmea.parse("$GPGGA,092750.000,5321.6802,N,00630.3372,E,1,8,1.03,61.7,M,55.2,M,,*64").unwrap();
     assert_eq!(nmea.latitude().unwrap(), 53.216802);
     assert_eq!(nmea.longitude().unwrap(), 6.303372);
 }
@@ -790,7 +790,7 @@ fn test_gga_north_east() {
 #[test]
 fn test_gga_south_west() {
     let mut nmea = Nmea::new();
-    nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*6B").ok();
+    nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*6B").unwrap();
     assert_eq!(nmea.latitude().unwrap(), -53.216802);
     assert_eq!(nmea.longitude().unwrap(), -6.303372);
 }
@@ -798,7 +798,7 @@ fn test_gga_south_west() {
 #[test]
 fn test_gga_south_east() {
     let mut nmea = Nmea::new();
-    nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,E,1,8,1.03,61.7,M,55.2,M,,*79").ok();
+    nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,E,1,8,1.03,61.7,M,55.2,M,,*79").unwrap();
     assert_eq!(nmea.latitude().unwrap(), -53.216802);
     assert_eq!(nmea.longitude().unwrap(), 6.303372);
 }
@@ -806,23 +806,23 @@ fn test_gga_south_east() {
 #[test]
 fn test_gga_invalid() {
     let mut nmea = Nmea::new();
-    nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,E,0,8,1.03,61.7,M,55.2,M,,*7B").ok();
+    nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,E,0,8,1.03,61.7,M,55.2,M,,*7B").unwrap_err();
     assert_eq!(nmea.fix_type(), None);
 }
 
 #[test]
 fn test_gga_gps() {
     let mut nmea = Nmea::new();
-    nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,E,1,8,1.03,61.7,M,55.2,M,,*79").ok();
+    nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,E,1,8,1.03,61.7,M,55.2,M,,*79").unwrap();
     assert_eq!(nmea.fix_type(), Some(FixType::Gps));
 }
 
 #[test]
 fn test_gsv() {
     let mut nmea = Nmea::new();
-    nmea.parse("$GPGSV,3,1,11,10,63,137,17,07,61,098,15,05,59,290,20,08,54,157,30*70").ok();
-    nmea.parse("$GPGSV,3,2,11,02,39,223,19,13,28,070,17,26,23,252,,04,14,186,14*79").ok();
-    nmea.parse("$GPGSV,3,3,11,29,09,301,24,16,09,020,,36,,,*76").ok();
+    nmea.parse("$GPGSV,3,1,11,10,63,137,17,07,61,098,15,05,59,290,20,08,54,157,30*70").unwrap();
+    nmea.parse("$GPGSV,3,2,11,02,39,223,19,13,28,070,17,26,23,252,,04,14,186,14*79").unwrap();
+    nmea.parse("$GPGSV,3,3,11,29,09,301,24,16,09,020,,36,,,*76").unwrap();
     assert_eq!(nmea.satellites().len(), 9);
 
     let sat: &Satellite = &(nmea.satellites()[0]);
@@ -836,9 +836,9 @@ fn test_gsv() {
 #[test]
 fn test_gsv_order() {
     let mut nmea = Nmea::new();
-    nmea.parse("$GPGSV,3,2,11,02,39,223,19,13,28,070,17,26,23,252,,04,14,186,14*79").ok();
-    nmea.parse("$GPGSV,3,3,11,29,09,301,24,16,09,020,,36,,,*76").ok();
-    nmea.parse("$GPGSV,3,1,11,10,63,137,17,07,61,098,15,05,59,290,20,08,54,157,30*70").ok();
+    nmea.parse("$GPGSV,3,2,11,02,39,223,19,13,28,070,17,26,23,252,,04,14,186,14*79").unwrap();
+    nmea.parse("$GPGSV,3,3,11,29,09,301,24,16,09,020,,36,,,*76").unwrap();
+    nmea.parse("$GPGSV,3,1,11,10,63,137,17,07,61,098,15,05,59,290,20,08,54,157,30*70").unwrap();
     assert_eq!(nmea.satellites().len(), 9);
 
     let sat: &Satellite = &(nmea.satellites()[0]);
@@ -852,8 +852,8 @@ fn test_gsv_order() {
 #[test]
 fn test_gsv_two_of_three() {
     let mut nmea = Nmea::new();
-    nmea.parse("$GPGSV,3,2,11,02,39,223,19,13,28,070,17,26,23,252,,04,14,186,14*79").ok();
-    nmea.parse("$GPGSV,3,3,11,29,09,301,24,16,09,020,,36,,,*76").ok();
+    nmea.parse("$GPGSV,3,2,11,02,39,223,19,13,28,070,17,26,23,252,,04,14,186,14*79").unwrap();
+    nmea.parse("$GPGSV,3,3,11,29,09,301,24,16,09,020,,36,,,*76").unwrap();
     assert_eq!(nmea.satellites().len(), 6);
 }
 
@@ -868,7 +868,12 @@ fn test_parse() {
 
     let mut nmea = Nmea::new();
     for s in &sentences {
-        nmea.parse(s).ok();
+        let res = nmea.parse(s);
+        if s.starts_with("$GPGSA") || s.starts_with("$GPRMC") {
+            res.unwrap_err();
+        } else {
+            res.unwrap();
+        }
     }
 
     assert_eq!(nmea.latitude().unwrap(), 53.216802);
