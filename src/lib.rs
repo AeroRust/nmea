@@ -380,6 +380,41 @@ impl fmt::Debug for Satellite {
     }
 }
 
+macro_rules! define_sentence_type_enum {
+    ($Name:ident { $($Variant:ident),* }) => {
+        #[derive(PartialEq, Debug)]
+        pub enum $Name {
+            None,
+            $($Variant),*,
+        }
+
+        impl<'a> From<&'a str> for $Name {
+            fn from(s: &str) -> Self {
+                match s {
+                    $(stringify!($Variant) => $Name::$Variant,)*
+                    _ => $Name::None,
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn test_define_sentence_type_enum() {
+    define_sentence_type_enum!( TestEnum {
+        AAA,
+        BBB
+    }
+    );
+
+    let a = TestEnum::AAA;
+    let b = TestEnum::BBB;
+    let n = TestEnum::None;
+    assert_eq!(TestEnum::from("AAA"), a);
+    assert_eq!(TestEnum::from("BBB"), b);
+    assert_eq!(TestEnum::from("fdafa"), n);
+}
+
 /// ! NMEA sentence type
 /// ! General: OSD |
 /// ! Autopilot: APA | APB | ASD |
@@ -402,9 +437,7 @@ impl fmt::Debug for Satellite {
 /// ! Waypoints and tacks: AAM | BEC | BOD | BWC | BWR | BWW | ROO | RTE | VTG | WCV | WNC | WPL | XDR | XTE | XTR |
 /// ! Wind: MWV | VPW | VWR |
 /// ! Date and Time: GDT | ZDA | ZFO | ZTG |
-#[derive(PartialEq, Debug)]
-pub enum SentenceType {
-    None,
+define_sentence_type_enum!(SentenceType {
     AAM,
     ABK,
     ACA,
@@ -504,116 +537,8 @@ pub enum SentenceType {
     ZDA,
     ZDL,
     ZFO,
-    ZTG,
-}
-
-impl<'a> From<&'a str> for SentenceType {
-    fn from(s: &str) -> Self {
-        match s {
-            "AAM" => SentenceType::AAM,
-            "ABK" => SentenceType::ACA,
-            "ACA" => SentenceType::ACA,
-            "ACK" => SentenceType::ACK,
-            "ACS" => SentenceType::ACS,
-            "AIR" => SentenceType::AIR,
-            "ALM" => SentenceType::ALM,
-            "ALR" => SentenceType::ALR,
-            "APA" => SentenceType::APA,
-            "APB" => SentenceType::APB,
-            "ASD" => SentenceType::ASD,
-            "BEC" => SentenceType::BEC,
-            "BOD" => SentenceType::BOD,
-            "BWC" => SentenceType::BWC,
-            "BWR" => SentenceType::BWR,
-            "BWW" => SentenceType::BWW,
-            "CUR" => SentenceType::CUR,
-            "DBK" => SentenceType::DBK,
-            "DBS" => SentenceType::DBS,
-            "DBT" => SentenceType::DBT,
-            "DCN" => SentenceType::DCN,
-            "DPT" => SentenceType::DPT,
-            "DSC" => SentenceType::DSC,
-            "DSE" => SentenceType::DSE,
-            "DSI" => SentenceType::DSI,
-            "DSR" => SentenceType::DSR,
-            "DTM" => SentenceType::DTM,
-            "FSI" => SentenceType::FSI,
-            "GBS" => SentenceType::GBS,
-            "GGA" => SentenceType::GGA,
-            "GLC" => SentenceType::GLC,
-            "GLL" => SentenceType::GLL,
-            "GMP" => SentenceType::GMP,
-            "GNS" => SentenceType::GNS,
-            "GRS" => SentenceType::GRS,
-            "GSA" => SentenceType::GSA,
-            "GST" => SentenceType::GST,
-            "GSV" => SentenceType::GSV,
-            "GTD" => SentenceType::GTD,
-            "GXA" => SentenceType::GXA,
-            "HDG" => SentenceType::HDG,
-            "HDM" => SentenceType::HDM,
-            "HDT" => SentenceType::HDT,
-            "HMR" => SentenceType::HMR,
-            "HMS" => SentenceType::HMS,
-            "HSC" => SentenceType::HSC,
-            "HTC" => SentenceType::HTC,
-            "HTD" => SentenceType::HTD,
-            "LCD" => SentenceType::LCD,
-            "LRF" => SentenceType::LRF,
-            "LRI" => SentenceType::LRI,
-            "LR1" => SentenceType::LR1,
-            "LR2" => SentenceType::LR2,
-            "LR3" => SentenceType::LR3,
-            "MLA" => SentenceType::MLA,
-            "MSK" => SentenceType::MSK,
-            "MSS" => SentenceType::MSS,
-            "MWD" => SentenceType::MWD,
-            "MTW" => SentenceType::MTW,
-            "MWV" => SentenceType::MWV,
-            "OLN" => SentenceType::OLN,
-            "OSD" => SentenceType::OSD,
-            "ROO" => SentenceType::ROO,
-            "RMA" => SentenceType::RMA,
-            "RMB" => SentenceType::RMB,
-            "RMC" => SentenceType::RMC,
-            "ROT" => SentenceType::ROT,
-            "RPM" => SentenceType::RPM,
-            "RSA" => SentenceType::RSA,
-            "RSD" => SentenceType::RSD,
-            "RTE" => SentenceType::RTE,
-            "SFI" => SentenceType::SFI,
-            "SSD" => SentenceType::SSD,
-            "STN" => SentenceType::STN,
-            "TLB" => SentenceType::TLB,
-            "TLL" => SentenceType::TLL,
-            "TRF" => SentenceType::TRF,
-            "TTM" => SentenceType::TTM,
-            "TUT" => SentenceType::TUT,
-            "TXT" => SentenceType::TXT,
-            "VBW" => SentenceType::VBW,
-            "VDM" => SentenceType::VDO,
-            "VDO" => SentenceType::VDO,
-            "VDR" => SentenceType::VDR,
-            "VHW" => SentenceType::VHW,
-            "VLW" => SentenceType::VLW,
-            "VPW" => SentenceType::VPW,
-            "VSD" => SentenceType::VSD,
-            "VTG" => SentenceType::VTG,
-            "VWR" => SentenceType::VWR,
-            "WCV" => SentenceType::WCV,
-            "WNC" => SentenceType::WNC,
-            "WPL" => SentenceType::WPL,
-            "XDR" => SentenceType::XDR,
-            "XTE" => SentenceType::XTE,
-            "XTR" => SentenceType::XTR,
-            "ZDA" => SentenceType::ZDA,
-            "ZDL" => SentenceType::ZDL,
-            "ZFO" => SentenceType::ZFO,
-            "ZTG" => SentenceType::ZTG,
-            _ => SentenceType::None,
-        }
-    }
-}
+    ZTG
+});
 
 /// ! Fix type
 #[derive(Clone, PartialEq, Debug)]
