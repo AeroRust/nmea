@@ -13,7 +13,7 @@ Currently only _GGA_ and _GSV_ sentences are supported. Feel free to add others.
 
 [Complete Documentation][doc]
 
-[doc]: https://flxo.github.io/rust-nmea/nmea
+[doc]: https://docs.rs/nmea/
 
 ## Usage
 
@@ -21,7 +21,7 @@ Put this in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nmea = "0.0.2"
+nmea = "0.0.3"
 ```
 
 And put this in your crate root:
