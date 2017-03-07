@@ -164,7 +164,7 @@ impl<'a> Nmea {
                                 .and_then(|l| Self::parse_numeric::<f32>(l.as_str(), -0.01).ok())
                         }
                         _ => None,
-                    }
+                    }.map(|v| v.round() + v.fract() * 100. / 60.)
                 });
                 self.longitude = caps.name("lon_dir").and_then(|s| {
                     match s.as_str() {
@@ -177,7 +177,7 @@ impl<'a> Nmea {
                                 .and_then(|l| Self::parse_numeric::<f32>(l.as_str(), 0.01).ok())
                         }
                         _ => None,
-                    }
+                    }.map(|v| v.round() + v.fract() * 100. / 60.)
                 });
                 self.altitude = caps.name("alt")
                     .and_then(|a| Self::parse_numeric::<f32>(a.as_str(), 1.0).ok());
@@ -696,8 +696,8 @@ fn test_gga_north_west() {
     let mut nmea = Nmea::new();
     nmea.parse("$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76").unwrap();
     assert_eq!(nmea.fix_timestamp().unwrap(), date);
-    assert_eq!(nmea.latitude().unwrap(), 53.216802);
-    assert_eq!(nmea.longitude().unwrap(), -6.303372);
+    assert_eq!(nmea.latitude().unwrap(), 53. + 21.6802 / 60.);
+    assert_eq!(nmea.longitude().unwrap(), -(6. + 30.3372 / 60.));
     assert_eq!(nmea.fix_type().unwrap(), FixType::Gps);
     assert_eq!(nmea.fix_satellites().unwrap(), 8);
     assert_eq!(nmea.hdop().unwrap(), 1.03);
@@ -708,24 +708,24 @@ fn test_gga_north_west() {
 fn test_gga_north_east() {
     let mut nmea = Nmea::new();
     nmea.parse("$GPGGA,092750.000,5321.6802,N,00630.3372,E,1,8,1.03,61.7,M,55.2,M,,*64").unwrap();
-    assert_eq!(nmea.latitude().unwrap(), 53.216802);
-    assert_eq!(nmea.longitude().unwrap(), 6.303372);
+    assert_eq!(nmea.latitude().unwrap(), 53. + 21.6802 / 60.);
+    assert_eq!(nmea.longitude().unwrap(), 6. + 30.3372 / 60.);
 }
 
 #[test]
 fn test_gga_south_west() {
     let mut nmea = Nmea::new();
     nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*6B").unwrap();
-    assert_eq!(nmea.latitude().unwrap(), -53.216802);
-    assert_eq!(nmea.longitude().unwrap(), -6.303372);
+    assert_eq!(nmea.latitude().unwrap(), -(53. + 21.6802 / 60.));
+    assert_eq!(nmea.longitude().unwrap(), -(6. + 30.3372 / 60.));
 }
 
 #[test]
 fn test_gga_south_east() {
     let mut nmea = Nmea::new();
     nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,E,1,8,1.03,61.7,M,55.2,M,,*79").unwrap();
-    assert_eq!(nmea.latitude().unwrap(), -53.216802);
-    assert_eq!(nmea.longitude().unwrap(), 6.303372);
+    assert_eq!(nmea.latitude().unwrap(), -(53. + 21.6802 / 60.));
+    assert_eq!(nmea.longitude().unwrap(), 6. + 30.3372 / 60.);
 }
 
 #[test]
@@ -739,7 +739,15 @@ fn test_gga_invalid() {
 fn test_gga_gps() {
     let mut nmea = Nmea::new();
     nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,E,1,8,1.03,61.7,M,55.2,M,,*79").unwrap();
+    let timestamp = nmea.fix_timestamp.unwrap();
+    assert_eq!(::chrono::naive::time::NaiveTime::from_hms_milli(9, 27, 50, 0), timestamp.time());
+    assert_eq!(-(53. + 21.6802 / 60.), nmea.latitude.unwrap());
+    assert_eq!(6. + 30.3372 / 60., nmea.longitude.unwrap());
     assert_eq!(nmea.fix_type(), Some(FixType::Gps));
+    assert_eq!(8, nmea.fix_satellites.unwrap());
+    assert_eq!(1.03, nmea.hdop.unwrap());
+    assert_eq!(61.7, nmea.altitude.unwrap());
+    assert_eq!(55.2, nmea.geoid_height.unwrap());
 }
 
 #[test]
@@ -801,7 +809,7 @@ fn test_parse() {
         }
     }
 
-    assert_eq!(nmea.latitude().unwrap(), 53.216802);
-    assert_eq!(nmea.longitude().unwrap(), -6.303372);
+    assert_eq!(nmea.latitude().unwrap(), 53. + 21.6802 / 60.);
+    assert_eq!(nmea.longitude().unwrap(), -(6. + 30.3372 / 60.));
     assert_eq!(nmea.altitude().unwrap(), 61.7);
 }
