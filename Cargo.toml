@@ -12,3 +12,7 @@ keywords = ["NMEA", "gps", "glonass", "coordinate", "position"]
 regex = "0.2.1"
 lazy_static = "0.2.2"
 chrono = "0.2.25"
+
+[dev-dependencies]
+quickcheck = "0.3"
+

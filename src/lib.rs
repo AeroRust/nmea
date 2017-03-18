@@ -17,6 +17,9 @@
 extern crate lazy_static;
 extern crate regex;
 extern crate chrono;
+#[cfg(test)]
+extern crate quickcheck;
+
 
 use chrono::{DateTime, Timelike, UTC};
 use regex::Regex;
@@ -29,8 +32,8 @@ use std::vec::Vec;
 pub struct Nmea {
     pub fix_timestamp: Option<DateTime<UTC>>,
     pub fix_type: Option<FixType>,
-    pub latitude: Option<f32>,
-    pub longitude: Option<f32>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
     pub altitude: Option<f32>,
     pub fix_satellites: Option<u32>,
     pub hdop: Option<f32>,
@@ -73,12 +76,12 @@ impl<'a> Nmea {
     }
 
     /// Returns last fixed latitude in degress. None if not fixed.
-    pub fn latitude(&self) -> Option<f32> {
+    pub fn latitude(&self) -> Option<f64> {
         self.latitude
     }
 
     /// Returns last fixed longitude in degress. None if not fixed.
-    pub fn longitude(&self) -> Option<f32> {
+    pub fn longitude(&self) -> Option<f64> {
         self.longitude
     }
 
@@ -157,27 +160,27 @@ impl<'a> Nmea {
                     match s.as_str() {
                         "N" => {
                             caps.name("lat")
-                                .and_then(|l| Self::parse_numeric::<f32>(l.as_str(), 0.01).ok())
+                                .and_then(|l| Self::parse_numeric::<f64>(l.as_str(), 0.01).ok())
                         }
                         "S" => {
                             caps.name("lat")
-                                .and_then(|l| Self::parse_numeric::<f32>(l.as_str(), -0.01).ok())
+                                .and_then(|l| Self::parse_numeric::<f64>(l.as_str(), -0.01).ok())
                         }
                         _ => None,
-                    }.map(|v| v.round() + v.fract() * 100. / 60.)
+                    }.map(|v| v.trunc() + v.fract() * 100. / 60.)
                 });
                 self.longitude = caps.name("lon_dir").and_then(|s| {
                     match s.as_str() {
                         "W" => {
                             caps.name("lon")
-                                .and_then(|l| Self::parse_numeric::<f32>(l.as_str(), -0.01).ok())
+                                .and_then(|l| Self::parse_numeric::<f64>(l.as_str(), -0.01).ok())
                         }
                         "E" => {
                             caps.name("lon")
-                                .and_then(|l| Self::parse_numeric::<f32>(l.as_str(), 0.01).ok())
+                                .and_then(|l| Self::parse_numeric::<f64>(l.as_str(), 0.01).ok())
                         }
                         _ => None,
-                    }.map(|v| v.round() + v.fract() * 100. / 60.)
+                    }.map(|v| v.trunc() + v.fract() * 100. / 60.)
                 });
                 self.altitude = caps.name("alt")
                     .and_then(|a| Self::parse_numeric::<f32>(a.as_str(), 1.0).ok());
@@ -812,4 +815,34 @@ fn test_parse() {
     assert_eq!(nmea.latitude().unwrap(), 53. + 21.6802 / 60.);
     assert_eq!(nmea.longitude().unwrap(), -(6. + 30.3372 / 60.));
     assert_eq!(nmea.altitude().unwrap(), 61.7);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use quickcheck::QuickCheck;
+
+    fn check_parsing_lat_lon_in_gga(lat: f64, lon: f64) -> bool {
+        let lat_min = (lat.abs() * 60.0) % 60.0;
+        let lon_min = (lon.abs() * 60.0) % 60.0;
+        let mut nmea = Nmea::new();
+        nmea.parse_gga(
+            &format!("$GPGGA,092750.000,{lat_deg:02}{lat_min:09.6},{lat_dir},{lon_deg:03}{lon_min:09.6},{lon_dir},1,8,1.03,61.7,M,55.2,M,,*76",
+                     lat_deg = lat.abs().floor() as u8, lon_deg = lon.abs().floor() as u8, lat_min = lat_min, lon_min = lon_min,
+                     lat_dir = if lat.is_sign_positive() { 'N' } else { 'S' },
+                     lon_dir = if lon.is_sign_positive() { 'E' } else { 'W' },
+            )).unwrap();
+        let (new_lat, new_lon) = (nmea.latitude.unwrap(), nmea.longitude.unwrap());
+        const MAX_COOR_DIFF: f64 = 1e-7;
+        (new_lat - lat).abs() < MAX_COOR_DIFF && (new_lon - lon).abs() < MAX_COOR_DIFF
+    }
+
+    #[test]
+    fn test_parsing_lat_lon_in_gga() {
+        //regressions found by quickcheck,
+        //explicit because of quickcheck use random gen
+        assert!(check_parsing_lat_lon_in_gga(0., 57.89528));
+        assert!(check_parsing_lat_lon_in_gga(0., -43.33031));
+        QuickCheck::new().tests(10_000_000_000).quickcheck(check_parsing_lat_lon_in_gga as fn (f64, f64) -> bool);
+    }
 }
