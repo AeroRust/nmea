@@ -20,24 +20,19 @@ use std::fs::File;
 use std::env;
 
 fn main() {
-    run().unwrap();
-}
-
-fn run() -> Result<(), String> {
     let mut nmea = nmea::Nmea::new();
 
-    let file = env::args().nth(1).ok_or("Invalid arguments".to_owned())?;
-    let mut input = BufReader::new(File::open(file).map_err(|e| format!("{}", e))?);
+    let file = env::args().nth(1).unwrap();
+    let mut input = BufReader::new(File::open(file).unwrap());
 
     for _ in 0..100 {
         let mut buffer = String::new();
-        let size = input.read_line(&mut buffer).map_err(|e| format!("{}", e))?;
+        let size = input.read_line(&mut buffer).unwrap();
         if size > 0 {
-            nmea.parse(&buffer)?;
+            nmea.parse(&buffer).unwrap();
             println!("{:?}", nmea);
         } else {
             break;
         }
     }
-    Ok(())
 }

@@ -9,9 +9,10 @@ license = "Apache-2.0"
 keywords = ["NMEA", "gps", "glonass", "coordinate", "position"]
 
 [dependencies]
-regex = "0.2.1"
+error-chain = "0.10.0"
 lazy_static = "0.2.2"
-chrono = "0.2.25"
+regex = "0.2.1"
+time = "0.1.36"
 
 [dev-dependencies]
 quickcheck = "0.3"
