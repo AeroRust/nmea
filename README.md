@@ -1,11 +1,8 @@
 [NMEA][doc]
 ===========
 
-[![NMEA on Travis CI][travis-image]][travis] [![Version](https://img.shields.io/crates/v/nmea.svg)](https://crates.io/crates/nmea)
-[travis-image]: https://travis-ci.org/flxo/rust-nmea.png
-[travis]: https://travis-ci.org/flxo/rust-nmea
-
-
+[![Version](https://img.shields.io/crates/v/nmea.svg)](https://crates.io/crates/nmea)
+[![Build Status](https://travis-ci.org/flxo/rust-nmea.png)](https://travis-ci.org/flxo/rust-nmea)
 
 NMEA 0183 sentence parser for Rust. 
 
