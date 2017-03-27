@@ -267,7 +267,7 @@ struct GsvData {
     gnss_type: GnssType,
     number_of_sentences: u16,
     sentence_num: u16,
-    sats_in_view: u16,
+    _sats_in_view: u16,
     sats_info: [Option<Satellite>; 4],
 }
 
@@ -349,7 +349,7 @@ fn parse_gsv(sentence: &str) -> Result<GsvData> {
         gnss_type: gnss_type,
         number_of_sentences: number_of_sentences,
         sentence_num: sentence_num,
-        sats_in_view: sats_in_view,
+        _sats_in_view: sats_in_view,
         sats_info: sats_info,
     })
 }
@@ -360,7 +360,7 @@ fn test_parse_gsv_full() {
     assert_eq!(data.gnss_type, GnssType::Gps);
     assert_eq!(data.number_of_sentences, 2);
     assert_eq!(data.sentence_num, 1);
-    assert_eq!(data.sats_in_view, 8);
+    assert_eq!(data._sats_in_view, 8);
     assert_eq!(data.sats_info[0].clone().unwrap(), Satellite{gnss_type: data.gnss_type.clone(), prn: 1, elevation: Some(40.), azimuth: Some(83.), snr: Some(46.)});
     assert_eq!(data.sats_info[1].clone().unwrap(), Satellite{gnss_type: data.gnss_type.clone(), prn: 2, elevation: Some(17.), azimuth: Some(308.), snr: Some(41.)});
     assert_eq!(data.sats_info[2].clone().unwrap(), Satellite{gnss_type: data.gnss_type.clone(), prn: 12, elevation: Some(7.), azimuth: Some(344.), snr: Some(39.)});
