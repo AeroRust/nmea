@@ -1,6 +1,6 @@
 [package]
 name = "nmea"
-version = "0.0.4"
+version = "0.0.5-pre"
 authors = ["Felix Obenhuber <felix@obenhuber.de>"]
 description = "Simple NMEA 0183 parser"
 documentation = "https://docs.rs/nmea/"
