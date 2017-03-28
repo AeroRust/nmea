@@ -2,7 +2,7 @@
 ===========
 
 [![Version](https://img.shields.io/crates/v/nmea.svg)](https://crates.io/crates/nmea)
-[![Build Status](https://travis-ci.org/flxo/rust-nmea.png)](https://travis-ci.org/flxo/rust-nmea)
+[![Build Status](https://travis-ci.org/Dushistov/rust-nmea.png)](https://travis-ci.org/Dushistov/rust-nmea)
 
 NMEA 0183 sentence parser for Rust. 
 
