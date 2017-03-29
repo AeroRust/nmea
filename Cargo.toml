@@ -17,3 +17,5 @@ time = "0.1.36"
 [dev-dependencies]
 quickcheck = "0.3"
 
+[badges]
+travis-ci = { repository = "Dushistov/rust-nmea" }
