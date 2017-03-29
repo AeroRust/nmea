@@ -22,13 +22,15 @@ extern crate time;
 #[cfg(test)]
 extern crate quickcheck;
 
+mod parse;
+
 use regex::Regex;
 use std::collections::HashMap;
 use std::fmt;
 use std::vec::Vec;
-use ::time::Tm;
-use std::ops::Range;
+use time::Tm;
 use std::iter::Iterator;
+use parse::{GsvData, checksum, parse_gsv, NmeaSentence};
 
 error_chain! {
     foreign_links {
@@ -228,18 +230,22 @@ impl<'a> Nmea {
         let caps = REGEX_CHECKSUM.captures(s).ok_or("Failed to parse sentence")?;
         let sentence = caps.name(&"sentence").ok_or("Failed to parse sentence")?;
         let sentence = sentence.as_str();
-        let checksum =
+        let cs =
             caps.name(&"checksum")
                 .ok_or("Failed to parse checksum")
                 .and_then(|c| {
                     u8::from_str_radix(c.as_str(), 16).map_err(|_| "Failed to parse checksun")
                 })?;
 
-        if Nmea::checksum(sentence) == checksum {
+        if checksum(sentence.as_bytes()) == cs {
             match self.sentence_type(sentence)? {
                 SentenceType::GGA => self.parse_gga(sentence),
                 SentenceType::GSV => {
-                    let data = parse_gsv(sentence)?;
+                    let data = parse_gsv(&NmeaSentence {
+                        talker_id: &sentence[0..2],
+                        message_id: &sentence[2..5],
+                        data: &sentence[6..],
+                    })?;
                     self.merge_gsv_data(data)?;
                     Ok(SentenceType::GSV)
                 }
@@ -248,10 +254,6 @@ impl<'a> Nmea {
         } else {
             Err("Checksum mismatch".into())
         }
-    }
-
-    fn checksum(sentence: &str) -> u8 {
-        sentence.bytes().fold(0, |c, x| c ^ x)
     }
 
     fn parse_numeric<T>(input: &'a str, factor: T) -> Result<T>
@@ -263,109 +265,6 @@ impl<'a> Nmea {
     }
 }
 
-struct GsvData {
-    gnss_type: GnssType,
-    number_of_sentences: u16,
-    sentence_num: u16,
-    _sats_in_view: u16,
-    sats_info: [Option<Satellite>; 4],
-}
-
-fn str_slice<'a>(s: &'a str, range: Range<usize>) -> Option<&'a str> {
-    assert!(range.start <= range.end);
-    if range.start <= s.len() && range.end <= s.len() {
-        Some(unsafe { s.slice_unchecked(range.start, range.end) })
-    } else {
-        None
-    }
-}
-
-macro_rules! map_not_empty {
-    ($StrName: ident, $Expr: expr) => {
-        if !$StrName.is_empty() {
-            Some($Expr)
-        } else {
-            None
-        }
-    }
-}
-
-/// parse one GSV sentence
-/// $IDGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75
-/// 2           Number of sentences for full data
-/// 1           Sentence 1 of 2
-/// 08          Total number of satellites in view
-/// 01          Satellite PRN number
-/// 40          Elevation, degrees
-/// 083         Azimuth, degrees
-/// 46          Signal-to-noise ratio in decibels
-/// <repeat for up to 4 satellites per sentence>
-///
-/// Can occur with talker IDs:
-///   BD (Beidou),
-///   GA (Galileo),
-///   GB (Beidou),
-///   GL (GLONASS),
-///   GN (GLONASS, any combination GNSS),
-///   GP (GPS, SBAS, QZSS),
-///   QZ (QZSS).
-///
-/// GL may be (incorrectly) used when GSVs are mixed containing
-/// GLONASS, GN may be (incorrectly) used when GSVs contain GLONASS
-/// only.  Usage is inconsistent.
-fn parse_gsv(sentence: &str) -> Result<GsvData> {
-    if str_slice(sentence, 0..5).map_or(true, |head| &head[2..5] != "GSV") {
-        return Err("GSV sentence not starts with $..GSV".into());
-    }
-
-    let mut field = sentence.split(",");
-    let gnss_type = match &(field.next().ok_or("no header")?[0..2]) {
-        "GP" => GnssType::Gps,
-        "GL" => GnssType::Glonass,
-        _ => return Err("Unknown GNSS type in GSV sentence".into()),
-    };
-
-    let number_of_sentences = Nmea::parse_numeric::<u16>(field.next().ok_or("no sentence amount")?, 1)?;
-    let sentence_num = Nmea::parse_numeric::<u16>(field.next().ok_or("no sentence number")?, 1)?;
-    let sats_in_view = Nmea::parse_numeric::<u16>(field.next().ok_or("no number of satellites in view")?, 1)?;
-
-    let rest_field_num = field.clone().count();
-    let nsats_info = rest_field_num / 4;
-    if rest_field_num % 4 != 0 || nsats_info > 4 {
-        return Err("mailformed sattilite info in GSV".into());
-    }
-    let mut sats_info = [None, None, None, None];
-    for idx in 0..nsats_info {
-        let prn = Nmea::parse_numeric::<u32>(field.next().ok_or("no prn")?, 1)?;
-        let elevation = field.next().ok_or("no elevation")?;
-        let elevation = map_not_empty!(elevation, Nmea::parse_numeric::<f32>(elevation, 1.0)?);
-        let azimuth = field.next().ok_or("no aizmuth")?;
-        let azimuth = map_not_empty!(azimuth, Nmea::parse_numeric::<f32>(azimuth, 1.0)?);
-        let snr = field.next().ok_or("no SNR")?;
-        let snr = map_not_empty!(snr, Nmea::parse_numeric::<f32>(snr, 1.0)?);
-        sats_info[idx] = Some(Satellite{gnss_type: gnss_type.clone(), prn: prn, elevation: elevation, azimuth: azimuth, snr: snr});
-    }
-    Ok(GsvData {
-        gnss_type: gnss_type,
-        number_of_sentences: number_of_sentences,
-        sentence_num: sentence_num,
-        _sats_in_view: sats_in_view,
-        sats_info: sats_info,
-    })
-}
-
-#[test]
-fn test_parse_gsv_full() {
-    let data = parse_gsv("GPGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45").unwrap();
-    assert_eq!(data.gnss_type, GnssType::Gps);
-    assert_eq!(data.number_of_sentences, 2);
-    assert_eq!(data.sentence_num, 1);
-    assert_eq!(data._sats_in_view, 8);
-    assert_eq!(data.sats_info[0].clone().unwrap(), Satellite{gnss_type: data.gnss_type.clone(), prn: 1, elevation: Some(40.), azimuth: Some(83.), snr: Some(46.)});
-    assert_eq!(data.sats_info[1].clone().unwrap(), Satellite{gnss_type: data.gnss_type.clone(), prn: 2, elevation: Some(17.), azimuth: Some(308.), snr: Some(41.)});
-    assert_eq!(data.sats_info[2].clone().unwrap(), Satellite{gnss_type: data.gnss_type.clone(), prn: 12, elevation: Some(7.), azimuth: Some(344.), snr: Some(39.)});
-    assert_eq!(data.sats_info[3].clone().unwrap(), Satellite{gnss_type: data.gnss_type.clone(), prn: 14, elevation: Some(22.), azimuth: Some(228.), snr: Some(45.)});
-}
 
 impl fmt::Debug for Nmea {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -724,8 +623,8 @@ fn test_parse_numeric() {
 fn test_checksum() {
     let valid = "$GNGSA,A,1,,,,,,,,,,,,,99.99,99.99,99.99*2E";
     let invalid = "$GNZDA,165118.00,13,05,2016,00,00*71";
-    assert_eq!(Nmea::checksum(&valid[1..valid.len() - 3]), 0x2E);
-    assert_ne!(Nmea::checksum(&invalid[1..invalid.len() - 3]), 0x71);
+    assert_eq!(checksum(&valid[1..valid.len() - 3].as_bytes()), 0x2E);
+    assert_ne!(checksum(&invalid[1..invalid.len() - 3].as_bytes()), 0x71);
 }
 
 #[test]
