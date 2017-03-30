@@ -9,13 +9,12 @@ license = "Apache-2.0"
 keywords = ["NMEA", "gps", "glonass", "coordinate", "position"]
 
 [dependencies]
-error-chain = "0.10.0"
-lazy_static = "0.2.2"
-regex = "0.2.1"
-time = "0.1.36"
+nom = "2.2.0"
+chrono = "0.3.0"
 
 [dev-dependencies]
 quickcheck = "0.3"
+approx = "0.1.1"
 
 [badges]
 travis-ci = { repository = "Dushistov/rust-nmea" }
