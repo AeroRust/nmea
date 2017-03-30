@@ -1,7 +1,7 @@
 use std;
 use std::str;
 
-use chrono::NaiveTime;
+use chrono::{NaiveTime, DateTime, UTC, NaiveDateTime, NaiveDate};
 use nom::{digit, IError};
 
 use GnssType;
@@ -396,3 +396,119 @@ fn test_parse_gga_with_optional_fields() {
     let data = parse_gga(&sentence).unwrap();
     assert_eq!(data.fix_type.unwrap(), FixType::Invalid);
 }
+
+pub enum RmcStatusOfFix {
+    Autonomous,
+    Differential,
+    Invalid,
+}
+
+pub struct RmcData {
+    pub fix_time: Option<DateTime<UTC>>,
+    pub status_of_fix: Option<RmcStatusOfFix>,
+    pub lat: Option<f64>,
+    pub lon: Option<f64>,
+    pub speed_over_ground: Option<f32>,
+    pub true_course: Option<f32>,
+}
+
+named!(do_parse_rmc<RmcData>,
+       map_res!(
+           do_parse!(
+               time: parse_hms >>
+               char!(',') >>
+               status_of_fix: one_of!("ADV") >>
+               char!(',') >>
+               lat_lon: parse_lat_lon >>
+               char!(',') >>
+               speed_over_ground: opt!(map_res!(take_until!(","), parse_float_num::<f32>)) >>
+               char!(',') >>
+               true_course: opt!(map_res!(take_until!(","), parse_float_num::<f32>)) >>
+               char!(',') >>
+               day: map_res!(take!(2), parse_num::<u8>) >>
+               month: map_res!(take!(2), parse_num::<u8>) >>
+               year: map_res!(take!(2), parse_num::<u8>) >>    
+               char!(',') >>
+               (time, status_of_fix, lat_lon, speed_over_ground, true_course, day, month, year)  
+           ),
+           |data: (NaiveTime, char, (f64, f64), Option<f32>, Option<f32>, u8, u8, u8)| -> Result<RmcData, &'static str> {
+               let (day, month, year) = (data.5 as u32, data.6 as u32, (data.7 as i32));
+               if month < 1 || month > 12 {
+                   return Err("Invalid month < 1 or > 12");
+               }
+               if day < 1 || day > 31 {
+                   return Err("Invalid day < 1 or > 31");
+               }
+               Ok(RmcData {
+                   fix_time: Some(DateTime::from_utc(NaiveDateTime::new(NaiveDate::from_ymd(year, month, day), data.0), UTC)),
+                   status_of_fix: Some(match data.1 {
+                       'A' => RmcStatusOfFix::Autonomous,
+                       'D' => RmcStatusOfFix::Differential,
+                       'V' => RmcStatusOfFix::Invalid,
+                       _ => return Err("do_parse_rmc failed: not A|D|V status of fix"),
+                   }),
+                   lat: Some((data.2).0),
+                   lon: Some((data.2).1),
+                   speed_over_ground: data.3,
+                   true_course: data.4,
+               })
+           }
+       )
+);
+           
+/// Parse RMC message
+/// From gpsd:
+/// RMC,225446.33,A,4916.45,N,12311.12,W,000.5,054.7,191194,020.3,E,A*68
+/// 1     225446.33    Time of fix 22:54:46 UTC
+/// 2     A          Status of Fix: A = Autonomous, valid;
+/// D = Differential, valid; V = invalid
+/// 3,4   4916.45,N    Latitude 49 deg. 16.45 min North
+/// 5,6   12311.12,W   Longitude 123 deg. 11.12 min West
+/// 7     000.5      Speed over ground, Knots
+/// 8     054.7      Course Made Good, True north
+/// 9     181194       Date of fix  18 November 1994
+/// 10,11 020.3,E      Magnetic variation 20.3 deg East
+/// 12    A      FAA mode indicator (NMEA 2.3 and later)
+/// A=autonomous, D=differential, E=Estimated,
+/// N=not valid, S=Simulator, M=Manual input mode
+/// *68        mandatory nmea_checksum
+///
+/// SiRF chipsets don't return either Mode Indicator or magnetic variation.        
+pub fn parse_rmc(sentence: &NmeaSentence) -> Result<RmcData, String> {
+    if sentence.message_id != b"RMC" {
+        return Err("RMC message should start with $..RMC".into());
+    }
+    do_parse_rmc(sentence.data)
+        .to_full_result()
+        .map_err(|err| match err {
+            IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
+            IError::Error(e) => e.description().into(),
+        })
+}
+
+#[test]
+fn test_parse_rmc() {
+    use chrono::{Datelike, Timelike};
+
+    let sentence = parse_nmea_sentence(b"$GPRMC,225446.33,A,4916.45,N,12311.12,W,000.5,054.7,191194,020.3,E,A*2B").unwrap();
+    assert_eq!(sentence.checksum, sentence.calc_checksum());
+    assert_eq!(sentence.checksum, 0x2b);
+    let rmc_data = parse_rmc(&sentence).unwrap();
+    let fix_time = rmc_data.fix_time.unwrap();
+    assert_eq!(94, fix_time.year());
+    assert_eq!(11, fix_time.month());
+    assert_eq!(19, fix_time.day());
+    assert_eq!(22, fix_time.hour());
+    assert_eq!(54, fix_time.minute());
+    assert_eq!(46, fix_time.second());
+    assert_eq!(330, fix_time.nanosecond() / 1_000_000);
+
+    println!("lat: {}", rmc_data.lat.unwrap());
+    relative_eq!(rmc_data.lat.unwrap(), 49.0 + 16.45 / 60.);
+    println!("lon: {}, diff {}", rmc_data.lon.unwrap(), (rmc_data.lon.unwrap() + (123.0 + 11.12 / 60.)).abs());
+    relative_eq!(rmc_data.lon.unwrap(), -(123.0 + 11.12 / 60.));
+
+    relative_eq!(rmc_data.speed_over_ground.unwrap(), 0.5);
+    relative_eq!(rmc_data.true_course.unwrap(), 54.7);
+}
+

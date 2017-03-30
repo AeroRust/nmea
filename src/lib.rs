@@ -28,17 +28,21 @@ use std::collections::HashMap;
 use std::{fmt, str};
 use std::vec::Vec;
 use std::iter::Iterator;
-use chrono::NaiveTime;
-use parse::{GsvData, GgaData, parse_gsv, parse_nmea_sentence, parse_gga};
+use chrono::{NaiveTime, Date, UTC};
+use parse::{GsvData, GgaData, RmcData, RmcStatusOfFix, parse_gsv, parse_nmea_sentence,
+            parse_gga, parse_rmc};
 
 /// NMEA parser
 #[derive(Default)]
 pub struct Nmea {
-    pub fix_timestamp: Option<NaiveTime>,
+    pub fix_time: Option<NaiveTime>,
+    pub fix_date: Option<Date<UTC>>,
     pub fix_type: Option<FixType>,
     pub latitude: Option<f64>,
     pub longitude: Option<f64>,
     pub altitude: Option<f32>,
+    pub speed_over_ground: Option<f32>,
+    pub true_course: Option<f32>,
     pub fix_satellites: Option<u32>,
     pub hdop: Option<f32>,
     pub geoid_height: Option<f32>,
@@ -72,7 +76,7 @@ impl<'a> Nmea {
 
     /// Returns fix type
     pub fn fix_timestamp(&self) -> Option<NaiveTime> {
-        self.fix_timestamp
+        self.fix_time
     }
 
     /// Returns fix type
@@ -116,7 +120,7 @@ impl<'a> Nmea {
     }
     
     fn merge_gga_data(&mut self, gga_data: GgaData) {
-        self.fix_timestamp = gga_data.fix_timestamp_time;
+        self.fix_time = gga_data.fix_timestamp_time;
         self.latitude = gga_data.latitude;
         self.longitude = gga_data.longitude;
         self.fix_type = gga_data.fix_type;
@@ -148,6 +152,22 @@ impl<'a> Nmea {
         Ok(())
     }
 
+    fn merge_rmc_data(&mut self, rmc_data: RmcData) {
+        self.fix_time = rmc_data.fix_time.map(|v| v.time());
+        self.fix_date = rmc_data.fix_time.map(|v| v.date());
+        self.fix_type = rmc_data.status_of_fix
+            .map(|v| match v {
+                RmcStatusOfFix::Autonomous => FixType::Gps,
+                RmcStatusOfFix::Differential => FixType::DGps,
+                RmcStatusOfFix::Invalid => FixType::Invalid,
+            });
+        self.latitude = rmc_data.lat;
+        self.longitude = rmc_data.lon;
+        self.speed_over_ground = rmc_data.speed_over_ground;
+        self.true_course = rmc_data.true_course;
+    }
+
+
     /// Parse any NMEA sentence and stores the result. The type of sentence
     /// is returnd if implemented and valid.
     pub fn parse(&mut self, s: &'a str) -> Result<SentenceType, String> {
@@ -164,6 +184,11 @@ impl<'a> Nmea {
                     let data = parse_gsv(&nmea_sentence)?;
                     self.merge_gsv_data(data)?;
                     Ok(SentenceType::GSV)
+                }
+                SentenceType::RMC => {
+                    let data = parse_rmc(&nmea_sentence)?;
+                    self.merge_rmc_data(data);
+                    Ok(SentenceType::RMC)
                 }
                 _ => Err("Unknown or implemented sentence type".into()),
             }
@@ -184,7 +209,7 @@ impl fmt::Display for Nmea {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f,
                "{}: lat: {} lon: {} alt: {} {:?}",
-               self.fix_timestamp.map(|l| format!("{:?}", l)).unwrap_or("None".to_owned()),
+               self.fix_time.map(|l| format!("{:?}", l)).unwrap_or("None".to_owned()),
                self.latitude.map(|l| format!("{:3.8}", l)).unwrap_or("None".to_owned()),
                self.longitude.map(|l| format!("{:3.8}", l)).unwrap_or("None".to_owned()),
                self.altitude.map(|l| format!("{:.3}", l)).unwrap_or("None".to_owned()),
@@ -290,6 +315,9 @@ fn test_define_sentence_type_enum() {
     assert_eq!(TestEnum::from("AAA"), a);
     assert_eq!(TestEnum::from("BBB"), b);
     assert_eq!(TestEnum::from("fdafa"), n);
+
+    assert_eq!(TestEnum::try_from(b"AAA").unwrap(), a);
+    assert_eq!(TestEnum::try_from(b"BBB").unwrap(), b);
 }
 
 /// ! NMEA sentence type
@@ -638,7 +666,7 @@ fn test_parse() {
     let mut nmea = Nmea::new();
     for s in &sentences {
         let res = nmea.parse(s);
-        if s.starts_with("$GPGSA") || s.starts_with("$GPRMC") {
+        if s.starts_with("$GPGSA") {
             res.unwrap_err();
         } else {
             res.unwrap();
