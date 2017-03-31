@@ -7,6 +7,7 @@ use nom::{digit, IError};
 use GnssType;
 use Satellite;
 use FixType;
+use SentenceType;
 
 pub struct NmeaSentence<'a> {
     pub talker_id: &'a [u8],
@@ -527,4 +528,35 @@ fn test_parse_rmc() {
 
     relative_eq!(rmc_data.speed_over_ground.unwrap(), 0.5);
     relative_eq!(rmc_data.true_course.unwrap(), 54.7);
+}
+
+pub enum ParseResult {
+    GGA(GgaData),
+    RMC(RmcData),
+    GSV(GsvData),
+    Unsupported(SentenceType),
+}
+
+pub fn parse(xs: &[u8]) -> Result<ParseResult, String> {
+    let nmea_sentence = parse_nmea_sentence(xs)?;
+
+    if nmea_sentence.checksum == nmea_sentence.calc_checksum() {
+        match SentenceType::try_from(nmea_sentence.message_id)? {
+            SentenceType::GGA => {
+                let data = parse_gga(&nmea_sentence)?;
+                Ok(ParseResult::GGA(data))
+            }
+            SentenceType::GSV => {
+                let data = parse_gsv(&nmea_sentence)?;
+                Ok(ParseResult::GSV(data))
+            }
+            SentenceType::RMC => {
+                let data = parse_rmc(&nmea_sentence)?;
+                Ok(ParseResult::RMC(data))
+            }
+            msg_id => Ok(ParseResult::Unsupported(msg_id)),
+        }
+    } else {
+        Err("Checksum mismatch".into())
+    }
 }

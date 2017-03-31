@@ -28,9 +28,9 @@ use std::collections::HashMap;
 use std::{fmt, str};
 use std::vec::Vec;
 use std::iter::Iterator;
+
 use chrono::{NaiveTime, Date, UTC};
-use parse::{GsvData, GgaData, RmcData, RmcStatusOfFix, parse_gsv, parse_nmea_sentence, parse_gga,
-            parse_rmc};
+use parse::{GsvData, GgaData, RmcData, RmcStatusOfFix, parse, ParseResult};
 
 /// NMEA parser
 #[derive(Default)]
@@ -176,29 +176,23 @@ impl<'a> Nmea {
     /// Parse any NMEA sentence and stores the result. The type of sentence
     /// is returnd if implemented and valid.
     pub fn parse(&mut self, s: &'a str) -> Result<SentenceType, String> {
-        let nmea_sentence = parse_nmea_sentence(s.as_bytes())?;
-
-        if nmea_sentence.checksum == nmea_sentence.calc_checksum() {
-            match SentenceType::try_from(nmea_sentence.message_id)? {
-                SentenceType::GGA => {
-                    let data = parse_gga(&nmea_sentence)?;
-                    self.merge_gga_data(data);
-                    Ok(SentenceType::GGA)
-                }
-                SentenceType::GSV => {
-                    let data = parse_gsv(&nmea_sentence)?;
-                    self.merge_gsv_data(data)?;
-                    Ok(SentenceType::GSV)
-                }
-                SentenceType::RMC => {
-                    let data = parse_rmc(&nmea_sentence)?;
-                    self.merge_rmc_data(data);
-                    Ok(SentenceType::RMC)
-                }
-                _ => Err("Unknown or implemented sentence type".into()),
+        match parse(s.as_bytes()) {
+            Ok(ParseResult::GGA(gga)) => {
+                self.merge_gga_data(gga);
+                Ok(SentenceType::GGA)
             }
-        } else {
-            Err("Checksum mismatch".into())
+            Ok(ParseResult::GSV(gsv)) => {
+                self.merge_gsv_data(gsv)?;
+                Ok(SentenceType::GSV)
+            }
+            Ok(ParseResult::RMC(rmc)) => {
+                self.merge_rmc_data(rmc);
+                Ok(SentenceType::RMC)
+            }
+            Ok(ParseResult::Unsupported(msg_id)) => {
+                Err(format!("Unknown or implemented sentence type: {:?}", msg_id))
+            }
+            Err(err) => Err(err),
         }
     }
 }
@@ -280,7 +274,7 @@ impl fmt::Debug for Satellite {
 
 macro_rules! define_sentence_type_enum {
     ($Name:ident { $($Variant:ident),* }) => {
-        #[derive(PartialEq, Debug)]
+        #[derive(PartialEq, Debug, Hash, Eq)]
         pub enum $Name {
             None,
             $($Variant),*,
