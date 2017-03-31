@@ -31,7 +31,8 @@ use std::iter::Iterator;
 use std::collections::HashSet;
 
 use chrono::{NaiveTime, Date, UTC};
-use parse::{GsvData, GgaData, RmcData, RmcStatusOfFix, parse, ParseResult};
+pub use parse::{GsvData, GgaData, RmcData, RmcStatusOfFix, parse, ParseResult};
+
 
 /// NMEA parser
 #[derive(Default)]
