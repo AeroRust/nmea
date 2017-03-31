@@ -10,11 +10,8 @@ os:
   - linux
   - osx
 
-before_script:
+before_script:  
   - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
-  - if [ "$TRAVIS_RUST_VERSION" != "1.2.0" ]; then
-      cargo install cargo-travis --force && export PATH=$HOME/.cargo/bin:$PATH;
-    fi
   - travis-cargo --only beta install rustfmt
 
 script:
