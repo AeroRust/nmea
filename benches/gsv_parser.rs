@@ -15,10 +15,10 @@ fn bench_gsv_parser(b: &mut Bencher) {
                  "$GLGSV,3,2,10,75,19,135,36,65,76,333,31,88,32,233,33,81,40,302,38*6A",
                  "$GLGSV,3,3,10,72,40,075,43,87,00,000,*6F"];
     b.iter(|| {
-        let mut nmea = Nmea::new();
-        for line in &input {
-            let pack_type = nmea.parse(line).unwrap();
-            assert_eq!(pack_type, SentenceType::GSV);
-        }
-    });
+               let mut nmea = Nmea::new();
+               for line in &input {
+                   let pack_type = nmea.parse(line).unwrap();
+                   assert_eq!(pack_type, SentenceType::GSV);
+               }
+           });
 }

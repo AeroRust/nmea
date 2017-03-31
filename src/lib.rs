@@ -191,12 +191,13 @@ impl<'a> Nmea {
     fn merge_rmc_data(&mut self, rmc_data: RmcData) {
         self.fix_time = rmc_data.fix_time.map(|v| v.time());
         self.fix_date = rmc_data.fix_time.map(|v| v.date());
-        self.fix_type =
-            rmc_data.status_of_fix.map(|v| match v {
-                                           RmcStatusOfFix::Autonomous => FixType::Gps,
-                                           RmcStatusOfFix::Differential => FixType::DGps,
-                                           RmcStatusOfFix::Invalid => FixType::Invalid,
-                                       });
+        self.fix_type = rmc_data
+            .status_of_fix
+            .map(|v| match v {
+                     RmcStatusOfFix::Autonomous => FixType::Gps,
+                     RmcStatusOfFix::Differential => FixType::DGps,
+                     RmcStatusOfFix::Invalid => FixType::Invalid,
+                 });
         self.latitude = rmc_data.lat;
         self.longitude = rmc_data.lon;
         self.speed_over_ground = rmc_data.speed_over_ground;
@@ -321,10 +322,18 @@ impl fmt::Display for Nmea {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f,
                "{}: lat: {} lon: {} alt: {} {:?}",
-               self.fix_time.map(|l| format!("{:?}", l)).unwrap_or("None".to_owned()),
-               self.latitude.map(|l| format!("{:3.8}", l)).unwrap_or("None".to_owned()),
-               self.longitude.map(|l| format!("{:3.8}", l)).unwrap_or("None".to_owned()),
-               self.altitude.map(|l| format!("{:.3}", l)).unwrap_or("None".to_owned()),
+               self.fix_time
+                   .map(|l| format!("{:?}", l))
+                   .unwrap_or("None".to_owned()),
+               self.latitude
+                   .map(|l| format!("{:3.8}", l))
+                   .unwrap_or("None".to_owned()),
+               self.longitude
+                   .map(|l| format!("{:3.8}", l))
+                   .unwrap_or("None".to_owned()),
+               self.altitude
+                   .map(|l| format!("{:.3}", l))
+                   .unwrap_or("None".to_owned()),
                self.satellites())
     }
 }
@@ -367,9 +376,15 @@ impl fmt::Display for Satellite {
                "{}: {} elv: {} ath: {} snr: {}",
                self.gnss_type,
                self.prn,
-               self.elevation.map(|e| format!("{}", e)).unwrap_or("--".to_owned()),
-               self.azimuth.map(|e| format!("{}", e)).unwrap_or("--".to_owned()),
-               self.snr.map(|e| format!("{}", e)).unwrap_or("--".to_owned()))
+               self.elevation
+                   .map(|e| format!("{}", e))
+                   .unwrap_or("--".to_owned()),
+               self.azimuth
+                   .map(|e| format!("{}", e))
+                   .unwrap_or("--".to_owned()),
+               self.snr
+                   .map(|e| format!("{}", e))
+                   .unwrap_or("--".to_owned()))
     }
 }
 
@@ -386,7 +401,7 @@ impl fmt::Debug for Satellite {
 }
 
 macro_rules! define_sentence_type_enum {
-    ($Name:ident { $($Variant:ident),* }) => {
+    ($Name:ident { $($Variant:ident),* $(,)* }) => {
         #[derive(PartialEq, Debug, Hash, Eq, Clone)]
         pub enum $Name {
             None,
@@ -551,7 +566,7 @@ define_sentence_type_enum!(SentenceType {
                                ZDA,
                                ZDL,
                                ZFO,
-                               ZTG
+                               ZTG,
                            });
 
 /// ! Fix type
@@ -638,7 +653,8 @@ fn test_message_type() {
 fn test_gga_north_west() {
     use chrono::Timelike;
     let mut nmea = Nmea::new();
-    nmea.parse("$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76").unwrap();
+    nmea.parse("$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76")
+        .unwrap();
     assert_eq!(nmea.fix_timestamp().unwrap().second(), 50);
     assert_eq!(nmea.fix_timestamp().unwrap().minute(), 27);
     assert_eq!(nmea.fix_timestamp().unwrap().hour(), 9);
@@ -653,7 +669,8 @@ fn test_gga_north_west() {
 #[test]
 fn test_gga_north_east() {
     let mut nmea = Nmea::new();
-    nmea.parse("$GPGGA,092750.000,5321.6802,N,00630.3372,E,1,8,1.03,61.7,M,55.2,M,,*64").unwrap();
+    nmea.parse("$GPGGA,092750.000,5321.6802,N,00630.3372,E,1,8,1.03,61.7,M,55.2,M,,*64")
+        .unwrap();
     assert_eq!(nmea.latitude().unwrap(), 53. + 21.6802 / 60.);
     assert_eq!(nmea.longitude().unwrap(), 6. + 30.3372 / 60.);
 }
@@ -661,7 +678,8 @@ fn test_gga_north_east() {
 #[test]
 fn test_gga_south_west() {
     let mut nmea = Nmea::new();
-    nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*6B").unwrap();
+    nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*6B")
+        .unwrap();
     assert_eq!(nmea.latitude().unwrap(), -(53. + 21.6802 / 60.));
     assert_eq!(nmea.longitude().unwrap(), -(6. + 30.3372 / 60.));
 }
@@ -669,7 +687,8 @@ fn test_gga_south_west() {
 #[test]
 fn test_gga_south_east() {
     let mut nmea = Nmea::new();
-    nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,E,1,8,1.03,61.7,M,55.2,M,,*79").unwrap();
+    nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,E,1,8,1.03,61.7,M,55.2,M,,*79")
+        .unwrap();
     assert_eq!(nmea.latitude().unwrap(), -(53. + 21.6802 / 60.));
     assert_eq!(nmea.longitude().unwrap(), 6. + 30.3372 / 60.);
 }
@@ -686,7 +705,8 @@ fn test_gga_invalid() {
 fn test_gga_gps() {
     use chrono::Timelike;
     let mut nmea = Nmea::new();
-    nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,E,1,8,1.03,61.7,M,55.2,M,,*79").unwrap();
+    nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,E,1,8,1.03,61.7,M,55.2,M,,*79")
+        .unwrap();
     assert_eq!(nmea.fix_timestamp().unwrap().second(), 50);
     assert_eq!(nmea.fix_timestamp().unwrap().minute(), 27);
     assert_eq!(nmea.fix_timestamp().unwrap().hour(), 9);
@@ -703,11 +723,14 @@ fn test_gga_gps() {
 fn test_gsv() {
     let mut nmea = Nmea::new();
     //                        10           07           05           08
-    nmea.parse("$GPGSV,3,1,11,10,63,137,17,07,61,098,15,05,59,290,20,08,54,157,30*70").unwrap();
+    nmea.parse("$GPGSV,3,1,11,10,63,137,17,07,61,098,15,05,59,290,20,08,54,157,30*70")
+        .unwrap();
     //                        02           13           26         04
-    nmea.parse("$GPGSV,3,2,11,02,39,223,19,13,28,070,17,26,23,252,,04,14,186,14*79").unwrap();
+    nmea.parse("$GPGSV,3,2,11,02,39,223,19,13,28,070,17,26,23,252,,04,14,186,14*79")
+        .unwrap();
     //                        29           16         36
-    nmea.parse("$GPGSV,3,3,11,29,09,301,24,16,09,020,,36,,,*76").unwrap();
+    nmea.parse("$GPGSV,3,3,11,29,09,301,24,16,09,020,,36,,,*76")
+        .unwrap();
     assert_eq!(nmea.satellites().len(), 11);
 
     let sat: &Satellite = &(nmea.satellites()[0]);
@@ -738,11 +761,14 @@ fn test_gsv_real_data() {
 fn test_gsv_order() {
     let mut nmea = Nmea::new();
     //                         2           13           26         04
-    nmea.parse("$GPGSV,3,2,11,02,39,223,19,13,28,070,17,26,23,252,,04,14,186,14*79").unwrap();
+    nmea.parse("$GPGSV,3,2,11,02,39,223,19,13,28,070,17,26,23,252,,04,14,186,14*79")
+        .unwrap();
     //                        29           16         36
-    nmea.parse("$GPGSV,3,3,11,29,09,301,24,16,09,020,,36,,,*76").unwrap();
+    nmea.parse("$GPGSV,3,3,11,29,09,301,24,16,09,020,,36,,,*76")
+        .unwrap();
     //                        10           07           05           08
-    nmea.parse("$GPGSV,3,1,11,10,63,137,17,07,61,098,15,05,59,290,20,08,54,157,30*70").unwrap();
+    nmea.parse("$GPGSV,3,1,11,10,63,137,17,07,61,098,15,05,59,290,20,08,54,157,30*70")
+        .unwrap();
     assert_eq!(nmea.satellites().len(), 11);
 
     let sat: &Satellite = &(nmea.satellites()[0]);
@@ -757,9 +783,11 @@ fn test_gsv_order() {
 fn test_gsv_two_of_three() {
     let mut nmea = Nmea::new();
     //                         2           13           26          4
-    nmea.parse("$GPGSV,3,2,11,02,39,223,19,13,28,070,17,26,23,252,,04,14,186,14*79").unwrap();
+    nmea.parse("$GPGSV,3,2,11,02,39,223,19,13,28,070,17,26,23,252,,04,14,186,14*79")
+        .unwrap();
     //                        29           16         36
-    nmea.parse("$GPGSV,3,3,11,29,09,301,24,16,09,020,,36,,,*76").unwrap();
+    nmea.parse("$GPGSV,3,3,11,29,09,301,24,16,09,020,,36,,,*76")
+        .unwrap();
     assert_eq!(nmea.satellites().len(), 7);
 }
 
@@ -818,8 +846,9 @@ mod tests {
         // explicit because of quickcheck use random gen
         assert!(check_parsing_lat_lon_in_gga(0., 57.89528));
         assert!(check_parsing_lat_lon_in_gga(0., -43.33031));
-        QuickCheck::new().tests(10_000_000_000).quickcheck(check_parsing_lat_lon_in_gga as
-                                                           fn(f64, f64) -> bool);
+        QuickCheck::new()
+            .tests(10_000_000_000)
+            .quickcheck(check_parsing_lat_lon_in_gga as fn(f64, f64) -> bool);
     }
 }
 

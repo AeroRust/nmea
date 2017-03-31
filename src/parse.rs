@@ -510,15 +510,12 @@ pub fn parse_rmc(sentence: &NmeaSentence) -> Result<RmcData, String> {
     if sentence.message_id != b"RMC" {
         return Err("RMC message should start with $..RMC".into());
     }
-    do_parse_rmc(sentence.data).to_full_result().map_err(|err| match err {
-                                                             IError::Incomplete(_) => {
-                                                                 "Incomplete nmea sentence"
-                                                                     .to_string()
-                                                             }
-                                                             IError::Error(e) => {
-                                                                 e.description().into()
-                                                             }
-                                                         })
+    do_parse_rmc(sentence.data)
+        .to_full_result()
+        .map_err(|err| match err {
+                     IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
+                     IError::Error(e) => e.description().into(),
+                 })
 }
 
 #[test]

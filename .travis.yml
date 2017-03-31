@@ -11,10 +11,10 @@ os:
   - osx
 
 before_script:
-  - (cargo install rustfmt || true)
+  - rustup run beta cargo install -f rustfmt
 
 script:
-  - cargo fmt -- --write-mode diff
+  - rustup run beta cargo fmt -- --write-mode diff
   - cargo build -v
   - cargo test -v
   - cargo doc
