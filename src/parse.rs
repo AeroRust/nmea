@@ -207,10 +207,23 @@ fn test_parse_gsv_full() {
     assert_eq!(data.number_of_sentences, 2);
     assert_eq!(data.sentence_num, 1);
     assert_eq!(data._sats_in_view, 8);
-    assert_eq!(data.sats_info[0].clone().unwrap(), Satellite{gnss_type: data.gnss_type.clone(), prn: 1, elevation: None, azimuth: Some(83.), snr: Some(46.)});
-    assert_eq!(data.sats_info[1].clone().unwrap(), Satellite{gnss_type: data.gnss_type.clone(), prn: 2, elevation: Some(17.), azimuth: Some(308.), snr: None});
-    assert_eq!(data.sats_info[2].clone().unwrap(), Satellite{gnss_type: data.gnss_type.clone(), prn: 12, elevation: Some(7.), azimuth: Some(344.), snr: Some(39.)});
-    assert_eq!(data.sats_info[3].clone().unwrap(), Satellite{gnss_type: data.gnss_type.clone(), prn: 14, elevation: Some(22.), azimuth: Some(228.), snr: None});
+    assert_eq!(data.sats_info[0].clone().unwrap(),
+               Satellite {
+                   gnss_type: data.gnss_type.clone(), prn: 1, elevation: None,
+                   azimuth: Some(83.), snr: Some(46.)
+               });
+    assert_eq!(data.sats_info[1].clone().unwrap(),
+               Satellite {
+                   gnss_type: data.gnss_type.clone(), prn: 2, elevation: Some(17.),
+                   azimuth: Some(308.), snr: None});
+    assert_eq!(data.sats_info[2].clone().unwrap(),
+               Satellite {
+                   gnss_type: data.gnss_type.clone(), prn: 12, elevation: Some(7.),
+                   azimuth: Some(344.), snr: Some(39.)});
+    assert_eq!(data.sats_info[3].clone().unwrap(),
+               Satellite {
+                   gnss_type: data.gnss_type.clone(), prn: 14, elevation: Some(22.),
+                   azimuth: Some(228.), snr: None});
 
     let data = parse_gsv(&NmeaSentence {
                               talker_id: b"GL",
@@ -339,7 +352,8 @@ named!(do_parse_gga<GgaData>,
                char!(',') >>
                char!('M') >>
                (time, lat_lon, fix_quality, tracked_sats, hdop, altitude, geoid_height)),
-           |data: (NaiveTime, (f64, f64), char, u32, Option<f32>, Option<f32>, Option<f32>)| -> std::result::Result<GgaData, &'static str> {
+           |data: (NaiveTime, (f64, f64), char, u32, Option<f32>, Option<f32>, Option<f32>)|
+                   -> std::result::Result<GgaData, &'static str> {
                Ok(GgaData {
                    fix_timestamp_time: Some(data.0),
                    fix_type: Some(FixType::from(data.2)),
@@ -442,11 +456,13 @@ named!(do_parse_rmc<RmcData>,
                char!(',') >>
                day: map_res!(take!(2), parse_num::<u8>) >>
                month: map_res!(take!(2), parse_num::<u8>) >>
-               year: map_res!(take!(2), parse_num::<u8>) >>    
+               year: map_res!(take!(2), parse_num::<u8>) >>
                char!(',') >>
-               (time, status_of_fix, lat_lon, speed_over_ground, true_course, day, month, year)  
+               (time, status_of_fix, lat_lon, speed_over_ground,
+                true_course, day, month, year)
            ),
-           |data: (NaiveTime, char, (f64, f64), Option<f32>, Option<f32>, u8, u8, u8)| -> Result<RmcData, &'static str> {
+           |data: (NaiveTime, char, (f64, f64), Option<f32>, Option<f32>, u8, u8, u8)|
+                   -> Result<RmcData, &'static str> {
                let (day, month, year) = (data.5 as u32, data.6 as u32, (data.7 as i32));
                if month < 1 || month > 12 {
                    return Err("Invalid month < 1 or > 12");
@@ -454,8 +470,9 @@ named!(do_parse_rmc<RmcData>,
                if day < 1 || day > 31 {
                    return Err("Invalid day < 1 or > 31");
                }
+               let date = NaiveDate::from_ymd(year, month, day);
                Ok(RmcData {
-                   fix_time: Some(DateTime::from_utc(NaiveDateTime::new(NaiveDate::from_ymd(year, month, day), data.0), UTC)),
+                   fix_time: Some(DateTime::from_utc(NaiveDateTime::new(date, data.0), UTC)),
                    status_of_fix: Some(match data.1 {
                        'A' => RmcStatusOfFix::Autonomous,
                        'D' => RmcStatusOfFix::Differential,
@@ -508,7 +525,9 @@ pub fn parse_rmc(sentence: &NmeaSentence) -> Result<RmcData, String> {
 fn test_parse_rmc() {
     use chrono::{Datelike, Timelike};
 
-    let sentence = parse_nmea_sentence(b"$GPRMC,225446.33,A,4916.45,N,12311.12,W,000.5,054.7,191194,020.3,E,A*2B").unwrap();
+    let sentence = parse_nmea_sentence(b"$GPRMC,225446.33,A,4916.45,N,12311.12,W,\
+                                         000.5,054.7,191194,020.3,E,A*2B")
+            .unwrap();
     assert_eq!(sentence.checksum, sentence.calc_checksum());
     assert_eq!(sentence.checksum, 0x2b);
     let rmc_data = parse_rmc(&sentence).unwrap();
@@ -523,7 +542,8 @@ fn test_parse_rmc() {
 
     println!("lat: {}", rmc_data.lat.unwrap());
     relative_eq!(rmc_data.lat.unwrap(), 49.0 + 16.45 / 60.);
-    println!("lon: {}, diff {}", rmc_data.lon.unwrap(), (rmc_data.lon.unwrap() + (123.0 + 11.12 / 60.)).abs());
+    println!("lon: {}, diff {}", rmc_data.lon.unwrap(),
+             (rmc_data.lon.unwrap() + (123.0 + 11.12 / 60.)).abs());
     relative_eq!(rmc_data.lon.unwrap(), -(123.0 + 11.12 / 60.));
 
     relative_eq!(rmc_data.speed_over_ground.unwrap(), 0.5);
