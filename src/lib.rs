@@ -29,8 +29,8 @@ use std::{fmt, str};
 use std::vec::Vec;
 use std::iter::Iterator;
 use chrono::{NaiveTime, Date, UTC};
-use parse::{GsvData, GgaData, RmcData, RmcStatusOfFix, parse_gsv, parse_nmea_sentence,
-            parse_gga, parse_rmc};
+use parse::{GsvData, GgaData, RmcData, RmcStatusOfFix, parse_gsv, parse_nmea_sentence, parse_gga,
+            parse_rmc};
 
 /// NMEA parser
 #[derive(Default)]
@@ -118,7 +118,7 @@ impl<'a> Nmea {
     pub fn satellites(&self) -> Vec<Satellite> {
         self.satellites.clone()
     }
-    
+
     fn merge_gga_data(&mut self, gga_data: GgaData) {
         self.fix_time = gga_data.fix_timestamp_time;
         self.latitude = gga_data.latitude;
@@ -132,12 +132,17 @@ impl<'a> Nmea {
 
     fn merge_gsv_data(&mut self, data: GsvData) -> Result<(), &'static str> {
         {
-            let d = self.satellites_scan.get_mut(&data.gnss_type)
+            let d = self.satellites_scan
+                .get_mut(&data.gnss_type)
                 .ok_or("Invalid GNSS type")?;
             // Adjust size to this scan
             d.resize(data.number_of_sentences as usize, vec![]);
             // Replace data at index with new scan data
-            d.push(data.sats_info.iter().filter(|v| v.is_some()).map(|v| v.clone().unwrap()).collect());
+            d.push(data.sats_info
+                       .iter()
+                       .filter(|v| v.is_some())
+                       .map(|v| v.clone().unwrap())
+                       .collect());
             d.swap_remove(data.sentence_num as usize - 1);
         }
         self.satellites.clear();
@@ -155,12 +160,12 @@ impl<'a> Nmea {
     fn merge_rmc_data(&mut self, rmc_data: RmcData) {
         self.fix_time = rmc_data.fix_time.map(|v| v.time());
         self.fix_date = rmc_data.fix_time.map(|v| v.date());
-        self.fix_type = rmc_data.status_of_fix
-            .map(|v| match v {
-                RmcStatusOfFix::Autonomous => FixType::Gps,
-                RmcStatusOfFix::Differential => FixType::DGps,
-                RmcStatusOfFix::Invalid => FixType::Invalid,
-            });
+        self.fix_type =
+            rmc_data.status_of_fix.map(|v| match v {
+                                           RmcStatusOfFix::Autonomous => FixType::Gps,
+                                           RmcStatusOfFix::Differential => FixType::DGps,
+                                           RmcStatusOfFix::Invalid => FixType::Invalid,
+                                       });
         self.latitude = rmc_data.lat;
         self.longitude = rmc_data.lon;
         self.speed_over_ground = rmc_data.speed_over_ground;
@@ -610,16 +615,14 @@ fn test_gsv() {
 #[test]
 fn test_gsv_real_data() {
     let mut nmea = Nmea::new();
-    static REAL_DATA: [&'static str; 7] = [
-        "$GPGSV,3,1,12,01,49,196,41,03,71,278,32,06,02,323,27,11,21,196,39*72",
-        "$GPGSV,3,2,12,14,39,063,33,17,21,292,30,19,20,310,31,22,82,181,36*73",
-        "$GPGSV,3,3,12,23,34,232,42,25,11,045,33,31,45,092,38,32,14,061,39*75",
-        "$GLGSV,3,1,10,74,40,078,43,66,23,275,31,82,10,347,36,73,15,015,38*6B",
-        "$GLGSV,3,2,10,75,19,135,36,65,76,333,31,88,32,233,33,81,40,302,38*6A",
-        "$GLGSV,3,3,10,72,40,075,43,87,00,000,*6F",
+    static REAL_DATA: [&'static str; 7] = ["$GPGSV,3,1,12,01,49,196,41,03,71,278,32,06,02,323,27,11,21,196,39*72",
+                                           "$GPGSV,3,2,12,14,39,063,33,17,21,292,30,19,20,310,31,22,82,181,36*73",
+                                           "$GPGSV,3,3,12,23,34,232,42,25,11,045,33,31,45,092,38,32,14,061,39*75",
+                                           "$GLGSV,3,1,10,74,40,078,43,66,23,275,31,82,10,347,36,73,15,015,38*6B",
+                                           "$GLGSV,3,2,10,75,19,135,36,65,76,333,31,88,32,233,33,81,40,302,38*6A",
+                                           "$GLGSV,3,3,10,72,40,075,43,87,00,000,*6F",
 
-        "$GPGSV,4,4,15,26,02,112,,31,45,071,,32,01,066,*4C"
-    ];
+                                           "$GPGSV,4,4,15,26,02,112,,31,45,071,,32,01,066,*4C"];
     for line in &REAL_DATA {
         assert_eq!(nmea.parse(line).unwrap(), SentenceType::GSV);
     }
@@ -693,7 +696,7 @@ mod tests {
                         lat_dir = if lat.is_sign_positive() { 'N' } else { 'S' },
                         lon_dir = if lon.is_sign_positive() { 'E' } else { 'W' },
         );
-        let cs = checksum(s.as_bytes()[1..s.len()-1].iter());
+        let cs = checksum(s.as_bytes()[1..s.len() - 1].iter());
         s.push_str(&format!("{:02X}", cs));
         nmea.parse(&s).unwrap();
         let (new_lat, new_lon) = (nmea.latitude.unwrap(), nmea.longitude.unwrap());
@@ -707,8 +710,7 @@ mod tests {
         // explicit because of quickcheck use random gen
         assert!(check_parsing_lat_lon_in_gga(0., 57.89528));
         assert!(check_parsing_lat_lon_in_gga(0., -43.33031));
-        QuickCheck::new()
-            .tests(10_000_000_000)
-            .quickcheck(check_parsing_lat_lon_in_gga as fn(f64, f64) -> bool);
+        QuickCheck::new().tests(10_000_000_000).quickcheck(check_parsing_lat_lon_in_gga as
+                                                           fn(f64, f64) -> bool);
     }
 }

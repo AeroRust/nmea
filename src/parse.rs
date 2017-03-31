@@ -17,8 +17,11 @@ pub struct NmeaSentence<'a> {
 
 impl<'a> NmeaSentence<'a> {
     pub fn calc_checksum(&self) -> u8 {
-        checksum(self.talker_id.iter().chain(self.message_id.iter())
-                 .chain(&[b',']).chain(self.data.iter()))
+        checksum(self.talker_id
+                     .iter()
+                     .chain(self.message_id.iter())
+                     .chain(&[b','])
+                     .chain(self.data.iter()))
     }
 }
 
@@ -30,12 +33,18 @@ pub struct GsvData {
     pub sats_info: [Option<Satellite>; 4],
 }
 
-pub fn checksum<'a, I: Iterator<Item=&'a u8>>(bytes: I) -> u8 {
+pub fn checksum<'a, I: Iterator<Item = &'a u8>>(bytes: I) -> u8 {
     bytes.fold(0, |c, x| c ^ *x)
 }
 
-fn construct_sentence<'a>(data: (&'a [u8], &'a [u8], &'a [u8], u8)) -> std::result::Result<NmeaSentence<'a>, &'static str> {
-    Ok(NmeaSentence{ talker_id: data.0, message_id: data.1, data: data.2, checksum: data.3 })
+fn construct_sentence<'a>(data: (&'a [u8], &'a [u8], &'a [u8], u8))
+                          -> std::result::Result<NmeaSentence<'a>, &'static str> {
+    Ok(NmeaSentence {
+           talker_id: data.0,
+           message_id: data.1,
+           data: data.2,
+           checksum: data.3,
+       })
 }
 
 fn parse_hex(data: &[u8]) -> std::result::Result<u8, &'static str> {
@@ -64,32 +73,29 @@ named!(do_parse_nmea_sentence<NmeaSentence>,
 );
 
 pub fn parse_nmea_sentence(sentence: &[u8]) -> std::result::Result<NmeaSentence, String> {
-    let res: NmeaSentence = do_parse_nmea_sentence(sentence)
-        .to_full_result()
+    let res: NmeaSentence = do_parse_nmea_sentence(sentence).to_full_result()
         .map_err(|err| match err {
-            IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-            IError::Error(e) => e.description().to_string(),
-        }
-        )?;
+                     IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
+                     IError::Error(e) => e.description().to_string(),
+                 })?;
     Ok(res)
 }
 
 fn parse_num<I: std::str::FromStr>(data: &[u8]) -> std::result::Result<I, &'static str> {
-//    println!("parse num {}", unsafe { str::from_utf8_unchecked(data) });
-    str::parse::<I>(unsafe { str::from_utf8_unchecked(data) })
-        .map_err(|_| "parse of number failed")
+    //    println!("parse num {}", unsafe { str::from_utf8_unchecked(data) });
+    str::parse::<I>(unsafe { str::from_utf8_unchecked(data) }).map_err(|_| "parse of number failed")
 }
 
 fn construct_satellite(data: (u32, Option<i32>, Option<i32>, Option<i32>))
                        -> std::result::Result<Satellite, &'static str> {
-//    println!("we construct sat {}", data.0);
+    //    println!("we construct sat {}", data.0);
     Ok(Satellite {
-        gnss_type: GnssType::Galileo,
-        prn: data.0,
-        elevation: data.1.map(|v| v as f32),
-        azimuth: data.2.map(|v| v as f32),
-        snr: data.3.map(|v| v as f32),
-    })
+           gnss_type: GnssType::Galileo,
+           prn: data.0,
+           elevation: data.1.map(|v| v as f32),
+           azimuth: data.2.map(|v| v as f32),
+           snr: data.3.map(|v| v as f32),
+       })
 }
 
 named!(parse_gsv_sat_info<Satellite>,
@@ -108,16 +114,21 @@ named!(parse_gsv_sat_info<Satellite>,
        ));
 
 
-fn construct_gsv_data(data: (u16, u16, u16, Option<Satellite>, Option<Satellite>,
-                             Option<Satellite>, Option<Satellite>))
+fn construct_gsv_data(data: (u16,
+                             u16,
+                             u16,
+                             Option<Satellite>,
+                             Option<Satellite>,
+                             Option<Satellite>,
+                             Option<Satellite>))
                       -> std::result::Result<GsvData, &'static str> {
     Ok(GsvData {
-        gnss_type: GnssType::Galileo,
-        number_of_sentences: data.0,
-        sentence_num: data.1,
-        _sats_in_view: data.2,
-        sats_info: [data.3, data.4, data.5, data.6],
-    })
+           gnss_type: GnssType::Galileo,
+           number_of_sentences: data.0,
+           sentence_num: data.1,
+           _sats_in_view: data.2,
+           sats_info: [data.3, data.4, data.5, data.6],
+       })
 }
 
 named!(do_parse_gsv<GsvData>,
@@ -169,13 +180,12 @@ pub fn parse_gsv(sentence: &NmeaSentence) -> Result<GsvData, String> {
         b"GL" => GnssType::Glonass,
         _ => return Err("Unknown GNSS type in GSV sentence".into()),
     };
-//    println!("parse: '{}'", str::from_utf8(sentence.data).unwrap());
-    let mut res: GsvData = do_parse_gsv(sentence.data)
-        .to_full_result()
+    //    println!("parse: '{}'", str::from_utf8(sentence.data).unwrap());
+    let mut res: GsvData = do_parse_gsv(sentence.data).to_full_result()
         .map_err(|err| match err {
-            IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-            IError::Error(e) => e.description().into(),
-        })?;
+                     IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
+                     IError::Error(e) => e.description().into(),
+                 })?;
     res.gnss_type = gnss_type.clone();
     for sat in res.sats_info.iter_mut() {
         (*sat).as_mut().map(|v| v.gnss_type = gnss_type.clone());
@@ -186,11 +196,12 @@ pub fn parse_gsv(sentence: &NmeaSentence) -> Result<GsvData, String> {
 #[test]
 fn test_parse_gsv_full() {
     let data = parse_gsv(&NmeaSentence {
-        talker_id: b"GP",
-        message_id: b"GSV",
-        data: b"2,1,08,01,,083,46,02,17,308,,12,07,344,39,14,22,228,",
-        checksum: 0,
-    }).unwrap();
+                              talker_id: b"GP",
+                              message_id: b"GSV",
+                              data: b"2,1,08,01,,083,46,02,17,308,,12,07,344,39,14,22,228,",
+                              checksum: 0,
+                          })
+            .unwrap();
     assert_eq!(data.gnss_type, GnssType::Gps);
     assert_eq!(data.number_of_sentences, 2);
     assert_eq!(data.sentence_num, 1);
@@ -201,11 +212,12 @@ fn test_parse_gsv_full() {
     assert_eq!(data.sats_info[3].clone().unwrap(), Satellite{gnss_type: data.gnss_type.clone(), prn: 14, elevation: Some(22.), azimuth: Some(228.), snr: None});
 
     let data = parse_gsv(&NmeaSentence {
-        talker_id: b"GL",
-        message_id: b"GSV",
-        data: b"3,3,10,72,40,075,43,87,00,000,",
-        checksum: 0,
-    }).unwrap();
+                              talker_id: b"GL",
+                              message_id: b"GSV",
+                              data: b"3,3,10,72,40,075,43,87,00,000,",
+                              checksum: 0,
+                          })
+            .unwrap();
     assert_eq!(data.gnss_type, GnssType::Glonass);
     assert_eq!(data.number_of_sentences, 3);
     assert_eq!(data.sentence_num, 3);
@@ -233,15 +245,15 @@ fn construct_time(data: (u32, u32, f64)) -> std::result::Result<NaiveTime, &'sta
     if data.1 >= 60 {
         return Err("Invalid time: min >= 60");
     }
-    Ok(NaiveTime::from_hms_nano(data.0, data.1, data.2.trunc() as u32,
+    Ok(NaiveTime::from_hms_nano(data.0,
+                                data.1,
+                                data.2.trunc() as u32,
                                 (data.2.fract() * 1_000_000_000f64).round() as u32))
 }
 
 fn parse_float_num<T: str::FromStr>(input: &[u8]) -> std::result::Result<T, &'static str> {
-    let s = str::from_utf8(input)
-        .map_err(|_| "invalid float number")?;
-    str::parse::<T>(s)
-        .map_err(|_| "parse of float number failed")
+    let s = str::from_utf8(input).map_err(|_| "invalid float number")?;
+    str::parse::<T>(s).map_err(|_| "parse of float number failed")
 }
 
 named!(parse_hms<NaiveTime>,
@@ -361,23 +373,23 @@ pub fn parse_gga(sentence: &NmeaSentence) -> Result<GgaData, String> {
     if sentence.message_id != b"GGA" {
         return Err("GGA sentence not starts with $..GGA".into());
     }
-    let res: GgaData = do_parse_gga(sentence.data)
-        .to_full_result()
+    let res: GgaData = do_parse_gga(sentence.data).to_full_result()
         .map_err(|err| match err {
-            IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-            IError::Error(e) => e.description().into(),
-        })?;
-     Ok(res)
+                     IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
+                     IError::Error(e) => e.description().into(),
+                 })?;
+    Ok(res)
 }
 
 #[test]
 fn test_parse_gga_full() {
     let data = parse_gga(&NmeaSentence {
-        talker_id: b"GP",
-        message_id: b"GGA",
-        data: b"033745.0,5650.82344,N,03548.9778,E,1,07,1.8,101.2,M,14.7,M,,",
-        checksum: 0x57,
-    }).unwrap();
+                              talker_id: b"GP",
+                              message_id: b"GGA",
+                              data: b"033745.0,5650.82344,N,03548.9778,E,1,07,1.8,101.2,M,14.7,M,,",
+                              checksum: 0x57,
+                          })
+            .unwrap();
     assert_eq!(data.fix_timestamp_time.unwrap(), NaiveTime::from_hms(3, 37, 45));
     assert_eq!(data.fix_type.unwrap(), FixType::Gps);
     relative_eq!(data.latitude.unwrap(), 56. + 50.82344 / 60.);
@@ -390,7 +402,9 @@ fn test_parse_gga_full() {
 
 #[test]
 fn test_parse_gga_with_optional_fields() {
-    let sentence = parse_nmea_sentence(b"$GPGGA,133605.0,5521.75946,N,03731.93769,E,0,00,,,M,,M,,*4F").unwrap();
+    let sentence =
+        parse_nmea_sentence(b"$GPGGA,133605.0,5521.75946,N,03731.93769,E,0,00,,,M,,M,,*4F")
+            .unwrap();
     assert_eq!(sentence.checksum, sentence.calc_checksum());
     assert_eq!(sentence.checksum, 0x4f);
     let data = parse_gga(&sentence).unwrap();
@@ -455,7 +469,7 @@ named!(do_parse_rmc<RmcData>,
            }
        )
 );
-           
+
 /// Parse RMC message
 /// From gpsd:
 /// RMC,225446.33,A,4916.45,N,12311.12,W,000.5,054.7,191194,020.3,E,A*68
@@ -473,17 +487,20 @@ named!(do_parse_rmc<RmcData>,
 /// N=not valid, S=Simulator, M=Manual input mode
 /// *68        mandatory nmea_checksum
 ///
-/// SiRF chipsets don't return either Mode Indicator or magnetic variation.        
+/// SiRF chipsets don't return either Mode Indicator or magnetic variation.
 pub fn parse_rmc(sentence: &NmeaSentence) -> Result<RmcData, String> {
     if sentence.message_id != b"RMC" {
         return Err("RMC message should start with $..RMC".into());
     }
-    do_parse_rmc(sentence.data)
-        .to_full_result()
-        .map_err(|err| match err {
-            IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-            IError::Error(e) => e.description().into(),
-        })
+    do_parse_rmc(sentence.data).to_full_result().map_err(|err| match err {
+                                                             IError::Incomplete(_) => {
+                                                                 "Incomplete nmea sentence"
+                                                                     .to_string()
+                                                             }
+                                                             IError::Error(e) => {
+                                                                 e.description().into()
+                                                             }
+                                                         })
 }
 
 #[test]
@@ -511,4 +528,3 @@ fn test_parse_rmc() {
     relative_eq!(rmc_data.speed_over_ground.unwrap(), 0.5);
     relative_eq!(rmc_data.true_course.unwrap(), 54.7);
 }
-
