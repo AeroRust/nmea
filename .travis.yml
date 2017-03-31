@@ -11,10 +11,14 @@ os:
   - osx
 
 before_script:
-  - rustup run beta cargo install -f rustfmt
+  - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
+  - if [ "$TRAVIS_RUST_VERSION" != "1.2.0" ]; then
+      cargo install cargo-travis --force && export PATH=$HOME/.cargo/bin:$PATH;
+    fi
+  - travis-cargo --only beta install rustfmt
 
 script:
-  - rustup run beta cargo fmt -- --write-mode diff
+  - travis-cargo --only beta fmt -- --write-mode diff
   - cargo build -v
   - cargo test -v
   - cargo doc
