@@ -1,10 +1,10 @@
 [package]
 name = "nmea"
-version = "0.0.5-pre"
-authors = ["Felix Obenhuber <felix@obenhuber.de>"]
+version = "0.0.5"
+authors = ["Felix Obenhuber <felix@obenhuber.de>", "Evgeniy A. Dushistov <dushistov@mail.ru>"]
 description = "Simple NMEA 0183 parser"
 documentation = "https://docs.rs/nmea/"
-homepage = "https://github.com/flxo/rust-nmea"
+homepage = "https://github.com/Dushistov/rust-nmea"
 license = "Apache-2.0"
 keywords = ["NMEA", "gps", "glonass", "coordinate", "position"]
 

@@ -1,3 +1,10 @@
+//! NMEA 0183 parser
+//!
+//! Use nmea::Nmea::parse and nmea::Nmea::parse_for_fix to preserve
+//! state between recieving new nmea sentence, and nmea::parse
+//! to parse sentences without state
+//!
+//! Units that used every where: degrees, knots, meters for altitude
 // Copyright (C) 2016 Felix Obenhuber
 //
 // Licensed under the Apache License, Version 2.0 (the "License");

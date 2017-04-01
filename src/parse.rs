@@ -934,6 +934,7 @@ pub enum ParseResult {
     Unsupported(SentenceType),
 }
 
+/// parse nmea 0183 sentence and extract data from it
 pub fn parse(xs: &[u8]) -> Result<ParseResult, String> {
     let nmea_sentence = parse_nmea_sentence(xs)?;
 
