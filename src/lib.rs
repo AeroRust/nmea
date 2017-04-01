@@ -31,7 +31,7 @@ use std::iter::Iterator;
 use std::collections::HashSet;
 
 use chrono::{NaiveTime, Date, UTC};
-pub use parse::{GsvData, GgaData, RmcData, RmcStatusOfFix, parse, ParseResult, GsaData};
+pub use parse::{GsvData, GgaData, RmcData, RmcStatusOfFix, parse, ParseResult, GsaData, VtgData};
 
 
 /// NMEA parser
@@ -214,11 +214,19 @@ impl<'a> Nmea {
         self.pdop = Some(gsa.pdop);
     }
 
+    fn merge_vtg_data(&mut self, vtg: VtgData) {
+        self.speed_over_ground = vtg.speed_over_ground;
+        self.true_course = vtg.true_course;
+    }
 
     /// Parse any NMEA sentence and stores the result. The type of sentence
     /// is returnd if implemented and valid.
     pub fn parse(&mut self, s: &'a str) -> Result<SentenceType, String> {
         match parse(s.as_bytes())? {
+            ParseResult::VTG(vtg) => {
+                self.merge_vtg_data(vtg);
+                Ok(SentenceType::VTG)
+            }
             ParseResult::GGA(gga) => {
                 self.merge_gga_data(gga);
                 Ok(SentenceType::GGA)
@@ -256,8 +264,28 @@ impl<'a> Nmea {
 
     pub fn parse_for_fix(&mut self, xs: &[u8]) -> Result<FixType, String> {
         match parse(xs)? {
-            ParseResult::GSA(gsa) => self.merge_gsa_data(gsa),
-            ParseResult::GSV(gsv_data) => self.merge_gsv_data(gsv_data)?,
+            ParseResult::GSA(gsa) => {
+                self.merge_gsa_data(gsa);
+                return Ok(FixType::Invalid);
+            }
+            ParseResult::GSV(gsv_data) => {
+                self.merge_gsv_data(gsv_data)?;
+                return Ok(FixType::Invalid);
+            }
+            ParseResult::VTG(vtg) => {
+                //have no time field, so only if user explicity mention it
+                if self.required_sentences_for_nav
+                       .contains(&SentenceType::VTG) {
+                    if vtg.true_course.is_none() || vtg.speed_over_ground.is_none() {
+                        self.clear_position_info();
+                        return Ok(FixType::Invalid);
+                    }
+                    self.merge_vtg_data(vtg);
+                    self.sentences_for_this_time.insert(SentenceType::VTG);
+                } else {
+                    return Ok(FixType::Invalid);
+                }
+            }
             ParseResult::RMC(rmc_data) => {
                 match rmc_data.status_of_fix {
                     Some(RmcStatusOfFix::Invalid) |

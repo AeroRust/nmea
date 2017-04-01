@@ -2,7 +2,8 @@ use std;
 use std::str;
 
 use chrono::{NaiveTime, DateTime, UTC, NaiveDateTime, NaiveDate};
-use nom::{digit, IError, rest};
+use nom;
+use nom::{IError, digit, IResult, AsChar};
 
 use GnssType;
 use Satellite;
@@ -618,7 +619,7 @@ named!(do_parse_gsa<GsaData>, map_res!(do_parse!(
     char!(',') >>
     hdop: map_res!(take_until!(","), parse_float_num::<f32>) >>
     char!(',') >>
-    vdop: map_res!(rest, parse_float_num::<f32>) >>
+    vdop: map_res!(nom::rest, parse_float_num::<f32>) >>
     (mode1, mode2, prns, pdop, hdop, vdop)),
     |mut data: (char, char, Vec<Option<u32>>, f32, f32, f32)| -> Result<GsaData, String> {
         Ok(GsaData {
@@ -719,11 +720,160 @@ fn smoke_test_parse_gsa() {
     parse_gsa(&s).unwrap_err();
 }
 
+#[derive(Debug, PartialEq)]
+pub struct VtgData {
+    pub true_course: Option<f32>,
+    pub speed_over_ground: Option<f32>,
+}
+
+fn float_number(input: &[u8]) -> IResult<&[u8], &[u8]> {
+    use nom::{InputLength, InputIter, Slice};
+
+    let input_length = input.input_len();
+    if input_length == 0 {
+        return IResult::Incomplete(nom::Needed::Unknown);
+    }
+
+    #[derive(PartialEq)]
+    enum State {
+        BeforePoint,
+        Point,
+        AfterPoint,
+    }
+    let mut state = State::BeforePoint;
+
+    for (idx, item) in input.iter_indices() {
+        match state {
+            State::BeforePoint => {
+                let item2 = item.clone();
+                if item2.as_char() == '.' {
+                    state = State::Point;
+                } else if !item.is_dec_digit() {
+                    if idx == 0 {
+                        return IResult::Error(error_position!(nom::ErrorKind::Digit, input));
+                    } else {
+                        return IResult::Done(input.slice(idx..), input.slice(0..idx));
+                    }
+                }
+            }
+            State::Point => {
+                if !item.is_dec_digit() {
+                    return IResult::Error(error_position!(nom::ErrorKind::Digit, input));
+                }
+                state = State::AfterPoint;
+            }
+            State::AfterPoint => {
+                if !item.is_dec_digit() {
+                    return IResult::Done(input.slice(idx..), input.slice(0..idx));
+                }
+            }
+        }
+    }
+    IResult::Done(input.slice(input_length..), input)
+}
+
+#[test]
+fn test_float_number() {
+    assert_eq!(IResult::Done(&b""[..], &b"12.3"[..]), float_number(&b"12.3"[..]));
+    assert_eq!(IResult::Done(&b"a"[..], &b"12.3"[..]), float_number(&b"12.3a"[..]));
+    assert_eq!(IResult::Done(&b"a"[..], &b"12"[..]), float_number(&b"12a"[..]));
+    assert_eq!(IResult::Error(nom::ErrorKind::Digit), float_number(&b"a12a"[..]));
+}
+
+
+named!(do_parse_vtg<VtgData>, map_res!(do_parse!(
+    true_course: opt!(map_res!(complete!(float_number), parse_float_num::<f32>)) >>
+    char!(',') >>
+    opt!(complete!(char!('T'))) >>
+    char!(',') >>
+    magn_course: opt!(map_res!(complete!(float_number), parse_float_num::<f32>)) >>
+    char!(',') >>
+    opt!(complete!(char!('M'))) >>
+    char!(',') >>
+    knots_ground_speed: opt!(map_res!(complete!(float_number), parse_float_num::<f32>)) >>
+    char!(',') >>
+    opt!(complete!(char!('N'))) >>
+    kph_ground_speed: opt!(complete!(map_res!(float_number, parse_float_num::<f32>))) >>
+    char!(',') >>
+    opt!(complete!(char!('K'))) >>
+    (true_course, knots_ground_speed, kph_ground_speed)),
+    |data: (Option<f32>, Option<f32>, Option<f32>)| -> Result<VtgData, String> {
+        println!("data: {:?}", data);
+        Ok(VtgData {
+            true_course: data.0,
+            speed_over_ground: match (data.1, data.2) {
+                (Some(val), _) => Some(val),
+                (_, Some(val)) => Some(val / 1.852),
+                (None, None) => None,
+            },
+        })
+    }
+));
+
+/// parse VTG
+/// from http://aprs.gids.nl/nmea/#vtg
+/// Track Made Good and Ground Speed.
+///
+/// eg1. $GPVTG,360.0,T,348.7,M,000.0,N,000.0,K*43
+/// eg2. $GPVTG,054.7,T,034.4,M,005.5,N,010.2,K
+///
+///
+/// 054.7,T      True track made good
+/// 034.4,M      Magnetic track made good
+/// 005.5,N      Ground speed, knots
+/// 010.2,K      Ground speed, Kilometers per hour
+///
+///
+/// eg3. $GPVTG,t,T,,,s.ss,N,s.ss,K*hh
+/// 1    = Track made good
+/// 2    = Fixed text 'T' indicates that track made good is relative to true north
+/// 3    = not used
+/// 4    = not used
+/// 5    = Speed over ground in knots
+/// 6    = Fixed text 'N' indicates that speed over ground in in knots
+/// 7    = Speed over ground in kilometers/hour
+/// 8    = Fixed text 'K' indicates that speed over ground is in kilometers/hour
+/// 9    = Checksum
+/// The actual track made good and speed relative to the ground.
+///
+/// $--VTG,x.x,T,x.x,M,x.x,N,x.x,K
+/// x.x,T = Track, degrees True
+/// x.x,M = Track, degrees Magnetic
+/// x.x,N = Speed, knots
+/// x.x,K = Speed, Km/hr
+fn parse_vtg(s: &NmeaSentence) -> Result<VtgData, String> {
+    if s.message_id != b"VTG" {
+        return Err("VTG message should starts with $..VTG".into());
+    }
+    let ret: VtgData = do_parse_vtg(s.data).to_full_result()
+        .map_err(|err| match err {
+                     IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
+                     IError::Error(e) => e.description().into(),
+                 })?;
+    Ok(ret)
+}
+
+#[test]
+fn test_parse_vtg() {
+    let run_parse_vtg = |line: &str| -> Result<VtgData, String> {
+        let s = parse_nmea_sentence(line.as_bytes()).expect("VTG sentence initial parse failed");
+        assert_eq!(s.checksum, s.calc_checksum());
+        parse_vtg(&s)
+    };
+    assert_eq!(VtgData{ true_course: None, speed_over_ground: None },
+               run_parse_vtg("$GPVTG,,T,,M,,N,,K,N*2C").unwrap());
+    assert_eq!(VtgData{ true_course: Some(360.), speed_over_ground: Some(0.) },
+               run_parse_vtg("$GPVTG,360.0,T,348.7,M,000.0,N,000.0,K*43").unwrap());
+    assert_eq!(VtgData{ true_course: Some(54.7), speed_over_ground: Some(5.5) },
+               run_parse_vtg("$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48").unwrap());
+}
+
 pub enum ParseResult {
     GGA(GgaData),
     RMC(RmcData),
     GSV(GsvData),
     GSA(GsaData),
+    VTG(VtgData),
     Unsupported(SentenceType),
 }
 
@@ -745,6 +895,7 @@ pub fn parse(xs: &[u8]) -> Result<ParseResult, String> {
                 Ok(ParseResult::RMC(data))
             }
             SentenceType::GSA => Ok(ParseResult::GSA(parse_gsa(&nmea_sentence)?)),
+            SentenceType::VTG => Ok(ParseResult::VTG(parse_vtg(&nmea_sentence)?)),
             msg_id => Ok(ParseResult::Unsupported(msg_id)),
         }
     } else {
