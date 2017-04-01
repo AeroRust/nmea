@@ -30,7 +30,7 @@ use std::vec::Vec;
 use std::iter::Iterator;
 use std::collections::HashSet;
 
-use chrono::{NaiveTime, Date, UTC};
+use chrono::{NaiveTime, NaiveDate};
 pub use parse::{GsvData, GgaData, RmcData, RmcStatusOfFix, parse, ParseResult, GsaData, VtgData};
 
 
@@ -38,7 +38,7 @@ pub use parse::{GsvData, GgaData, RmcData, RmcStatusOfFix, parse, ParseResult, G
 #[derive(Default)]
 pub struct Nmea {
     pub fix_time: Option<NaiveTime>,
-    pub fix_date: Option<Date<UTC>>,
+    pub fix_date: Option<NaiveDate>,
     pub fix_type: Option<FixType>,
     pub latitude: Option<f64>,
     pub longitude: Option<f64>,
@@ -154,7 +154,7 @@ impl<'a> Nmea {
     }
 
     fn merge_gga_data(&mut self, gga_data: GgaData) {
-        self.fix_time = gga_data.fix_timestamp_time;
+        self.fix_time = gga_data.fix_time;
         self.latitude = gga_data.latitude;
         self.longitude = gga_data.longitude;
         self.fix_type = gga_data.fix_type;
@@ -192,8 +192,8 @@ impl<'a> Nmea {
     }
 
     fn merge_rmc_data(&mut self, rmc_data: RmcData) {
-        self.fix_time = rmc_data.fix_time.map(|v| v.time());
-        self.fix_date = rmc_data.fix_time.map(|v| v.date());
+        self.fix_time = rmc_data.fix_time;
+        self.fix_date = rmc_data.fix_date;
         self.fix_type = rmc_data
             .status_of_fix
             .map(|v| match v {
@@ -209,9 +209,9 @@ impl<'a> Nmea {
 
     fn merge_gsa_data(&mut self, gsa: GsaData) {
         self.fix_satellites_prns = Some(gsa.fix_sats_prn);
-        self.hdop = Some(gsa.hdop);
-        self.vdop = Some(gsa.vdop);
-        self.pdop = Some(gsa.pdop);
+        self.hdop = gsa.hdop;
+        self.vdop = gsa.vdop;
+        self.pdop = gsa.pdop;
     }
 
     fn merge_vtg_data(&mut self, vtg: VtgData) {
@@ -297,14 +297,12 @@ impl<'a> Nmea {
                 }
                 match (self.last_fix_time, rmc_data.fix_time) {
                     (Some(ref last_fix_time), Some(ref rmc_fix_time)) => {
-                        if *last_fix_time != rmc_fix_time.time() {
+                        if *last_fix_time != *rmc_fix_time {
                             self.new_tick();
-                            self.last_fix_time = Some(rmc_fix_time.time());
+                            self.last_fix_time = Some(*rmc_fix_time);
                         }
                     }
-                    (None, Some(ref rmc_fix_time)) => {
-                        self.last_fix_time = Some(rmc_fix_time.time())
-                    }
+                    (None, Some(ref rmc_fix_time)) => self.last_fix_time = Some(*rmc_fix_time),
                     (Some(_), None) | (None, None) => {
                         self.clear_position_info();
                         return Ok(FixType::Invalid);
@@ -322,7 +320,7 @@ impl<'a> Nmea {
                     }
                     _ => { /*nothing*/ }
                 }
-                match (self.last_fix_time, gga_data.fix_timestamp_time) {
+                match (self.last_fix_time, gga_data.fix_time) {
                     (Some(ref last_fix_time), Some(ref gga_fix_time)) => {
                         if last_fix_time != gga_fix_time {
                             self.new_tick();

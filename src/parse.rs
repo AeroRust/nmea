@@ -1,7 +1,7 @@
 use std;
 use std::str;
 
-use chrono::{NaiveTime, DateTime, UTC, NaiveDateTime, NaiveDate};
+use chrono::{NaiveTime, NaiveDate};
 use nom;
 use nom::{IError, digit, IResult, AsChar};
 
@@ -258,8 +258,9 @@ fn test_parse_gsv_full() {
     assert_eq!(data._sats_in_view, 10);
 }
 
+#[derive(Debug, PartialEq)]
 pub struct GgaData {
-    pub fix_timestamp_time: Option<NaiveTime>,
+    pub fix_time: Option<NaiveTime>,
     pub fix_type: Option<FixType>,
     pub latitude: Option<f64>,
     pub longitude: Option<f64>,
@@ -267,22 +268,6 @@ pub struct GgaData {
     pub hdop: Option<f32>,
     pub altitude: Option<f32>,
     pub geoid_height: Option<f32>,
-}
-
-fn construct_time(data: (u32, u32, f64)) -> std::result::Result<NaiveTime, &'static str> {
-    if data.2.is_sign_negative() {
-        return Err("Invalid time: second is negative");
-    }
-    if data.0 >= 24 {
-        return Err("Invalid time: hour >= 24");
-    }
-    if data.1 >= 60 {
-        return Err("Invalid time: min >= 60");
-    }
-    Ok(NaiveTime::from_hms_nano(data.0,
-                                data.1,
-                                data.2.trunc() as u32,
-                                (data.2.fract() * 1_000_000_000f64).round() as u32))
 }
 
 fn parse_float_num<T: str::FromStr>(input: &[u8]) -> std::result::Result<T, &'static str> {
@@ -298,7 +283,22 @@ named!(parse_hms<NaiveTime>,
                sec: map_res!(take_until!(","), parse_float_num::<f64>) >>
                (hour, min, sec)
            ),
-           construct_time
+           |data: (u32, u32, f64)| -> std::result::Result<NaiveTime, &'static str> {
+               if data.2.is_sign_negative() {
+                   return Err("Invalid time: second is negative");
+               }
+               if data.0 >= 24 {
+                   return Err("Invalid time: hour >= 24");
+               }
+               if data.1 >= 60 {
+                   return Err("Invalid time: min >= 60");
+               }
+               Ok(NaiveTime::from_hms_nano(
+                   data.0,
+                   data.1,
+                   data.2.trunc() as u32,
+                   (data.2.fract() * 1_000_000_000f64).round() as u32))
+           }
        )
 );
 
@@ -317,16 +317,16 @@ fn test_parse_hms() {
     assert_eq!(time.nanosecond(), 5_00_000_000);
 }
 
-named!(parse_lat_lon<(f64, f64)>,
+named!(do_parse_lat_lon<(f64, f64)>,
        map_res!(
            do_parse!(
                lat_deg: map_res!(take!(2), parse_num::<u8>) >>
-               lat_min: map_res!(take_until!(","), parse_float_num::<f64>) >>
+               lat_min: map_res!(float_number, parse_float_num::<f64>) >>
                char!(',') >>
                lat_dir: one_of!("NS") >>
                char!(',') >>
                lon_deg: map_res!(take!(3), parse_num::<u8>) >>
-               lon_min: map_res!(take_until!(","), parse_float_num::<f64>) >>
+               lon_min: map_res!(float_number, parse_float_num::<f64>) >>
                char!(',') >>
                lon_dir: one_of!("EW") >>
                (lat_deg, lat_min, lat_dir, lon_deg, lon_min, lon_dir)
@@ -345,41 +345,50 @@ named!(parse_lat_lon<(f64, f64)>,
 ));
 
 #[test]
-fn test_parse_lat_lon() {
-    let (_, lat_lon) = parse_lat_lon(b"4807.038,N,01131.324,E").unwrap();
+fn test_do_parse_lat_lon() {
+    let (_, lat_lon) = do_parse_lat_lon(b"4807.038,N,01131.324,E").unwrap();
     relative_eq!(lat_lon.0, 48. + 7.038 / 60.);
     relative_eq!(lat_lon.1, 11. + 31.324 / 60.);
 }
 
+named!(parse_lat_lon<Option<(f64, f64)>>,
+       alt_complete!(
+           map_res!(tag!(",,,"),
+                    |_| -> Result<Option<(f64, f64)>, &'static str> { Ok(None) }) |
+           map_res!(do_parse_lat_lon,
+                    |v| -> Result<Option<(f64, f64)>, &'static str> { Ok(Some(v)) }))
+);
+
 named!(do_parse_gga<GgaData>,
        map_res!(
            do_parse!(
-               time: parse_hms >>
+               time: opt!(complete!(parse_hms)) >>
                char!(',') >>
                lat_lon: parse_lat_lon >>
                char!(',') >>
-               fix_quality: one_of!("012345678") >>
+               fix_quality: dbg!(one_of!("012345678")) >>
                char!(',') >>
-               tracked_sats: map_res!(dbg!(digit), parse_num::<u32>) >>
+               tracked_sats: opt!(complete!(map_res!(digit, parse_num::<u32>))) >>
                char!(',') >>
-               hdop: opt!(map_res!(take_until!(","), parse_float_num::<f32>)) >>
+               hdop: opt!(complete!(map_res!(float_number, parse_float_num::<f32>))) >>
                char!(',') >>
-               altitude: opt!(map_res!(take_until!(","), parse_float_num::<f32>)) >>
+               altitude: opt!(complete!(map_res!(take_until!(","), parse_float_num::<f32>))) >>
                char!(',') >>
-               char!('M') >>
+               opt!(complete!(char!('M'))) >>
                char!(',') >>
-               geoid_height: opt!(map_res!(take_until!(","), parse_float_num::<f32>)) >>
+               geoid_height: opt!(complete!(map_res!(take_until!(","), parse_float_num::<f32>))) >>
                char!(',') >>
-               char!('M') >>
+               opt!(complete!(char!('M'))) >>
                (time, lat_lon, fix_quality, tracked_sats, hdop, altitude, geoid_height)),
-           |data: (NaiveTime, (f64, f64), char, u32, Option<f32>, Option<f32>, Option<f32>)|
+           |data: (Option<NaiveTime>, Option<(f64, f64)>, char, Option<u32>,
+                   Option<f32>, Option<f32>, Option<f32>)|
                    -> std::result::Result<GgaData, &'static str> {
                Ok(GgaData {
-                   fix_timestamp_time: Some(data.0),
+                   fix_time: data.0,
                    fix_type: Some(FixType::from(data.2)),
-                   latitude: Some((data.1).0),
-                   longitude: Some((data.1).1),
-                   fix_satellites: Some(data.3),
+                   latitude: data.1.map(|v| v.0),
+                   longitude: data.1.map(|v| v.1),
+                   fix_satellites: data.3,
                    hdop: data.4,
                    altitude: data.5,
                    geoid_height: data.6,
@@ -425,7 +434,7 @@ fn test_parse_gga_full() {
                               checksum: 0x57,
                           })
             .unwrap();
-    assert_eq!(data.fix_timestamp_time.unwrap(), NaiveTime::from_hms(3, 37, 45));
+    assert_eq!(data.fix_time.unwrap(), NaiveTime::from_hms(3, 37, 45));
     assert_eq!(data.fix_type.unwrap(), FixType::Gps);
     relative_eq!(data.latitude.unwrap(), 56. + 50.82344 / 60.);
     relative_eq!(data.longitude.unwrap(), 35. + 48.9778 / 60.);
@@ -433,6 +442,20 @@ fn test_parse_gga_full() {
     relative_eq!(data.hdop.unwrap(), 1.8);
     relative_eq!(data.altitude.unwrap(), 101.2);
     relative_eq!(data.geoid_height.unwrap(), 14.7);
+
+    let s = parse_nmea_sentence(b"$GPGGA,,,,,,0,,,,,,,,*66").unwrap();
+    assert_eq!(s.checksum, s.calc_checksum());
+    let data = parse_gga(&s).unwrap();
+    assert_eq!(GgaData {
+        fix_time: None,
+        fix_type: Some(FixType::Invalid),
+        latitude: None,
+        longitude: None,
+        fix_satellites: None,
+        hdop: None,
+        altitude: None,
+        geoid_height: None,
+    }, data);
 }
 
 #[test]
@@ -446,14 +469,17 @@ fn test_parse_gga_with_optional_fields() {
     assert_eq!(data.fix_type.unwrap(), FixType::Invalid);
 }
 
+#[derive(Debug, PartialEq)]
 pub enum RmcStatusOfFix {
     Autonomous,
     Differential,
     Invalid,
 }
 
+#[derive(Debug, PartialEq)]
 pub struct RmcData {
-    pub fix_time: Option<DateTime<UTC>>,
+    pub fix_time: Option<NaiveTime>,
+    pub fix_date: Option<NaiveDate>,
     pub status_of_fix: Option<RmcStatusOfFix>,
     pub lat: Option<f64>,
     pub lon: Option<f64>,
@@ -461,46 +487,55 @@ pub struct RmcData {
     pub true_course: Option<f32>,
 }
 
-named!(do_parse_rmc<RmcData>,
-       map_res!(
-           do_parse!(
-               time: parse_hms >>
-               char!(',') >>
-               status_of_fix: one_of!("ADV") >>
-               char!(',') >>
-               lat_lon: parse_lat_lon >>
-               char!(',') >>
-               speed_over_ground: opt!(map_res!(take_until!(","), parse_float_num::<f32>)) >>
-               char!(',') >>
-               true_course: opt!(map_res!(take_until!(","), parse_float_num::<f32>)) >>
-               char!(',') >>
+named!(parse_date<NaiveDate>, map_res!(do_parse!(
                day: map_res!(take!(2), parse_num::<u8>) >>
                month: map_res!(take!(2), parse_num::<u8>) >>
                year: map_res!(take!(2), parse_num::<u8>) >>
+        (day, month, year)),
+    |data: (u8, u8, u8)| -> Result<NaiveDate, &'static str> {
+        let (day, month, year) = (data.0 as u32, data.1 as u32, (data.2 as i32));
+        if month < 1 || month > 12 {
+            return Err("Invalid month < 1 or > 12");
+        }
+        if day < 1 || day > 31 {
+            return Err("Invalid day < 1 or > 31");
+        }
+        Ok(NaiveDate::from_ymd(year, month, day))
+    })
+);
+
+named!(do_parse_rmc<RmcData>,
+       map_res!(
+           do_parse!(
+               time: opt!(complete!(parse_hms)) >>
+               char!(',') >>
+               status_of_fix: one_of!("ADV") >>
+               char!(',') >>
+               lat_lon:  parse_lat_lon >>
+               char!(',') >>
+               speed_over_ground: opt!(complete!(map_res!(float_number, parse_float_num::<f32>))) >>
+               char!(',') >>
+               true_course: opt!(complete!(map_res!(float_number, parse_float_num::<f32>))) >>
+               char!(',') >>
+               date: opt!(complete!(parse_date)) >>
                char!(',') >>
                (time, status_of_fix, lat_lon, speed_over_ground,
-                true_course, day, month, year)
+                true_course, date)
            ),
-           |data: (NaiveTime, char, (f64, f64), Option<f32>, Option<f32>, u8, u8, u8)|
+           |data: (Option<NaiveTime>, char, Option<(f64, f64)>, Option<f32>,
+                   Option<f32>, Option<NaiveDate>)|
                    -> Result<RmcData, &'static str> {
-               let (day, month, year) = (data.5 as u32, data.6 as u32, (data.7 as i32));
-               if month < 1 || month > 12 {
-                   return Err("Invalid month < 1 or > 12");
-               }
-               if day < 1 || day > 31 {
-                   return Err("Invalid day < 1 or > 31");
-               }
-               let date = NaiveDate::from_ymd(year, month, day);
                Ok(RmcData {
-                   fix_time: Some(DateTime::from_utc(NaiveDateTime::new(date, data.0), UTC)),
+                   fix_time: data.0,
+                   fix_date: data.5,
                    status_of_fix: Some(match data.1 {
                        'A' => RmcStatusOfFix::Autonomous,
                        'D' => RmcStatusOfFix::Differential,
                        'V' => RmcStatusOfFix::Invalid,
                        _ => return Err("do_parse_rmc failed: not A|D|V status of fix"),
                    }),
-                   lat: Some((data.2).0),
-                   lon: Some((data.2).1),
+                   lat: data.2.map(|v| v.0),
+                   lon: data.2.map(|v| v.1),
                    speed_over_ground: data.3,
                    true_course: data.4,
                })
@@ -540,22 +575,14 @@ pub fn parse_rmc(sentence: &NmeaSentence) -> Result<RmcData, String> {
 
 #[test]
 fn test_parse_rmc() {
-    use chrono::{Datelike, Timelike};
-
-    let sentence = parse_nmea_sentence(b"$GPRMC,225446.33,A,4916.45,N,12311.12,W,\
-                                         000.5,054.7,191194,020.3,E,A*2B")
+    let s = parse_nmea_sentence(b"$GPRMC,225446.33,A,4916.45,N,12311.12,W,\
+                                  000.5,054.7,191194,020.3,E,A*2B")
             .unwrap();
-    assert_eq!(sentence.checksum, sentence.calc_checksum());
-    assert_eq!(sentence.checksum, 0x2b);
-    let rmc_data = parse_rmc(&sentence).unwrap();
-    let fix_time = rmc_data.fix_time.unwrap();
-    assert_eq!(94, fix_time.year());
-    assert_eq!(11, fix_time.month());
-    assert_eq!(19, fix_time.day());
-    assert_eq!(22, fix_time.hour());
-    assert_eq!(54, fix_time.minute());
-    assert_eq!(46, fix_time.second());
-    assert_eq!(330, fix_time.nanosecond() / 1_000_000);
+    assert_eq!(s.checksum, s.calc_checksum());
+    assert_eq!(s.checksum, 0x2b);
+    let rmc_data = parse_rmc(&s).unwrap();
+    assert_eq!(rmc_data.fix_time.unwrap(), NaiveTime::from_hms_milli(22, 54, 46, 330));
+    assert_eq!(rmc_data.fix_date.unwrap(), NaiveDate::from_ymd(94, 11, 19));
 
     println!("lat: {}", rmc_data.lat.unwrap());
     relative_eq!(rmc_data.lat.unwrap(), 49.0 + 16.45 / 60.);
@@ -565,6 +592,18 @@ fn test_parse_rmc() {
 
     relative_eq!(rmc_data.speed_over_ground.unwrap(), 0.5);
     relative_eq!(rmc_data.true_course.unwrap(), 54.7);
+
+    let s = parse_nmea_sentence(b"$GPRMC,,V,,,,,,,,,,N*53").unwrap();
+    let rmc = parse_rmc(&s).unwrap();
+    assert_eq!(RmcData {
+        fix_time: None,
+        fix_date: None,
+        status_of_fix: Some(RmcStatusOfFix::Invalid),
+        lat: None,
+        lon: None,
+        speed_over_ground: None,
+        true_course: None,
+    }, rmc);
 }
 
 #[derive(PartialEq, Debug)]
@@ -585,9 +624,9 @@ pub struct GsaData {
     pub mode1: GsaMode1,
     pub mode2: GsaMode2,
     pub fix_sats_prn: Vec<u32>,
-    pub pdop: f32,
-    pub hdop: f32,
-    pub vdop: f32,
+    pub pdop: Option<f32>,
+    pub hdop: Option<f32>,
+    pub vdop: Option<f32>,
 }
 
 named!(gsa_prn_fields_parse<&[u8], Vec<Option<u32>>>, many0!(map_res!(do_parse!(
@@ -609,19 +648,38 @@ fn test_gsa_prn_fields_parse() {
     assert_eq!(vec![None, None, Some(5), Some(6)], ret);
 }
 
+type GsaTail = (Vec<Option<u32>>, Option<f32>, Option<f32>, Option<f32>);
+named!(do_parse_gsa_tail<GsaTail>, do_parse!(
+    prns: gsa_prn_fields_parse >>
+    pdop: map_res!(float_number, parse_float_num::<f32>) >>
+    char!(',') >>
+    hdop: map_res!(float_number, parse_float_num::<f32>) >>
+    char!(',') >>
+    vdop: map_res!(float_number, parse_float_num::<f32>) >>
+    (prns, Some(pdop), Some(hdop), Some(vdop)))
+);
+
+fn is_comma(x: u8) -> bool {
+    x == b','
+}
+
+named!(do_parse_empty_gsa_tail<GsaTail>, map_res!(do_parse!(
+    take_while!(is_comma) >>
+    eof!() >>
+    ()),
+    |_ : ()| -> Result<GsaTail, String> {
+        Ok((Vec::new(), None, None, None))
+    }
+));
+
 named!(do_parse_gsa<GsaData>, map_res!(do_parse!(
     mode1: one_of!("MA") >>
     char!(',') >>
     mode2: one_of!("123") >>
     char!(',') >>
-    prns: gsa_prn_fields_parse >>
-    pdop: map_res!(take_until!(","), parse_float_num::<f32>) >>
-    char!(',') >>
-    hdop: map_res!(take_until!(","), parse_float_num::<f32>) >>
-    char!(',') >>
-    vdop: map_res!(nom::rest, parse_float_num::<f32>) >>
-    (mode1, mode2, prns, pdop, hdop, vdop)),
-    |mut data: (char, char, Vec<Option<u32>>, f32, f32, f32)| -> Result<GsaData, String> {
+    tail: alt_complete!(do_parse_empty_gsa_tail | do_parse_gsa_tail) >>
+    (mode1, mode2, tail)),
+    |mut data:  (char, char, GsaTail)| -> Result<GsaData, String> {
         Ok(GsaData {
             mode1: match data.0 {
                 'M' => GsaMode1::Manual,
@@ -634,10 +692,10 @@ named!(do_parse_gsa<GsaData>, map_res!(do_parse!(
                 '3' => GsaMode2::Fix3D,
                 _ => unreachable!(),
             },
-            fix_sats_prn: data.2.drain(..).filter_map(|v| v).collect(),
-            pdop: data.3,
-            hdop: data.4,
-            vdop: data.5
+            fix_sats_prn: (data.2).0.drain(..).filter_map(|v| v).collect(),
+            pdop: (data.2).1,
+            hdop: (data.2).2,
+            vdop: (data.2).3,
         })
     }
 ));
@@ -702,22 +760,21 @@ fn smoke_test_parse_gsa() {
         mode1: GsaMode1::Automatic,
         mode2: GsaMode2::Fix3D,
         fix_sats_prn: vec![16,18,22,24],
-        pdop: 3.6,
-        hdop: 2.1,
-        vdop: 2.2
+        pdop: Some(3.6),
+        hdop: Some(2.1),
+        vdop: Some(2.2),
     }, gsa);
     let gsa_examples = ["$GPGSA,A,3,19,28,14,18,27,22,31,39,,,,,1.7,1.0,1.3*35",
                         "$GPGSA,A,3,23,31,22,16,03,07,,,,,,,1.8,1.1,1.4*3E",
                         "$BDGSA,A,3,214,,,,,,,,,,,,1.8,1.1,1.4*18",
                         "$GNGSA,A,3,31,26,21,,,,,,,,,,3.77,2.55,2.77*1A",
-                        "$GNGSA,A,3,75,86,87,,,,,,,,,,3.77,2.55,2.77*1C"];
+                        "$GNGSA,A,3,75,86,87,,,,,,,,,,3.77,2.55,2.77*1C",
+                        "$GPGSA,A,1,,,,*32"];
     for line in &gsa_examples {
         println!("we parse line '{}'", line);
         let s = parse_nmea_sentence(line.as_bytes()).unwrap();
         parse_gsa(&s).unwrap();
     }
-    let s = parse_nmea_sentence(b"$GPGSA,A,1,,,,*32").unwrap();
-    parse_gsa(&s).unwrap_err();
 }
 
 #[derive(Debug, PartialEq)]
@@ -798,7 +855,7 @@ named!(do_parse_vtg<VtgData>, map_res!(do_parse!(
     opt!(complete!(char!('K'))) >>
     (true_course, knots_ground_speed, kph_ground_speed)),
     |data: (Option<f32>, Option<f32>, Option<f32>)| -> Result<VtgData, String> {
-        println!("data: {:?}", data);
+        //println!("data: {:?}", data);
         Ok(VtgData {
             true_course: data.0,
             speed_over_ground: match (data.1, data.2) {
