@@ -31,7 +31,7 @@ use std::iter::Iterator;
 use std::collections::HashSet;
 
 use chrono::{NaiveTime, Date, UTC};
-pub use parse::{GsvData, GgaData, RmcData, RmcStatusOfFix, parse, ParseResult};
+pub use parse::{GsvData, GgaData, RmcData, RmcStatusOfFix, parse, ParseResult, GsaData};
 
 
 /// NMEA parser
@@ -45,10 +45,13 @@ pub struct Nmea {
     pub altitude: Option<f32>,
     pub speed_over_ground: Option<f32>,
     pub true_course: Option<f32>,
-    pub fix_satellites: Option<u32>,
+    pub num_of_fix_satellites: Option<u32>,
     pub hdop: Option<f32>,
+    pub vdop: Option<f32>,
+    pub pdop: Option<f32>,
     pub geoid_height: Option<f32>,
     pub satellites: Vec<Satellite>,
+    pub fix_satellites_prns: Option<Vec<u32>>,
     satellites_scan: HashMap<GnssType, Vec<Vec<Satellite>>>,
     required_sentences_for_nav: HashSet<SentenceType>,
     last_fix_time: Option<NaiveTime>,
@@ -132,7 +135,7 @@ impl<'a> Nmea {
 
     /// Returns the number of satellites use for fix.
     pub fn fix_satellites(&self) -> Option<u32> {
-        self.fix_satellites
+        self.num_of_fix_satellites
     }
 
     /// Returns the number fix HDOP
@@ -155,7 +158,7 @@ impl<'a> Nmea {
         self.latitude = gga_data.latitude;
         self.longitude = gga_data.longitude;
         self.fix_type = gga_data.fix_type;
-        self.fix_satellites = gga_data.fix_satellites;
+        self.num_of_fix_satellites = gga_data.fix_satellites;
         self.hdop = gga_data.hdop;
         self.altitude = gga_data.altitude;
         self.geoid_height = gga_data.geoid_height;
@@ -204,6 +207,13 @@ impl<'a> Nmea {
         self.true_course = rmc_data.true_course;
     }
 
+    fn merge_gsa_data(&mut self, gsa: GsaData) {
+        self.fix_satellites_prns = Some(gsa.fix_sats_prn);
+        self.hdop = Some(gsa.hdop);
+        self.vdop = Some(gsa.vdop);
+        self.pdop = Some(gsa.pdop);
+    }
+
 
     /// Parse any NMEA sentence and stores the result. The type of sentence
     /// is returnd if implemented and valid.
@@ -220,6 +230,10 @@ impl<'a> Nmea {
             ParseResult::RMC(rmc) => {
                 self.merge_rmc_data(rmc);
                 Ok(SentenceType::RMC)
+            }
+            ParseResult::GSA(gsa) => {
+                self.merge_gsa_data(gsa);
+                Ok(SentenceType::GSA)
             }
             ParseResult::Unsupported(msg_id) => {
                 Err(format!("Unknown or implemented sentence type: {:?}", msg_id))
@@ -242,6 +256,7 @@ impl<'a> Nmea {
 
     pub fn parse_for_fix(&mut self, xs: &[u8]) -> Result<FixType, String> {
         match parse(xs)? {
+            ParseResult::GSA(gsa) => self.merge_gsa_data(gsa),
             ParseResult::GSV(gsv_data) => self.merge_gsv_data(gsv_data)?,
             ParseResult::RMC(rmc_data) => {
                 match rmc_data.status_of_fix {
@@ -713,7 +728,7 @@ fn test_gga_gps() {
     assert_eq!(-(53. + 21.6802 / 60.), nmea.latitude.unwrap());
     assert_eq!(6. + 30.3372 / 60., nmea.longitude.unwrap());
     assert_eq!(nmea.fix_type(), Some(FixType::Gps));
-    assert_eq!(8, nmea.fix_satellites.unwrap());
+    assert_eq!(8, nmea.num_of_fix_satellites.unwrap());
     assert_eq!(1.03, nmea.hdop.unwrap());
     assert_eq!(61.7, nmea.altitude.unwrap());
     assert_eq!(55.2, nmea.geoid_height.unwrap());
@@ -802,12 +817,8 @@ fn test_parse() {
 
     let mut nmea = Nmea::new();
     for s in &sentences {
-        let res = nmea.parse(s);
-        if s.starts_with("$GPGSA") {
-            res.unwrap_err();
-        } else {
-            res.unwrap();
-        }
+        let res = nmea.parse(s).unwrap();
+        println!("test_parse res {:?}", res);
     }
 
     assert_eq!(nmea.latitude().unwrap(), 53. + 21.6802 / 60.);

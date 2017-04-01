@@ -19,6 +19,6 @@ script:
   - if [ "$TRAVIS_RUST_VERSION" == "beta" ]; then
       cargo fmt -- --write-mode diff;
     fi
-  - cargo build -v
-  - cargo test -v
+  - cargo build -v --release
+  - cargo test -v --release
   - cargo doc

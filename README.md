@@ -6,7 +6,7 @@
 
 NMEA 0183 sentence parser for Rust. 
 
-Currently only _GGA_,_GSV_ and _RMC_ sentences are supported. Feel free to add others.
+Currently only _GGA_,_GSV_, _GSA_ and _RMC_ sentences are supported. Feel free to add others.
 
 [Complete Documentation][doc]
 
