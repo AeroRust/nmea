@@ -1,6 +1,6 @@
 [package]
 name = "nmea"
-version = "0.0.5"
+version = "0.0.6"
 authors = ["Felix Obenhuber <felix@obenhuber.de>", "Evgeniy A. Dushistov <dushistov@mail.ru>"]
 description = "Simple NMEA 0183 parser"
 documentation = "https://docs.rs/nmea/"
@@ -9,11 +9,11 @@ license = "Apache-2.0"
 keywords = ["NMEA", "gps", "glonass", "coordinate", "position"]
 
 [dependencies]
-nom = "2.2.0"
-chrono = "0.3.0"
+nom = "3.1.0"
+chrono = "0.4.0"
 
 [dev-dependencies]
-quickcheck = "0.3"
+quickcheck = "0.4"
 approx = "0.1.1"
 
 [badges]
