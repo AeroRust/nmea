@@ -281,8 +281,7 @@ impl<'a> Nmea {
             }
             ParseResult::VTG(vtg) => {
                 //have no time field, so only if user explicity mention it
-                if self.required_sentences_for_nav
-                       .contains(&SentenceType::VTG) {
+                if self.required_sentences_for_nav.contains(&SentenceType::VTG) {
                     if vtg.true_course.is_none() || vtg.speed_over_ground.is_none() {
                         self.clear_position_info();
                         return Ok(FixType::Invalid);

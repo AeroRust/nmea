@@ -94,7 +94,8 @@ pub fn parse_nmea_sentence(sentence: &[u8]) -> std::result::Result<NmeaSentence,
     if sentence.len() > 102 {
         return Err("Too long message".to_string());
     }
-    let res: NmeaSentence = do_parse_nmea_sentence(sentence).to_full_result()
+    let res: NmeaSentence = do_parse_nmea_sentence(sentence)
+        .to_full_result()
         .map_err(|err| match err {
                      IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
                      IError::Error(e) => e.description().to_string(),
@@ -202,7 +203,8 @@ pub fn parse_gsv(sentence: &NmeaSentence) -> Result<GsvData, String> {
         _ => return Err("Unknown GNSS type in GSV sentence".into()),
     };
     //    println!("parse: '{}'", str::from_utf8(sentence.data).unwrap());
-    let mut res: GsvData = do_parse_gsv(sentence.data).to_full_result()
+    let mut res: GsvData = do_parse_gsv(sentence.data)
+        .to_full_result()
         .map_err(|err| match err {
                      IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
                      IError::Error(e) => e.description().into(),
@@ -217,11 +219,11 @@ pub fn parse_gsv(sentence: &NmeaSentence) -> Result<GsvData, String> {
 #[test]
 fn test_parse_gsv_full() {
     let data = parse_gsv(&NmeaSentence {
-                              talker_id: b"GP",
-                              message_id: b"GSV",
-                              data: b"2,1,08,01,,083,46,02,17,308,,12,07,344,39,14,22,228,",
-                              checksum: 0,
-                          })
+                             talker_id: b"GP",
+                             message_id: b"GSV",
+                             data: b"2,1,08,01,,083,46,02,17,308,,12,07,344,39,14,22,228,",
+                             checksum: 0,
+                         })
             .unwrap();
     assert_eq!(data.gnss_type, GnssType::Gps);
     assert_eq!(data.number_of_sentences, 2);
@@ -246,11 +248,11 @@ fn test_parse_gsv_full() {
                    azimuth: Some(228.), snr: None});
 
     let data = parse_gsv(&NmeaSentence {
-                              talker_id: b"GL",
-                              message_id: b"GSV",
-                              data: b"3,3,10,72,40,075,43,87,00,000,",
-                              checksum: 0,
-                          })
+                             talker_id: b"GL",
+                             message_id: b"GSV",
+                             data: b"3,3,10,72,40,075,43,87,00,000,",
+                             checksum: 0,
+                         })
             .unwrap();
     assert_eq!(data.gnss_type, GnssType::Glonass);
     assert_eq!(data.number_of_sentences, 3);
@@ -417,7 +419,8 @@ pub fn parse_gga(sentence: &NmeaSentence) -> Result<GgaData, String> {
     if sentence.message_id != b"GGA" {
         return Err("GGA sentence not starts with $..GGA".into());
     }
-    let res: GgaData = do_parse_gga(sentence.data).to_full_result()
+    let res: GgaData = do_parse_gga(sentence.data)
+        .to_full_result()
         .map_err(|err| match err {
                      IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
                      IError::Error(e) => e.description().into(),
@@ -428,11 +431,11 @@ pub fn parse_gga(sentence: &NmeaSentence) -> Result<GgaData, String> {
 #[test]
 fn test_parse_gga_full() {
     let data = parse_gga(&NmeaSentence {
-                              talker_id: b"GP",
-                              message_id: b"GGA",
-                              data: b"033745.0,5650.82344,N,03548.9778,E,1,07,1.8,101.2,M,14.7,M,,",
-                              checksum: 0x57,
-                          })
+                             talker_id: b"GP",
+                             message_id: b"GGA",
+                             data: b"033745.0,5650.82344,N,03548.9778,E,1,07,1.8,101.2,M,14.7,M,,",
+                             checksum: 0x57,
+                         })
             .unwrap();
     assert_eq!(data.fix_time.unwrap(), NaiveTime::from_hms(3, 37, 45));
     assert_eq!(data.fix_type.unwrap(), FixType::Gps);
@@ -744,7 +747,8 @@ fn parse_gsa(s: &NmeaSentence) -> Result<GsaData, String> {
     if s.message_id != b"GSA" {
         return Err("GSA message should starts with $..GSA".into());
     }
-    let ret: GsaData = do_parse_gsa(s.data).to_full_result()
+    let ret: GsaData = do_parse_gsa(s.data)
+        .to_full_result()
         .map_err(|err| match err {
                      IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
                      IError::Error(e) => e.description().into(),
@@ -902,7 +906,8 @@ fn parse_vtg(s: &NmeaSentence) -> Result<VtgData, String> {
     if s.message_id != b"VTG" {
         return Err("VTG message should starts with $..VTG".into());
     }
-    let ret: VtgData = do_parse_vtg(s.data).to_full_result()
+    let ret: VtgData = do_parse_vtg(s.data)
+        .to_full_result()
         .map_err(|err| match err {
                      IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
                      IError::Error(e) => e.description().into(),
