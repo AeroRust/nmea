@@ -98,7 +98,7 @@ pub fn parse_nmea_sentence(sentence: &[u8]) -> std::result::Result<NmeaSentence,
         .to_full_result()
         .map_err(|err| match err {
                      IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-                     IError::Error(e) => e.description().to_string(),
+                     IError::Error(e) => e.to_string(),
                  })?;
     Ok(res)
 }
@@ -207,7 +207,7 @@ pub fn parse_gsv(sentence: &NmeaSentence) -> Result<GsvData, String> {
         .to_full_result()
         .map_err(|err| match err {
                      IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-                     IError::Error(e) => e.description().into(),
+                     IError::Error(e) => e.to_string(),
                  })?;
     res.gnss_type = gnss_type.clone();
     for sat in res.sats_info.iter_mut() {
@@ -423,7 +423,7 @@ pub fn parse_gga(sentence: &NmeaSentence) -> Result<GgaData, String> {
         .to_full_result()
         .map_err(|err| match err {
                      IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-                     IError::Error(e) => e.description().into(),
+                     IError::Error(e) => e.to_string(),
                  })?;
     Ok(res)
 }
@@ -572,7 +572,7 @@ pub fn parse_rmc(sentence: &NmeaSentence) -> Result<RmcData, String> {
         .to_full_result()
         .map_err(|err| match err {
                      IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-                     IError::Error(e) => e.description().into(),
+                     IError::Error(e) => e.to_string(),
                  })
 }
 
@@ -751,7 +751,7 @@ fn parse_gsa(s: &NmeaSentence) -> Result<GsaData, String> {
         .to_full_result()
         .map_err(|err| match err {
                      IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-                     IError::Error(e) => e.description().into(),
+                     IError::Error(e) => e.to_string(),
                  })?;
     Ok(ret)
 }
@@ -910,7 +910,7 @@ fn parse_vtg(s: &NmeaSentence) -> Result<VtgData, String> {
         .to_full_result()
         .map_err(|err| match err {
                      IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-                     IError::Error(e) => e.description().into(),
+                     IError::Error(e) => e.to_string(),
                  })?;
     Ok(ret)
 }
