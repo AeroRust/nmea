@@ -18,4 +18,4 @@ approx = "0.1.1"
 
 [badges]
 travis-ci = { repository = "Dushistov/rust-nmea" }
-appveyor-ci = { repository = "Dushistov/rust-nmea" }
+appveyor = { repository = "Dushistov/rust-nmea" }
