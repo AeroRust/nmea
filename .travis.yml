@@ -12,7 +12,7 @@ os:
 
 before_script:
   - if [ "$TRAVIS_RUST_VERSION" == "beta" ]; then
-      cargo install --vers 0.8.4 rustfmt;
+      rustup component add --toolchain beta rustfmt-preview;
     fi
 
 script:

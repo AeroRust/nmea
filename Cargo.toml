@@ -1,20 +1,21 @@
 [package]
 name = "nmea"
-version = "0.0.7"
+version = "0.0.8-pre"
 authors = ["Felix Obenhuber <felix@obenhuber.de>", "Evgeniy A. Dushistov <dushistov@mail.ru>"]
 description = "Simple NMEA 0183 parser"
-documentation = "https://docs.rs/nmea/"
-homepage = "https://github.com/Dushistov/rust-nmea"
 license = "Apache-2.0"
 keywords = ["NMEA", "gps", "glonass", "coordinate", "position"]
+repository = "https://github.com/Dushistov/rust-nmea"
+documentation = "https://docs.rs/nmea/"
+readme = "README.md"
 
 [dependencies]
-nom = "3.1.0"
+nom = "3.2.1"
 chrono = "0.4.0"
 
 [dev-dependencies]
-quickcheck = "0.4"
-approx = "0.1.1"
+quickcheck = "0.6"
+approx = "0.1"
 
 [badges]
 travis-ci = { repository = "Dushistov/rust-nmea" }

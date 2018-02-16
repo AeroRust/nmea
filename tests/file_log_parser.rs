@@ -2,7 +2,7 @@ extern crate nmea;
 
 use std::path::Path;
 use std::error::Error;
-use std::io::{BufReader, BufRead};
+use std::io::{BufRead, BufReader};
 use std::fs::File;
 
 fn err_to_string<E: Error>(e: E) -> String {
@@ -28,10 +28,10 @@ fn test_parse_file_log() {
     let res = process_file(&Path::new("tests").join("nmea1.log"))
         .unwrap_or_else(|err| panic!("process file failed with error '{}'", err));
 
-    let expected: Vec<_> =
-        BufReader::new(File::open(&Path::new("tests").join("nmea1.log.expected")).unwrap())
-            .lines()
-            .map(|v| v.unwrap())
-            .collect();
+    let expected: Vec<_> = BufReader::new(
+        File::open(&Path::new("tests").join("nmea1.log.expected")).unwrap(),
+    ).lines()
+        .map(|v| v.unwrap())
+        .collect();
     assert_eq!(expected, res);
 }

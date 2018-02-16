@@ -1,9 +1,9 @@
 use std;
 use std::str;
 
-use chrono::{NaiveTime, NaiveDate};
+use chrono::{NaiveDate, NaiveTime};
 use nom;
-use nom::{IError, digit, IResult, AsChar};
+use nom::{digit, AsChar, IError, IResult};
 
 use GnssType;
 use Satellite;
@@ -19,11 +19,13 @@ pub struct NmeaSentence<'a> {
 
 impl<'a> NmeaSentence<'a> {
     pub fn calc_checksum(&self) -> u8 {
-        checksum(self.talker_id
-                     .iter()
-                     .chain(self.message_id.iter())
-                     .chain(&[b','])
-                     .chain(self.data.iter()))
+        checksum(
+            self.talker_id
+                .iter()
+                .chain(self.message_id.iter())
+                .chain(&[b','])
+                .chain(self.data.iter()),
+        )
     }
 }
 
@@ -39,14 +41,15 @@ pub fn checksum<'a, I: Iterator<Item = &'a u8>>(bytes: I) -> u8 {
     bytes.fold(0, |c, x| c ^ *x)
 }
 
-fn construct_sentence<'a>(data: (&'a [u8], &'a [u8], &'a [u8], u8))
-                          -> std::result::Result<NmeaSentence<'a>, &'static str> {
+fn construct_sentence<'a>(
+    data: (&'a [u8], &'a [u8], &'a [u8], u8),
+) -> std::result::Result<NmeaSentence<'a>, &'static str> {
     Ok(NmeaSentence {
-           talker_id: data.0,
-           message_id: data.1,
-           data: data.2,
-           checksum: data.3,
-       })
+        talker_id: data.0,
+        message_id: data.1,
+        data: data.2,
+        checksum: data.3,
+    })
 }
 
 fn parse_hex(data: &[u8]) -> std::result::Result<u8, &'static str> {
@@ -54,24 +57,24 @@ fn parse_hex(data: &[u8]) -> std::result::Result<u8, &'static str> {
         .map_err(|_| "Failed to parse checksum as hex number")
 }
 
-named!(parse_checksum<u8>, map_res!(
-    do_parse!(
-        char!('*') >>
-        checksum_bytes: take!(2) >>
-            (checksum_bytes)),
-    parse_hex));
+named!(
+    parse_checksum<u8>,
+    map_res!(
+        do_parse!(char!('*') >> checksum_bytes: take!(2) >> (checksum_bytes)),
+        parse_hex
+    )
+);
 
-named!(do_parse_nmea_sentence<NmeaSentence>,
-       map_res!(
-           do_parse!(
-               char!('$') >>
-               talker_id: take!(2) >>
-               message_id: take!(3) >>
-               char!(',') >>
-               data: take_until!("*") >>
-               cs: parse_checksum >> (talker_id, message_id, data, cs)),
-            construct_sentence
-       )
+named!(
+    do_parse_nmea_sentence<NmeaSentence>,
+    map_res!(
+        do_parse!(
+            char!('$') >> talker_id: take!(2) >> message_id: take!(3) >> char!(',')
+                >> data: take_until!("*") >> cs: parse_checksum
+                >> (talker_id, message_id, data, cs)
+        ),
+        construct_sentence
+    )
 );
 
 pub fn parse_nmea_sentence(sentence: &[u8]) -> std::result::Result<NmeaSentence, String> {
@@ -97,9 +100,9 @@ pub fn parse_nmea_sentence(sentence: &[u8]) -> std::result::Result<NmeaSentence,
     let res: NmeaSentence = do_parse_nmea_sentence(sentence)
         .to_full_result()
         .map_err(|err| match err {
-                     IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-                     IError::Error(e) => e.to_string(),
-                 })?;
+            IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
+            IError::Error(e) => e.to_string(),
+        })?;
     Ok(res)
 }
 
@@ -108,66 +111,78 @@ fn parse_num<I: std::str::FromStr>(data: &[u8]) -> std::result::Result<I, &'stat
     str::parse::<I>(unsafe { str::from_utf8_unchecked(data) }).map_err(|_| "parse of number failed")
 }
 
-fn construct_satellite(data: (u32, Option<i32>, Option<i32>, Option<i32>))
-                       -> std::result::Result<Satellite, &'static str> {
+fn construct_satellite(
+    data: (u32, Option<i32>, Option<i32>, Option<i32>),
+) -> std::result::Result<Satellite, &'static str> {
     //    println!("we construct sat {}", data.0);
     Ok(Satellite {
-           gnss_type: GnssType::Galileo,
-           prn: data.0,
-           elevation: data.1.map(|v| v as f32),
-           azimuth: data.2.map(|v| v as f32),
-           snr: data.3.map(|v| v as f32),
-       })
+        gnss_type: GnssType::Galileo,
+        prn: data.0,
+        elevation: data.1.map(|v| v as f32),
+        azimuth: data.2.map(|v| v as f32),
+        snr: data.3.map(|v| v as f32),
+    })
 }
 
-named!(parse_gsv_sat_info<Satellite>,
-       map_res!(
-           do_parse!(
-               prn: map_res!(digit, parse_num::<u32>) >>
-               char!(',') >>
-               elevation:  opt!(map_res!(digit, parse_num::<i32>)) >>
-               char!(',') >>
-               azimuth: opt!(map_res!(digit, parse_num::<i32>)) >>
-               char!(',') >>
-               signal_noise: opt!(map_res!(complete!(digit), parse_num::<i32>)) >>
-               dbg!(alt!(eof!() | tag!(","))) >>
-               (prn, elevation, azimuth, signal_noise)),
-           construct_satellite
-       ));
+named!(
+    parse_gsv_sat_info<Satellite>,
+    map_res!(
+        do_parse!(
+            prn: map_res!(digit, parse_num::<u32>) >> char!(',')
+                >> elevation: opt!(map_res!(digit, parse_num::<i32>)) >> char!(',')
+                >> azimuth: opt!(map_res!(digit, parse_num::<i32>)) >> char!(',')
+                >> signal_noise: opt!(map_res!(complete!(digit), parse_num::<i32>))
+                >> dbg!(alt!(eof!() | tag!(",")))
+                >> (prn, elevation, azimuth, signal_noise)
+        ),
+        construct_satellite
+    )
+);
 
-
-fn construct_gsv_data(data: (u16,
-                             u16,
-                             u16,
-                             Option<Satellite>,
-                             Option<Satellite>,
-                             Option<Satellite>,
-                             Option<Satellite>))
-                      -> std::result::Result<GsvData, &'static str> {
+fn construct_gsv_data(
+    data: (
+        u16,
+        u16,
+        u16,
+        Option<Satellite>,
+        Option<Satellite>,
+        Option<Satellite>,
+        Option<Satellite>,
+    ),
+) -> std::result::Result<GsvData, &'static str> {
     Ok(GsvData {
-           gnss_type: GnssType::Galileo,
-           number_of_sentences: data.0,
-           sentence_num: data.1,
-           _sats_in_view: data.2,
-           sats_info: [data.3, data.4, data.5, data.6],
-       })
+        gnss_type: GnssType::Galileo,
+        number_of_sentences: data.0,
+        sentence_num: data.1,
+        _sats_in_view: data.2,
+        sats_info: [data.3, data.4, data.5, data.6],
+    })
 }
 
-named!(do_parse_gsv<GsvData>,
-       map_res!(
-           do_parse!(
-               number_of_sentences: map_res!(digit, parse_num::<u16>) >>
-               char!(',') >>
-               sentence_index: map_res!(digit, parse_num::<u16>) >>
-               char!(',') >>
-               total_number_of_sats: map_res!(digit, parse_num::<u16>) >>
-               char!(',') >>
-               sat0: opt!(complete!(parse_gsv_sat_info)) >>
-               sat1: opt!(complete!(parse_gsv_sat_info)) >>
-               sat2: opt!(complete!(parse_gsv_sat_info)) >>
-               sat3: opt!(complete!(parse_gsv_sat_info)) >>
-               (number_of_sentences, sentence_index, total_number_of_sats, sat0, sat1, sat2, sat3)),
-           construct_gsv_data));
+named!(
+    do_parse_gsv<GsvData>,
+    map_res!(
+        do_parse!(
+            number_of_sentences: map_res!(digit, parse_num::<u16>) >> char!(',')
+                >> sentence_index: map_res!(digit, parse_num::<u16>) >> char!(',')
+                >> total_number_of_sats: map_res!(digit, parse_num::<u16>) >> char!(',')
+                >> sat0: opt!(complete!(parse_gsv_sat_info))
+                >> sat1: opt!(complete!(parse_gsv_sat_info))
+                >> sat2: opt!(complete!(parse_gsv_sat_info))
+                >> sat3: opt!(complete!(parse_gsv_sat_info))
+                >> (
+                    number_of_sentences,
+                    sentence_index,
+                    total_number_of_sats,
+                    sat0,
+                    sat1,
+                    sat2,
+                    sat3
+                )
+        ),
+        construct_gsv_data
+    )
+);
 
 /// Parsin one GSV sentence
 /// from gpsd/driver_nmea0183.c:
@@ -206,9 +221,9 @@ pub fn parse_gsv(sentence: &NmeaSentence) -> Result<GsvData, String> {
     let mut res: GsvData = do_parse_gsv(sentence.data)
         .to_full_result()
         .map_err(|err| match err {
-                     IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-                     IError::Error(e) => e.to_string(),
-                 })?;
+            IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
+            IError::Error(e) => e.to_string(),
+        })?;
     res.gnss_type = gnss_type.clone();
     for sat in res.sats_info.iter_mut() {
         (*sat).as_mut().map(|v| v.gnss_type = gnss_type.clone());
@@ -219,41 +234,62 @@ pub fn parse_gsv(sentence: &NmeaSentence) -> Result<GsvData, String> {
 #[test]
 fn test_parse_gsv_full() {
     let data = parse_gsv(&NmeaSentence {
-                             talker_id: b"GP",
-                             message_id: b"GSV",
-                             data: b"2,1,08,01,,083,46,02,17,308,,12,07,344,39,14,22,228,",
-                             checksum: 0,
-                         })
-            .unwrap();
+        talker_id: b"GP",
+        message_id: b"GSV",
+        data: b"2,1,08,01,,083,46,02,17,308,,12,07,344,39,14,22,228,",
+        checksum: 0,
+    }).unwrap();
     assert_eq!(data.gnss_type, GnssType::Gps);
     assert_eq!(data.number_of_sentences, 2);
     assert_eq!(data.sentence_num, 1);
     assert_eq!(data._sats_in_view, 8);
-    assert_eq!(data.sats_info[0].clone().unwrap(),
-               Satellite {
-                   gnss_type: data.gnss_type.clone(), prn: 1, elevation: None,
-                   azimuth: Some(83.), snr: Some(46.)
-               });
-    assert_eq!(data.sats_info[1].clone().unwrap(),
-               Satellite {
-                   gnss_type: data.gnss_type.clone(), prn: 2, elevation: Some(17.),
-                   azimuth: Some(308.), snr: None});
-    assert_eq!(data.sats_info[2].clone().unwrap(),
-               Satellite {
-                   gnss_type: data.gnss_type.clone(), prn: 12, elevation: Some(7.),
-                   azimuth: Some(344.), snr: Some(39.)});
-    assert_eq!(data.sats_info[3].clone().unwrap(),
-               Satellite {
-                   gnss_type: data.gnss_type.clone(), prn: 14, elevation: Some(22.),
-                   azimuth: Some(228.), snr: None});
+    assert_eq!(
+        data.sats_info[0].clone().unwrap(),
+        Satellite {
+            gnss_type: data.gnss_type.clone(),
+            prn: 1,
+            elevation: None,
+            azimuth: Some(83.),
+            snr: Some(46.),
+        }
+    );
+    assert_eq!(
+        data.sats_info[1].clone().unwrap(),
+        Satellite {
+            gnss_type: data.gnss_type.clone(),
+            prn: 2,
+            elevation: Some(17.),
+            azimuth: Some(308.),
+            snr: None,
+        }
+    );
+    assert_eq!(
+        data.sats_info[2].clone().unwrap(),
+        Satellite {
+            gnss_type: data.gnss_type.clone(),
+            prn: 12,
+            elevation: Some(7.),
+            azimuth: Some(344.),
+            snr: Some(39.),
+        }
+    );
+    assert_eq!(
+        data.sats_info[3].clone().unwrap(),
+        Satellite {
+            gnss_type: data.gnss_type.clone(),
+            prn: 14,
+            elevation: Some(22.),
+            azimuth: Some(228.),
+            snr: None,
+        }
+    );
 
     let data = parse_gsv(&NmeaSentence {
-                             talker_id: b"GL",
-                             message_id: b"GSV",
-                             data: b"3,3,10,72,40,075,43,87,00,000,",
-                             checksum: 0,
-                         })
-            .unwrap();
+        talker_id: b"GL",
+        message_id: b"GSV",
+        data: b"3,3,10,72,40,075,43,87,00,000,",
+        checksum: 0,
+    }).unwrap();
     assert_eq!(data.gnss_type, GnssType::Glonass);
     assert_eq!(data.number_of_sentences, 3);
     assert_eq!(data.sentence_num, 3);
@@ -277,31 +313,32 @@ fn parse_float_num<T: str::FromStr>(input: &[u8]) -> std::result::Result<T, &'st
     str::parse::<T>(s).map_err(|_| "parse of float number failed")
 }
 
-named!(parse_hms<NaiveTime>,
-       map_res!(
-           do_parse!(
-               hour: map_res!(take!(2), parse_num::<u32>) >>
-               min: map_res!(take!(2), parse_num::<u32>) >>
-               sec: map_res!(take_until!(","), parse_float_num::<f64>) >>
-               (hour, min, sec)
-           ),
-           |data: (u32, u32, f64)| -> std::result::Result<NaiveTime, &'static str> {
-               if data.2.is_sign_negative() {
-                   return Err("Invalid time: second is negative");
-               }
-               if data.0 >= 24 {
-                   return Err("Invalid time: hour >= 24");
-               }
-               if data.1 >= 60 {
-                   return Err("Invalid time: min >= 60");
-               }
-               Ok(NaiveTime::from_hms_nano(
-                   data.0,
-                   data.1,
-                   data.2.trunc() as u32,
-                   (data.2.fract() * 1_000_000_000f64).round() as u32))
-           }
-       )
+named!(
+    parse_hms<NaiveTime>,
+    map_res!(
+        do_parse!(
+            hour: map_res!(take!(2), parse_num::<u32>) >> min: map_res!(take!(2), parse_num::<u32>)
+                >> sec: map_res!(take_until!(","), parse_float_num::<f64>)
+                >> (hour, min, sec)
+        ),
+        |data: (u32, u32, f64)| -> std::result::Result<NaiveTime, &'static str> {
+            if data.2.is_sign_negative() {
+                return Err("Invalid time: second is negative");
+            }
+            if data.0 >= 24 {
+                return Err("Invalid time: hour >= 24");
+            }
+            if data.1 >= 60 {
+                return Err("Invalid time: min >= 60");
+            }
+            Ok(NaiveTime::from_hms_nano(
+                data.0,
+                data.1,
+                data.2.trunc() as u32,
+                (data.2.fract() * 1_000_000_000f64).round() as u32,
+            ))
+        }
+    )
 );
 
 #[test]
@@ -319,32 +356,31 @@ fn test_parse_hms() {
     assert_eq!(time.nanosecond(), 5_00_000_000);
 }
 
-named!(do_parse_lat_lon<(f64, f64)>,
-       map_res!(
-           do_parse!(
-               lat_deg: map_res!(take!(2), parse_num::<u8>) >>
-               lat_min: map_res!(float_number, parse_float_num::<f64>) >>
-               char!(',') >>
-               lat_dir: one_of!("NS") >>
-               char!(',') >>
-               lon_deg: map_res!(take!(3), parse_num::<u8>) >>
-               lon_min: map_res!(float_number, parse_float_num::<f64>) >>
-               char!(',') >>
-               lon_dir: one_of!("EW") >>
-               (lat_deg, lat_min, lat_dir, lon_deg, lon_min, lon_dir)
-           ),
-           |data: (u8, f64, char, u8, f64, char)| -> std::result::Result<(f64, f64), &'static str> {
-               let mut lat = (data.0 as f64) + data.1 / 60.;
-               if data.2 == 'S' {
-                   lat = -lat;
-               }
-               let mut lon = (data.3 as f64) + data.4 / 60.;
-               if data.5 == 'W' {
-                   lon = -lon;
-               }
-               Ok((lat, lon))
-           }
-));
+named!(
+    do_parse_lat_lon<(f64, f64)>,
+    map_res!(
+        do_parse!(
+            lat_deg: map_res!(take!(2), parse_num::<u8>)
+                >> lat_min: map_res!(float_number, parse_float_num::<f64>) >> char!(',')
+                >> lat_dir: one_of!("NS") >> char!(',')
+                >> lon_deg: map_res!(take!(3), parse_num::<u8>)
+                >> lon_min: map_res!(float_number, parse_float_num::<f64>) >> char!(',')
+                >> lon_dir: one_of!("EW")
+                >> (lat_deg, lat_min, lat_dir, lon_deg, lon_min, lon_dir)
+        ),
+        |data: (u8, f64, char, u8, f64, char)| -> std::result::Result<(f64, f64), &'static str> {
+            let mut lat = (data.0 as f64) + data.1 / 60.;
+            if data.2 == 'S' {
+                lat = -lat;
+            }
+            let mut lon = (data.3 as f64) + data.4 / 60.;
+            if data.5 == 'W' {
+                lon = -lon;
+            }
+            Ok((lat, lon))
+        }
+    )
+);
 
 #[test]
 fn test_do_parse_lat_lon() {
@@ -353,50 +389,73 @@ fn test_do_parse_lat_lon() {
     relative_eq!(lat_lon.1, 11. + 31.324 / 60.);
 }
 
-named!(parse_lat_lon<Option<(f64, f64)>>,
-       alt_complete!(
-           map_res!(tag!(",,,"),
-                    |_| -> Result<Option<(f64, f64)>, &'static str> { Ok(None) }) |
-           map_res!(do_parse_lat_lon,
-                    |v| -> Result<Option<(f64, f64)>, &'static str> { Ok(Some(v)) }))
+named!(
+    parse_lat_lon<Option<(f64, f64)>>,
+    alt_complete!(
+        map_res!(
+            tag!(",,,"),
+            |_| -> Result<Option<(f64, f64)>, &'static str> { Ok(None) }
+        )
+            | map_res!(
+                do_parse_lat_lon,
+                |v| -> Result<Option<(f64, f64)>, &'static str> { Ok(Some(v)) }
+            )
+    )
 );
 
-named!(do_parse_gga<GgaData>,
-       map_res!(
-           do_parse!(
-               time: opt!(complete!(parse_hms)) >>
-               char!(',') >>
-               lat_lon: parse_lat_lon >>
-               char!(',') >>
-               fix_quality: dbg!(one_of!("012345678")) >>
-               char!(',') >>
-               tracked_sats: opt!(complete!(map_res!(digit, parse_num::<u32>))) >>
-               char!(',') >>
-               hdop: opt!(complete!(map_res!(float_number, parse_float_num::<f32>))) >>
-               char!(',') >>
-               altitude: opt!(complete!(map_res!(take_until!(","), parse_float_num::<f32>))) >>
-               char!(',') >>
-               opt!(complete!(char!('M'))) >>
-               char!(',') >>
-               geoid_height: opt!(complete!(map_res!(take_until!(","), parse_float_num::<f32>))) >>
-               char!(',') >>
-               opt!(complete!(char!('M'))) >>
-               (time, lat_lon, fix_quality, tracked_sats, hdop, altitude, geoid_height)),
-           |data: (Option<NaiveTime>, Option<(f64, f64)>, char, Option<u32>,
-                   Option<f32>, Option<f32>, Option<f32>)|
-                   -> std::result::Result<GgaData, &'static str> {
-               Ok(GgaData {
-                   fix_time: data.0,
-                   fix_type: Some(FixType::from(data.2)),
-                   latitude: data.1.map(|v| v.0),
-                   longitude: data.1.map(|v| v.1),
-                   fix_satellites: data.3,
-                   hdop: data.4,
-                   altitude: data.5,
-                   geoid_height: data.6,
-               })
-           }
-));
+named!(
+    do_parse_gga<GgaData>,
+    map_res!(
+        do_parse!(
+            time: opt!(complete!(parse_hms)) >> char!(',') >> lat_lon: parse_lat_lon >> char!(',')
+                >> fix_quality: dbg!(one_of!("012345678")) >> char!(',')
+                >> tracked_sats: opt!(complete!(map_res!(digit, parse_num::<u32>)))
+                >> char!(',')
+                >> hdop: opt!(complete!(map_res!(float_number, parse_float_num::<f32>)))
+                >> char!(',')
+                >> altitude:
+                    opt!(complete!(map_res!(
+                        take_until!(","),
+                        parse_float_num::<f32>
+                    ))) >> char!(',') >> opt!(complete!(char!('M'))) >> char!(',')
+                >> geoid_height:
+                    opt!(complete!(map_res!(
+                        take_until!(","),
+                        parse_float_num::<f32>
+                    ))) >> char!(',') >> opt!(complete!(char!('M')))
+                >> (
+                    time,
+                    lat_lon,
+                    fix_quality,
+                    tracked_sats,
+                    hdop,
+                    altitude,
+                    geoid_height
+                )
+        ),
+        |data: (
+            Option<NaiveTime>,
+            Option<(f64, f64)>,
+            char,
+            Option<u32>,
+            Option<f32>,
+            Option<f32>,
+            Option<f32>
+        )|
+         -> std::result::Result<GgaData, &'static str> {
+            Ok(GgaData {
+                fix_time: data.0,
+                fix_type: Some(FixType::from(data.2)),
+                latitude: data.1.map(|v| v.0),
+                longitude: data.1.map(|v| v.1),
+                fix_satellites: data.3,
+                hdop: data.4,
+                altitude: data.5,
+                geoid_height: data.6,
+            })
+        }
+    )
+);
 
 /// Parse GGA message
 /// from gpsd/driver_nmea0183.c
@@ -422,21 +481,20 @@ pub fn parse_gga(sentence: &NmeaSentence) -> Result<GgaData, String> {
     let res: GgaData = do_parse_gga(sentence.data)
         .to_full_result()
         .map_err(|err| match err {
-                     IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-                     IError::Error(e) => e.to_string(),
-                 })?;
+            IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
+            IError::Error(e) => e.to_string(),
+        })?;
     Ok(res)
 }
 
 #[test]
 fn test_parse_gga_full() {
     let data = parse_gga(&NmeaSentence {
-                             talker_id: b"GP",
-                             message_id: b"GGA",
-                             data: b"033745.0,5650.82344,N,03548.9778,E,1,07,1.8,101.2,M,14.7,M,,",
-                             checksum: 0x57,
-                         })
-            .unwrap();
+        talker_id: b"GP",
+        message_id: b"GGA",
+        data: b"033745.0,5650.82344,N,03548.9778,E,1,07,1.8,101.2,M,14.7,M,,",
+        checksum: 0x57,
+    }).unwrap();
     assert_eq!(data.fix_time.unwrap(), NaiveTime::from_hms(3, 37, 45));
     assert_eq!(data.fix_type.unwrap(), FixType::Gps);
     relative_eq!(data.latitude.unwrap(), 56. + 50.82344 / 60.);
@@ -449,23 +507,26 @@ fn test_parse_gga_full() {
     let s = parse_nmea_sentence(b"$GPGGA,,,,,,0,,,,,,,,*66").unwrap();
     assert_eq!(s.checksum, s.calc_checksum());
     let data = parse_gga(&s).unwrap();
-    assert_eq!(GgaData {
-        fix_time: None,
-        fix_type: Some(FixType::Invalid),
-        latitude: None,
-        longitude: None,
-        fix_satellites: None,
-        hdop: None,
-        altitude: None,
-        geoid_height: None,
-    }, data);
+    assert_eq!(
+        GgaData {
+            fix_time: None,
+            fix_type: Some(FixType::Invalid),
+            latitude: None,
+            longitude: None,
+            fix_satellites: None,
+            hdop: None,
+            altitude: None,
+            geoid_height: None,
+        },
+        data
+    );
 }
 
 #[test]
 fn test_parse_gga_with_optional_fields() {
-    let sentence =
-        parse_nmea_sentence(b"$GPGGA,133605.0,5521.75946,N,03731.93769,E,0,00,,,M,,M,,*4F")
-            .unwrap();
+    let sentence = parse_nmea_sentence(
+        b"$GPGGA,133605.0,5521.75946,N,03731.93769,E,0,00,,,M,,M,,*4F",
+    ).unwrap();
     assert_eq!(sentence.checksum, sentence.calc_checksum());
     assert_eq!(sentence.checksum, 0x4f);
     let data = parse_gga(&sentence).unwrap();
@@ -490,60 +551,71 @@ pub struct RmcData {
     pub true_course: Option<f32>,
 }
 
-named!(parse_date<NaiveDate>, map_res!(do_parse!(
-               day: map_res!(take!(2), parse_num::<u8>) >>
-               month: map_res!(take!(2), parse_num::<u8>) >>
-               year: map_res!(take!(2), parse_num::<u8>) >>
-        (day, month, year)),
-    |data: (u8, u8, u8)| -> Result<NaiveDate, &'static str> {
-        let (day, month, year) = (data.0 as u32, data.1 as u32, (data.2 as i32));
-        if month < 1 || month > 12 {
-            return Err("Invalid month < 1 or > 12");
+named!(
+    parse_date<NaiveDate>,
+    map_res!(
+        do_parse!(
+            day: map_res!(take!(2), parse_num::<u8>) >> month: map_res!(take!(2), parse_num::<u8>)
+                >> year: map_res!(take!(2), parse_num::<u8>) >> (day, month, year)
+        ),
+        |data: (u8, u8, u8)| -> Result<NaiveDate, &'static str> {
+            let (day, month, year) = (data.0 as u32, data.1 as u32, (data.2 as i32));
+            if month < 1 || month > 12 {
+                return Err("Invalid month < 1 or > 12");
+            }
+            if day < 1 || day > 31 {
+                return Err("Invalid day < 1 or > 31");
+            }
+            Ok(NaiveDate::from_ymd(year, month, day))
         }
-        if day < 1 || day > 31 {
-            return Err("Invalid day < 1 or > 31");
-        }
-        Ok(NaiveDate::from_ymd(year, month, day))
-    })
+    )
 );
 
-named!(do_parse_rmc<RmcData>,
-       map_res!(
-           do_parse!(
-               time: opt!(complete!(parse_hms)) >>
-               char!(',') >>
-               status_of_fix: one_of!("ADV") >>
-               char!(',') >>
-               lat_lon:  parse_lat_lon >>
-               char!(',') >>
-               speed_over_ground: opt!(complete!(map_res!(float_number, parse_float_num::<f32>))) >>
-               char!(',') >>
-               true_course: opt!(complete!(map_res!(float_number, parse_float_num::<f32>))) >>
-               char!(',') >>
-               date: opt!(complete!(parse_date)) >>
-               char!(',') >>
-               (time, status_of_fix, lat_lon, speed_over_ground,
-                true_course, date)
-           ),
-           |data: (Option<NaiveTime>, char, Option<(f64, f64)>, Option<f32>,
-                   Option<f32>, Option<NaiveDate>)|
-                   -> Result<RmcData, &'static str> {
-               Ok(RmcData {
-                   fix_time: data.0,
-                   fix_date: data.5,
-                   status_of_fix: Some(match data.1 {
-                       'A' => RmcStatusOfFix::Autonomous,
-                       'D' => RmcStatusOfFix::Differential,
-                       'V' => RmcStatusOfFix::Invalid,
-                       _ => return Err("do_parse_rmc failed: not A|D|V status of fix"),
-                   }),
-                   lat: data.2.map(|v| v.0),
-                   lon: data.2.map(|v| v.1),
-                   speed_over_ground: data.3,
-                   true_course: data.4,
-               })
-           }
-       )
+named!(
+    do_parse_rmc<RmcData>,
+    map_res!(
+        do_parse!(
+            time: opt!(complete!(parse_hms)) >> char!(',') >> status_of_fix: one_of!("ADV")
+                >> char!(',') >> lat_lon: parse_lat_lon >> char!(',')
+                >> speed_over_ground:
+                    opt!(complete!(map_res!(float_number, parse_float_num::<f32>)))
+                >> char!(',')
+                >> true_course: opt!(complete!(map_res!(float_number, parse_float_num::<f32>)))
+                >> char!(',') >> date: opt!(complete!(parse_date)) >> char!(',')
+                >> (
+                    time,
+                    status_of_fix,
+                    lat_lon,
+                    speed_over_ground,
+                    true_course,
+                    date
+                )
+        ),
+        |data: (
+            Option<NaiveTime>,
+            char,
+            Option<(f64, f64)>,
+            Option<f32>,
+            Option<f32>,
+            Option<NaiveDate>
+        )|
+         -> Result<RmcData, &'static str> {
+            Ok(RmcData {
+                fix_time: data.0,
+                fix_date: data.5,
+                status_of_fix: Some(match data.1 {
+                    'A' => RmcStatusOfFix::Autonomous,
+                    'D' => RmcStatusOfFix::Differential,
+                    'V' => RmcStatusOfFix::Invalid,
+                    _ => return Err("do_parse_rmc failed: not A|D|V status of fix"),
+                }),
+                lat: data.2.map(|v| v.0),
+                lon: data.2.map(|v| v.1),
+                speed_over_ground: data.3,
+                true_course: data.4,
+            })
+        }
+    )
 );
 
 /// Parse RMC message
@@ -571,26 +643,33 @@ pub fn parse_rmc(sentence: &NmeaSentence) -> Result<RmcData, String> {
     do_parse_rmc(sentence.data)
         .to_full_result()
         .map_err(|err| match err {
-                     IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-                     IError::Error(e) => e.to_string(),
-                 })
+            IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
+            IError::Error(e) => e.to_string(),
+        })
 }
 
 #[test]
 fn test_parse_rmc() {
-    let s = parse_nmea_sentence(b"$GPRMC,225446.33,A,4916.45,N,12311.12,W,\
-                                  000.5,054.7,191194,020.3,E,A*2B")
-            .unwrap();
+    let s = parse_nmea_sentence(
+        b"$GPRMC,225446.33,A,4916.45,N,12311.12,W,\
+                                  000.5,054.7,191194,020.3,E,A*2B",
+    ).unwrap();
     assert_eq!(s.checksum, s.calc_checksum());
     assert_eq!(s.checksum, 0x2b);
     let rmc_data = parse_rmc(&s).unwrap();
-    assert_eq!(rmc_data.fix_time.unwrap(), NaiveTime::from_hms_milli(22, 54, 46, 330));
+    assert_eq!(
+        rmc_data.fix_time.unwrap(),
+        NaiveTime::from_hms_milli(22, 54, 46, 330)
+    );
     assert_eq!(rmc_data.fix_date.unwrap(), NaiveDate::from_ymd(94, 11, 19));
 
     println!("lat: {}", rmc_data.lat.unwrap());
     relative_eq!(rmc_data.lat.unwrap(), 49.0 + 16.45 / 60.);
-    println!("lon: {}, diff {}", rmc_data.lon.unwrap(),
-             (rmc_data.lon.unwrap() + (123.0 + 11.12 / 60.)).abs());
+    println!(
+        "lon: {}, diff {}",
+        rmc_data.lon.unwrap(),
+        (rmc_data.lon.unwrap() + (123.0 + 11.12 / 60.)).abs()
+    );
     relative_eq!(rmc_data.lon.unwrap(), -(123.0 + 11.12 / 60.));
 
     relative_eq!(rmc_data.speed_over_ground.unwrap(), 0.5);
@@ -598,15 +677,18 @@ fn test_parse_rmc() {
 
     let s = parse_nmea_sentence(b"$GPRMC,,V,,,,,,,,,,N*53").unwrap();
     let rmc = parse_rmc(&s).unwrap();
-    assert_eq!(RmcData {
-        fix_time: None,
-        fix_date: None,
-        status_of_fix: Some(RmcStatusOfFix::Invalid),
-        lat: None,
-        lon: None,
-        speed_over_ground: None,
-        true_course: None,
-    }, rmc);
+    assert_eq!(
+        RmcData {
+            fix_time: None,
+            fix_date: None,
+            status_of_fix: Some(RmcStatusOfFix::Invalid),
+            lat: None,
+            lon: None,
+            speed_over_ground: None,
+            true_course: None,
+        },
+        rmc
+    );
 }
 
 #[derive(PartialEq, Debug)]
@@ -652,56 +734,57 @@ fn test_gsa_prn_fields_parse() {
 }
 
 type GsaTail = (Vec<Option<u32>>, Option<f32>, Option<f32>, Option<f32>);
-named!(do_parse_gsa_tail<GsaTail>, do_parse!(
-    prns: gsa_prn_fields_parse >>
-    pdop: map_res!(float_number, parse_float_num::<f32>) >>
-    char!(',') >>
-    hdop: map_res!(float_number, parse_float_num::<f32>) >>
-    char!(',') >>
-    vdop: map_res!(float_number, parse_float_num::<f32>) >>
-    (prns, Some(pdop), Some(hdop), Some(vdop)))
+named!(
+    do_parse_gsa_tail<GsaTail>,
+    do_parse!(
+        prns: gsa_prn_fields_parse >> pdop: map_res!(float_number, parse_float_num::<f32>)
+            >> char!(',') >> hdop: map_res!(float_number, parse_float_num::<f32>)
+            >> char!(',') >> vdop: map_res!(float_number, parse_float_num::<f32>)
+            >> (prns, Some(pdop), Some(hdop), Some(vdop))
+    )
 );
 
 fn is_comma(x: u8) -> bool {
     x == b','
 }
 
-named!(do_parse_empty_gsa_tail<GsaTail>, map_res!(do_parse!(
-    take_while!(is_comma) >>
-    eof!() >>
-    ()),
-    |_ : ()| -> Result<GsaTail, String> {
-        Ok((Vec::new(), None, None, None))
-    }
-));
+named!(
+    do_parse_empty_gsa_tail<GsaTail>,
+    map_res!(
+        do_parse!(take_while!(is_comma) >> eof!() >> ()),
+        |_: ()| -> Result<GsaTail, String> { Ok((Vec::new(), None, None, None)) }
+    )
+);
 
-named!(do_parse_gsa<GsaData>, map_res!(do_parse!(
-    mode1: one_of!("MA") >>
-    char!(',') >>
-    mode2: one_of!("123") >>
-    char!(',') >>
-    tail: alt_complete!(do_parse_empty_gsa_tail | do_parse_gsa_tail) >>
-    (mode1, mode2, tail)),
-    |mut data:  (char, char, GsaTail)| -> Result<GsaData, String> {
-        Ok(GsaData {
-            mode1: match data.0 {
-                'M' => GsaMode1::Manual,
-                'A' => GsaMode1::Automatic,
-                _ => unreachable!(),
-            },
-            mode2: match data.1 {
-                '1' => GsaMode2::NoFix,
-                '2' => GsaMode2::Fix2D,
-                '3' => GsaMode2::Fix3D,
-                _ => unreachable!(),
-            },
-            fix_sats_prn: (data.2).0.drain(..).filter_map(|v| v).collect(),
-            pdop: (data.2).1,
-            hdop: (data.2).2,
-            vdop: (data.2).3,
-        })
-    }
-));
+named!(
+    do_parse_gsa<GsaData>,
+    map_res!(
+        do_parse!(
+            mode1: one_of!("MA") >> char!(',') >> mode2: one_of!("123") >> char!(',')
+                >> tail: alt_complete!(do_parse_empty_gsa_tail | do_parse_gsa_tail)
+                >> (mode1, mode2, tail)
+        ),
+        |mut data: (char, char, GsaTail)| -> Result<GsaData, String> {
+            Ok(GsaData {
+                mode1: match data.0 {
+                    'M' => GsaMode1::Manual,
+                    'A' => GsaMode1::Automatic,
+                    _ => unreachable!(),
+                },
+                mode2: match data.1 {
+                    '1' => GsaMode2::NoFix,
+                    '2' => GsaMode2::Fix2D,
+                    '3' => GsaMode2::Fix3D,
+                    _ => unreachable!(),
+                },
+                fix_sats_prn: (data.2).0.drain(..).filter_map(|v| v).collect(),
+                pdop: (data.2).1,
+                hdop: (data.2).2,
+                vdop: (data.2).3,
+            })
+        }
+    )
+);
 
 /// Parse GSA
 /// from gpsd:
@@ -750,9 +833,9 @@ fn parse_gsa(s: &NmeaSentence) -> Result<GsaData, String> {
     let ret: GsaData = do_parse_gsa(s.data)
         .to_full_result()
         .map_err(|err| match err {
-                     IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-                     IError::Error(e) => e.to_string(),
-                 })?;
+            IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
+            IError::Error(e) => e.to_string(),
+        })?;
     Ok(ret)
 }
 
@@ -760,20 +843,25 @@ fn parse_gsa(s: &NmeaSentence) -> Result<GsaData, String> {
 fn smoke_test_parse_gsa() {
     let s = parse_nmea_sentence(b"$GPGSA,A,3,,,,,,16,18,,22,24,,,3.6,2.1,2.2*3C").unwrap();
     let gsa = parse_gsa(&s).unwrap();
-    assert_eq!(GsaData {
-        mode1: GsaMode1::Automatic,
-        mode2: GsaMode2::Fix3D,
-        fix_sats_prn: vec![16,18,22,24],
-        pdop: Some(3.6),
-        hdop: Some(2.1),
-        vdop: Some(2.2),
-    }, gsa);
-    let gsa_examples = ["$GPGSA,A,3,19,28,14,18,27,22,31,39,,,,,1.7,1.0,1.3*35",
-                        "$GPGSA,A,3,23,31,22,16,03,07,,,,,,,1.8,1.1,1.4*3E",
-                        "$BDGSA,A,3,214,,,,,,,,,,,,1.8,1.1,1.4*18",
-                        "$GNGSA,A,3,31,26,21,,,,,,,,,,3.77,2.55,2.77*1A",
-                        "$GNGSA,A,3,75,86,87,,,,,,,,,,3.77,2.55,2.77*1C",
-                        "$GPGSA,A,1,,,,*32"];
+    assert_eq!(
+        GsaData {
+            mode1: GsaMode1::Automatic,
+            mode2: GsaMode2::Fix3D,
+            fix_sats_prn: vec![16, 18, 22, 24],
+            pdop: Some(3.6),
+            hdop: Some(2.1),
+            vdop: Some(2.2),
+        },
+        gsa
+    );
+    let gsa_examples = [
+        "$GPGSA,A,3,19,28,14,18,27,22,31,39,,,,,1.7,1.0,1.3*35",
+        "$GPGSA,A,3,23,31,22,16,03,07,,,,,,,1.8,1.1,1.4*3E",
+        "$BDGSA,A,3,214,,,,,,,,,,,,1.8,1.1,1.4*18",
+        "$GNGSA,A,3,31,26,21,,,,,,,,,,3.77,2.55,2.77*1A",
+        "$GNGSA,A,3,75,86,87,,,,,,,,,,3.77,2.55,2.77*1C",
+        "$GPGSA,A,1,,,,*32",
+    ];
     for line in &gsa_examples {
         println!("we parse line '{}'", line);
         let s = parse_nmea_sentence(line.as_bytes()).unwrap();
@@ -788,7 +876,7 @@ pub struct VtgData {
 }
 
 fn float_number(input: &[u8]) -> IResult<&[u8], &[u8]> {
-    use nom::{InputLength, InputIter, Slice};
+    use nom::{InputIter, InputLength, Slice};
 
     let input_length = input.input_len();
     if input_length == 0 {
@@ -835,41 +923,52 @@ fn float_number(input: &[u8]) -> IResult<&[u8], &[u8]> {
 
 #[test]
 fn test_float_number() {
-    assert_eq!(IResult::Done(&b""[..], &b"12.3"[..]), float_number(&b"12.3"[..]));
-    assert_eq!(IResult::Done(&b"a"[..], &b"12.3"[..]), float_number(&b"12.3a"[..]));
-    assert_eq!(IResult::Done(&b"a"[..], &b"12"[..]), float_number(&b"12a"[..]));
-    assert_eq!(IResult::Error(nom::ErrorKind::Digit), float_number(&b"a12a"[..]));
+    assert_eq!(
+        IResult::Done(&b""[..], &b"12.3"[..]),
+        float_number(&b"12.3"[..])
+    );
+    assert_eq!(
+        IResult::Done(&b"a"[..], &b"12.3"[..]),
+        float_number(&b"12.3a"[..])
+    );
+    assert_eq!(
+        IResult::Done(&b"a"[..], &b"12"[..]),
+        float_number(&b"12a"[..])
+    );
+    assert_eq!(
+        IResult::Error(nom::ErrorKind::Digit),
+        float_number(&b"a12a"[..])
+    );
 }
 
-
-named!(do_parse_vtg<VtgData>, map_res!(do_parse!(
-    true_course: opt!(map_res!(complete!(float_number), parse_float_num::<f32>)) >>
-    char!(',') >>
-    opt!(complete!(char!('T'))) >>
-    char!(',') >>
-    magn_course: opt!(map_res!(complete!(float_number), parse_float_num::<f32>)) >>
-    char!(',') >>
-    opt!(complete!(char!('M'))) >>
-    char!(',') >>
-    knots_ground_speed: opt!(map_res!(complete!(float_number), parse_float_num::<f32>)) >>
-    char!(',') >>
-    opt!(complete!(char!('N'))) >>
-    kph_ground_speed: opt!(complete!(map_res!(float_number, parse_float_num::<f32>))) >>
-    char!(',') >>
-    opt!(complete!(char!('K'))) >>
-    (true_course, knots_ground_speed, kph_ground_speed)),
-    |data: (Option<f32>, Option<f32>, Option<f32>)| -> Result<VtgData, String> {
-        //println!("data: {:?}", data);
-        Ok(VtgData {
-            true_course: data.0,
-            speed_over_ground: match (data.1, data.2) {
-                (Some(val), _) => Some(val),
-                (_, Some(val)) => Some(val / 1.852),
-                (None, None) => None,
-            },
-        })
-    }
-));
+named!(
+    do_parse_vtg<VtgData>,
+    map_res!(
+        do_parse!(
+            true_course: opt!(map_res!(complete!(float_number), parse_float_num::<f32>))
+                >> char!(',') >> opt!(complete!(char!('T'))) >> char!(',')
+                >> magn_course: opt!(map_res!(complete!(float_number), parse_float_num::<f32>))
+                >> char!(',') >> opt!(complete!(char!('M'))) >> char!(',')
+                >> knots_ground_speed:
+                    opt!(map_res!(complete!(float_number), parse_float_num::<f32>))
+                >> char!(',') >> opt!(complete!(char!('N')))
+                >> kph_ground_speed: opt!(complete!(map_res!(float_number, parse_float_num::<f32>)))
+                >> char!(',') >> opt!(complete!(char!('K')))
+                >> (true_course, knots_ground_speed, kph_ground_speed)
+        ),
+        |data: (Option<f32>, Option<f32>, Option<f32>)| -> Result<VtgData, String> {
+            //println!("data: {:?}", data);
+            Ok(VtgData {
+                true_course: data.0,
+                speed_over_ground: match (data.1, data.2) {
+                    (Some(val), _) => Some(val),
+                    (_, Some(val)) => Some(val / 1.852),
+                    (None, None) => None,
+                },
+            })
+        }
+    )
+);
 
 /// parse VTG
 /// from http://aprs.gids.nl/nmea/#vtg
@@ -909,9 +1008,9 @@ fn parse_vtg(s: &NmeaSentence) -> Result<VtgData, String> {
     let ret: VtgData = do_parse_vtg(s.data)
         .to_full_result()
         .map_err(|err| match err {
-                     IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-                     IError::Error(e) => e.to_string(),
-                 })?;
+            IError::Incomplete(_) => "Incomplete nmea sentence".to_string(),
+            IError::Error(e) => e.to_string(),
+        })?;
     Ok(ret)
 }
 
@@ -922,12 +1021,27 @@ fn test_parse_vtg() {
         assert_eq!(s.checksum, s.calc_checksum());
         parse_vtg(&s)
     };
-    assert_eq!(VtgData{ true_course: None, speed_over_ground: None },
-               run_parse_vtg("$GPVTG,,T,,M,,N,,K,N*2C").unwrap());
-    assert_eq!(VtgData{ true_course: Some(360.), speed_over_ground: Some(0.) },
-               run_parse_vtg("$GPVTG,360.0,T,348.7,M,000.0,N,000.0,K*43").unwrap());
-    assert_eq!(VtgData{ true_course: Some(54.7), speed_over_ground: Some(5.5) },
-               run_parse_vtg("$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48").unwrap());
+    assert_eq!(
+        VtgData {
+            true_course: None,
+            speed_over_ground: None,
+        },
+        run_parse_vtg("$GPVTG,,T,,M,,N,,K,N*2C").unwrap()
+    );
+    assert_eq!(
+        VtgData {
+            true_course: Some(360.),
+            speed_over_ground: Some(0.),
+        },
+        run_parse_vtg("$GPVTG,360.0,T,348.7,M,000.0,N,000.0,K*43").unwrap()
+    );
+    assert_eq!(
+        VtgData {
+            true_course: Some(54.7),
+            speed_over_ground: Some(5.5),
+        },
+        run_parse_vtg("$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48").unwrap()
+    );
 }
 
 pub enum ParseResult {
