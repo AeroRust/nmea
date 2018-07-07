@@ -32,10 +32,10 @@ extern crate quickcheck;
 mod parse;
 
 use std::collections::HashMap;
-use std::collections::HashSet;
-use std::iter::Iterator;
-use std::vec::Vec;
 use std::{fmt, mem, str};
+use std::vec::Vec;
+use std::iter::Iterator;
+use std::collections::HashSet;
 
 use chrono::{NaiveDate, NaiveTime};
 pub use parse::{parse, GgaData, GsaData, GsvData, ParseResult, RmcData, RmcStatusOfFix, VtgData};
@@ -867,9 +867,9 @@ fn test_parse() {
 
 #[cfg(test)]
 mod tests {
-    use super::parse::checksum;
     use super::*;
     use quickcheck::QuickCheck;
+    use super::parse::checksum;
 
     fn check_parsing_lat_lon_in_gga(lat: f64, lon: f64) -> bool {
         let lat_min = (lat.abs() * 60.0) % 60.0;

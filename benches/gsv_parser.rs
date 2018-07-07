@@ -1,4 +1,4 @@
-/*
+#![feature(test)]
 extern crate test;
 
 extern crate nmea;
@@ -6,7 +6,6 @@ extern crate nmea;
 use nmea::{Nmea, SentenceType};
 use test::Bencher;
 
-#[cfg_attr(nightly, feature(test))]
 #[bench]
 fn bench_gsv_parser(b: &mut Bencher) {
     let input = [
@@ -25,4 +24,3 @@ fn bench_gsv_parser(b: &mut Bencher) {
         }
     });
 }
-*/
