@@ -225,8 +225,10 @@ pub fn parse_gsv(sentence: &NmeaSentence) -> Result<GsvData, String> {
             IError::Error(e) => e.to_string(),
         })?;
     res.gnss_type = gnss_type.clone();
-    for sat in res.sats_info.iter_mut() {
-        (*sat).as_mut().map(|v| v.gnss_type = gnss_type.clone());
+    for sat in &mut res.sats_info {
+        if let Some(v) = (*sat).as_mut() {
+            v.gnss_type = gnss_type.clone();
+        }
     }
     Ok(res)
 }
@@ -369,11 +371,11 @@ named!(
                 >> (lat_deg, lat_min, lat_dir, lon_deg, lon_min, lon_dir)
         ),
         |data: (u8, f64, char, u8, f64, char)| -> std::result::Result<(f64, f64), &'static str> {
-            let mut lat = (data.0 as f64) + data.1 / 60.;
+            let mut lat = f64::from(data.0) + data.1 / 60.;
             if data.2 == 'S' {
                 lat = -lat;
             }
-            let mut lon = (data.3 as f64) + data.4 / 60.;
+            let mut lon = f64::from(data.3) + data.4 / 60.;
             if data.5 == 'W' {
                 lon = -lon;
             }
@@ -559,7 +561,7 @@ named!(
                 >> year: map_res!(take!(2), parse_num::<u8>) >> (day, month, year)
         ),
         |data: (u8, u8, u8)| -> Result<NaiveDate, &'static str> {
-            let (day, month, year) = (data.0 as u32, data.1 as u32, (data.2 as i32));
+            let (day, month, year) = (u32::from(data.0), u32::from(data.1), i32::from(data.2));
             if month < 1 || month > 12 {
                 return Err("Invalid month < 1 or > 12");
             }
@@ -894,7 +896,7 @@ fn float_number(input: &[u8]) -> IResult<&[u8], &[u8]> {
     for (idx, item) in input.iter_indices() {
         match state {
             State::BeforePoint => {
-                let item2 = item.clone();
+                let item2 = *item;
                 if item2.as_char() == '.' {
                     state = State::Point;
                 } else if !item.is_dec_digit() {

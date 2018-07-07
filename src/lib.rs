@@ -32,10 +32,10 @@ extern crate quickcheck;
 mod parse;
 
 use std::collections::HashMap;
-use std::{fmt, mem, str};
-use std::vec::Vec;
-use std::iter::Iterator;
 use std::collections::HashSet;
+use std::iter::Iterator;
+use std::vec::Vec;
+use std::{fmt, mem, str};
 
 use chrono::{NaiveDate, NaiveTime};
 pub use parse::{parse, GgaData, GsaData, GsvData, ParseResult, RmcData, RmcStatusOfFix, VtgData};
@@ -188,7 +188,7 @@ impl<'a> Nmea {
             d.swap_remove(data.sentence_num as usize - 1);
         }
         self.satellites.clear();
-        for (_, v) in &self.satellites_scan {
+        for v in self.satellites_scan.values() {
             for v1 in v {
                 for v2 in v1 {
                     self.satellites.push(v2.clone());
@@ -370,16 +370,16 @@ impl fmt::Display for Nmea {
             "{}: lat: {} lon: {} alt: {} {:?}",
             self.fix_time
                 .map(|l| format!("{:?}", l))
-                .unwrap_or("None".to_owned()),
+                .unwrap_or_else(|| "None".to_owned()),
             self.latitude
                 .map(|l| format!("{:3.8}", l))
-                .unwrap_or("None".to_owned()),
+                .unwrap_or_else(|| "None".to_owned()),
             self.longitude
                 .map(|l| format!("{:3.8}", l))
-                .unwrap_or("None".to_owned()),
+                .unwrap_or_else(|| "None".to_owned()),
             self.altitude
                 .map(|l| format!("{:.3}", l))
-                .unwrap_or("None".to_owned()),
+                .unwrap_or_else(|| "None".to_owned()),
             self.satellites()
         )
     }
@@ -426,13 +426,13 @@ impl fmt::Display for Satellite {
             self.prn,
             self.elevation
                 .map(|e| format!("{}", e))
-                .unwrap_or("--".to_owned()),
+                .unwrap_or_else(|| "--".to_owned()),
             self.azimuth
                 .map(|e| format!("{}", e))
-                .unwrap_or("--".to_owned()),
+                .unwrap_or_else(|| "--".to_owned()),
             self.snr
                 .map(|e| format!("{}", e))
-                .unwrap_or("--".to_owned())
+                .unwrap_or_else(|| "--".to_owned())
         )
     }
 }
@@ -867,9 +867,9 @@ fn test_parse() {
 
 #[cfg(test)]
 mod tests {
+    use super::parse::checksum;
     use super::*;
     use quickcheck::QuickCheck;
-    use super::parse::checksum;
 
     fn check_parsing_lat_lon_in_gga(lat: f64, lon: f64) -> bool {
         let lat_min = (lat.abs() * 60.0) % 60.0;
