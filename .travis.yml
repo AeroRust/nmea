@@ -10,15 +10,7 @@ os:
   - linux
   - osx
 
-before_script:
-  - if [ "$TRAVIS_RUST_VERSION" == "beta" ]; then
-      rustup component add --toolchain beta rustfmt-preview;
-    fi
-
 script:
-  - if [ "$TRAVIS_RUST_VERSION" == "beta" ]; then
-      cargo fmt -- --write-mode diff;
-    fi
   - cargo build -v --release
   - cargo test -v --release
   - cargo doc
