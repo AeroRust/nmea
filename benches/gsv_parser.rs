@@ -1,4 +1,4 @@
-#![feature(test)]
+/*#![feature(test)]
 extern crate test;
 
 extern crate nmea;
@@ -24,3 +24,4 @@ fn bench_gsv_parser(b: &mut Bencher) {
         }
     });
 }
+*/
