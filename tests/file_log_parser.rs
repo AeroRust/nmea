@@ -1,9 +1,9 @@
 extern crate nmea;
 
-use std::error::Error;
-use std::fs::File;
-use std::io::{BufRead, BufReader};
 use std::path::Path;
+use std::error::Error;
+use std::io::{BufRead, BufReader};
+use std::fs::File;
 
 fn err_to_string<E: Error>(e: E) -> String {
     e.description().to_string()
@@ -14,11 +14,9 @@ fn process_file(n: &Path) -> Result<Vec<String>, String> {
     let mut nmea = nmea::Nmea::new();
     let mut ret = Vec::with_capacity(15_000);
     for (num, line) in input.lines().enumerate() {
-        let line = line
-            .map_err(err_to_string)
+        let line = line.map_err(err_to_string)
             .map_err(|s| format!("{} at line {}", s, num + 1))?;
-        let parse_res = nmea
-            .parse(&line)
+        let parse_res = nmea.parse(&line)
             .map_err(|s| format!("{} at line {}", s, num + 1))?;
         ret.push(format!("{:?}", parse_res));
     }
