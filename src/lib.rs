@@ -172,7 +172,8 @@ impl<'a> Nmea {
 
     fn merge_gsv_data(&mut self, data: GsvData) -> Result<(), &'static str> {
         {
-            let d = self.satellites_scan
+            let d = self
+                .satellites_scan
                 .get_mut(&data.gnss_type)
                 .ok_or("Invalid GNSS type")?;
             // Adjust size to this scan
@@ -347,7 +348,8 @@ impl<'a> Nmea {
         match self.fix_type {
             Some(FixType::Invalid) | None => Ok(FixType::Invalid),
             Some(ref fix_type)
-                if self.required_sentences_for_nav
+                if self
+                    .required_sentences_for_nav
                     .is_subset(&self.sentences_for_this_time) =>
             {
                 Ok(fix_type.clone())

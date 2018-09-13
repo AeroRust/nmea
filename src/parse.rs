@@ -5,9 +5,9 @@ use chrono::{NaiveDate, NaiveTime};
 use nom;
 use nom::{digit, AsChar, IError, IResult};
 
+use FixType;
 use GnssType;
 use Satellite;
-use FixType;
 use SentenceType;
 
 pub struct NmeaSentence<'a> {
@@ -69,8 +69,12 @@ named!(
     do_parse_nmea_sentence<NmeaSentence>,
     map_res!(
         do_parse!(
-            char!('$') >> talker_id: take!(2) >> message_id: take!(3) >> char!(',')
-                >> data: take_until!("*") >> cs: parse_checksum
+            char!('$')
+                >> talker_id: take!(2)
+                >> message_id: take!(3)
+                >> char!(',')
+                >> data: take_until!("*")
+                >> cs: parse_checksum
                 >> (talker_id, message_id, data, cs)
         ),
         construct_sentence
@@ -128,9 +132,12 @@ named!(
     parse_gsv_sat_info<Satellite>,
     map_res!(
         do_parse!(
-            prn: map_res!(digit, parse_num::<u32>) >> char!(',')
-                >> elevation: opt!(map_res!(digit, parse_num::<i32>)) >> char!(',')
-                >> azimuth: opt!(map_res!(digit, parse_num::<i32>)) >> char!(',')
+            prn: map_res!(digit, parse_num::<u32>)
+                >> char!(',')
+                >> elevation: opt!(map_res!(digit, parse_num::<i32>))
+                >> char!(',')
+                >> azimuth: opt!(map_res!(digit, parse_num::<i32>))
+                >> char!(',')
                 >> signal_noise: opt!(map_res!(complete!(digit), parse_num::<i32>))
                 >> dbg!(alt!(eof!() | tag!(",")))
                 >> (prn, elevation, azimuth, signal_noise)
@@ -163,9 +170,12 @@ named!(
     do_parse_gsv<GsvData>,
     map_res!(
         do_parse!(
-            number_of_sentences: map_res!(digit, parse_num::<u16>) >> char!(',')
-                >> sentence_index: map_res!(digit, parse_num::<u16>) >> char!(',')
-                >> total_number_of_sats: map_res!(digit, parse_num::<u16>) >> char!(',')
+            number_of_sentences: map_res!(digit, parse_num::<u16>)
+                >> char!(',')
+                >> sentence_index: map_res!(digit, parse_num::<u16>)
+                >> char!(',')
+                >> total_number_of_sats: map_res!(digit, parse_num::<u16>)
+                >> char!(',')
                 >> sat0: opt!(complete!(parse_gsv_sat_info))
                 >> sat1: opt!(complete!(parse_gsv_sat_info))
                 >> sat2: opt!(complete!(parse_gsv_sat_info))
@@ -177,7 +187,7 @@ named!(
                     sat0,
                     sat1,
                     sat2,
-                    sat3
+                    sat3,
                 )
         ),
         construct_gsv_data
@@ -319,7 +329,8 @@ named!(
     parse_hms<NaiveTime>,
     map_res!(
         do_parse!(
-            hour: map_res!(take!(2), parse_num::<u32>) >> min: map_res!(take!(2), parse_num::<u32>)
+            hour: map_res!(take!(2), parse_num::<u32>)
+                >> min: map_res!(take!(2), parse_num::<u32>)
                 >> sec: map_res!(take_until!(","), parse_float_num::<f64>)
                 >> (hour, min, sec)
         ),
@@ -363,10 +374,13 @@ named!(
     map_res!(
         do_parse!(
             lat_deg: map_res!(take!(2), parse_num::<u8>)
-                >> lat_min: map_res!(float_number, parse_float_num::<f64>) >> char!(',')
-                >> lat_dir: one_of!("NS") >> char!(',')
+                >> lat_min: map_res!(float_number, parse_float_num::<f64>)
+                >> char!(',')
+                >> lat_dir: one_of!("NS")
+                >> char!(',')
                 >> lon_deg: map_res!(take!(3), parse_num::<u8>)
-                >> lon_min: map_res!(float_number, parse_float_num::<f64>) >> char!(',')
+                >> lon_min: map_res!(float_number, parse_float_num::<f64>)
+                >> char!(',')
                 >> lon_dir: one_of!("EW")
                 >> (lat_deg, lat_min, lat_dir, lon_deg, lon_min, lon_dir)
         ),
@@ -409,8 +423,12 @@ named!(
     do_parse_gga<GgaData>,
     map_res!(
         do_parse!(
-            time: opt!(complete!(parse_hms)) >> char!(',') >> lat_lon: parse_lat_lon >> char!(',')
-                >> fix_quality: dbg!(one_of!("012345678")) >> char!(',')
+            time: opt!(complete!(parse_hms))
+                >> char!(',')
+                >> lat_lon: parse_lat_lon
+                >> char!(',')
+                >> fix_quality: dbg!(one_of!("012345678"))
+                >> char!(',')
                 >> tracked_sats: opt!(complete!(map_res!(digit, parse_num::<u32>)))
                 >> char!(',')
                 >> hdop: opt!(complete!(map_res!(float_number, parse_float_num::<f32>)))
@@ -432,7 +450,7 @@ named!(
                     tracked_sats,
                     hdop,
                     altitude,
-                    geoid_height
+                    geoid_height,
                 )
         ),
         |data: (
@@ -442,7 +460,7 @@ named!(
             Option<u32>,
             Option<f32>,
             Option<f32>,
-            Option<f32>
+            Option<f32>,
         )|
          -> std::result::Result<GgaData, &'static str> {
             Ok(GgaData {
@@ -557,8 +575,10 @@ named!(
     parse_date<NaiveDate>,
     map_res!(
         do_parse!(
-            day: map_res!(take!(2), parse_num::<u8>) >> month: map_res!(take!(2), parse_num::<u8>)
-                >> year: map_res!(take!(2), parse_num::<u8>) >> (day, month, year)
+            day: map_res!(take!(2), parse_num::<u8>)
+                >> month: map_res!(take!(2), parse_num::<u8>)
+                >> year: map_res!(take!(2), parse_num::<u8>)
+                >> (day, month, year)
         ),
         |data: (u8, u8, u8)| -> Result<NaiveDate, &'static str> {
             let (day, month, year) = (u32::from(data.0), u32::from(data.1), i32::from(data.2));
@@ -577,8 +597,12 @@ named!(
     do_parse_rmc<RmcData>,
     map_res!(
         do_parse!(
-            time: opt!(complete!(parse_hms)) >> char!(',') >> status_of_fix: one_of!("ADV")
-                >> char!(',') >> lat_lon: parse_lat_lon >> char!(',')
+            time: opt!(complete!(parse_hms))
+                >> char!(',')
+                >> status_of_fix: one_of!("ADV")
+                >> char!(',')
+                >> lat_lon: parse_lat_lon
+                >> char!(',')
                 >> speed_over_ground:
                     opt!(complete!(map_res!(float_number, parse_float_num::<f32>)))
                 >> char!(',')
@@ -590,7 +614,7 @@ named!(
                     lat_lon,
                     speed_over_ground,
                     true_course,
-                    date
+                    date,
                 )
         ),
         |data: (
@@ -599,7 +623,7 @@ named!(
             Option<(f64, f64)>,
             Option<f32>,
             Option<f32>,
-            Option<NaiveDate>
+            Option<NaiveDate>,
         )|
          -> Result<RmcData, &'static str> {
             Ok(RmcData {
@@ -739,9 +763,12 @@ type GsaTail = (Vec<Option<u32>>, Option<f32>, Option<f32>, Option<f32>);
 named!(
     do_parse_gsa_tail<GsaTail>,
     do_parse!(
-        prns: gsa_prn_fields_parse >> pdop: map_res!(float_number, parse_float_num::<f32>)
-            >> char!(',') >> hdop: map_res!(float_number, parse_float_num::<f32>)
-            >> char!(',') >> vdop: map_res!(float_number, parse_float_num::<f32>)
+        prns: gsa_prn_fields_parse
+            >> pdop: map_res!(float_number, parse_float_num::<f32>)
+            >> char!(',')
+            >> hdop: map_res!(float_number, parse_float_num::<f32>)
+            >> char!(',')
+            >> vdop: map_res!(float_number, parse_float_num::<f32>)
             >> (prns, Some(pdop), Some(hdop), Some(vdop))
     )
 );
@@ -762,7 +789,10 @@ named!(
     do_parse_gsa<GsaData>,
     map_res!(
         do_parse!(
-            mode1: one_of!("MA") >> char!(',') >> mode2: one_of!("123") >> char!(',')
+            mode1: one_of!("MA")
+                >> char!(',')
+                >> mode2: one_of!("123")
+                >> char!(',')
                 >> tail: alt_complete!(do_parse_empty_gsa_tail | do_parse_gsa_tail)
                 >> (mode1, mode2, tail)
         ),
@@ -948,9 +978,13 @@ named!(
     map_res!(
         do_parse!(
             true_course: opt!(map_res!(complete!(float_number), parse_float_num::<f32>))
-                >> char!(',') >> opt!(complete!(char!('T'))) >> char!(',')
+                >> char!(',')
+                >> opt!(complete!(char!('T')))
+                >> char!(',')
                 >> magn_course: opt!(map_res!(complete!(float_number), parse_float_num::<f32>))
-                >> char!(',') >> opt!(complete!(char!('M'))) >> char!(',')
+                >> char!(',')
+                >> opt!(complete!(char!('M')))
+                >> char!(',')
                 >> knots_ground_speed:
                     opt!(map_res!(complete!(float_number), parse_float_num::<f32>))
                 >> char!(',') >> opt!(complete!(char!('N')))
