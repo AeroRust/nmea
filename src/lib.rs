@@ -41,7 +41,7 @@ use chrono::{NaiveDate, NaiveTime};
 pub use parse::{parse, GgaData, GsaData, GsvData, ParseResult, RmcData, RmcStatusOfFix, VtgData};
 
 /// NMEA parser
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Nmea {
     pub fix_time: Option<NaiveTime>,
     pub fix_date: Option<NaiveDate>,
@@ -172,7 +172,8 @@ impl<'a> Nmea {
 
     fn merge_gsv_data(&mut self, data: GsvData) -> Result<(), &'static str> {
         {
-            let d = self.satellites_scan
+            let d = self
+                .satellites_scan
                 .get_mut(&data.gnss_type)
                 .ok_or("Invalid GNSS type")?;
             // Adjust size to this scan
@@ -347,19 +348,14 @@ impl<'a> Nmea {
         match self.fix_type {
             Some(FixType::Invalid) | None => Ok(FixType::Invalid),
             Some(ref fix_type)
-                if self.required_sentences_for_nav
+                if self
+                    .required_sentences_for_nav
                     .is_subset(&self.sentences_for_this_time) =>
             {
                 Ok(fix_type.clone())
             }
             _ => Ok(FixType::Invalid),
         }
-    }
-}
-
-impl fmt::Debug for Nmea {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
     }
 }
 
