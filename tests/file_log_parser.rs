@@ -37,3 +37,22 @@ fn test_parse_file_log() {
             .collect();
     assert_eq!(expected, res);
 }
+
+#[test]
+fn test_parse_issue_2() {
+    let mut input = BufReader::new(File::open(&Path::new("tests").join("nmea2.log")).unwrap());
+    let mut nmea = nmea::Nmea::new();
+    for _ in 0..100 {
+        let mut buffer = String::new();
+        let size = input.read_line(&mut buffer).unwrap();
+        eprintln!("buffer = {:?}", buffer);
+        if size > 0 {
+            if buffer.as_bytes()[0] == b'$' {
+                let _ = nmea.parse(&buffer);
+                println!("{:?}", nmea);
+            }
+        } else {
+            break;
+        }
+    }
+}

@@ -41,7 +41,7 @@ use chrono::{NaiveDate, NaiveTime};
 pub use parse::{parse, GgaData, GsaData, GsvData, ParseResult, RmcData, RmcStatusOfFix, VtgData};
 
 /// NMEA parser
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Nmea {
     pub fix_time: Option<NaiveTime>,
     pub fix_date: Option<NaiveDate>,
@@ -356,12 +356,6 @@ impl<'a> Nmea {
             }
             _ => Ok(FixType::Invalid),
         }
-    }
-}
-
-impl fmt::Debug for Nmea {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
     }
 }
 
