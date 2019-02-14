@@ -909,7 +909,8 @@ fn test_parse_for_fix() {
                 .iter()
                 .map(|v| v.clone())
                 .collect(),
-        ).unwrap();
+        )
+        .unwrap();
         let log = [
             (
                 "$GPRMC,123308.2,A,5521.76474,N,03731.92553,E,000.48,071.9,090317,010.2,E,A*3B",
@@ -1016,7 +1017,8 @@ fn test_parse_for_fix() {
                 .iter()
                 .map(|v| v.clone())
                 .collect(),
-        ).unwrap();
+        )
+        .unwrap();
         let log = [
             (
                 "$GPRMC,123308.2,A,5521.76474,N,03731.92553,E,000.48,071.9,090317,010.2,E,A*3B",
@@ -1062,7 +1064,8 @@ fn test_some_reciever() {
             .iter()
             .map(|v| v.clone())
             .collect(),
-    ).unwrap();
+    )
+    .unwrap();
     println!("start test");
     let mut nfixes = 0_usize;
     for line in &lines {

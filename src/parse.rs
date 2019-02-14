@@ -251,7 +251,8 @@ fn test_parse_gsv_full() {
         message_id: b"GSV",
         data: b"2,1,08,01,,083,46,02,17,308,,12,07,344,39,14,22,228,",
         checksum: 0,
-    }).unwrap();
+    })
+    .unwrap();
     assert_eq!(data.gnss_type, GnssType::Gps);
     assert_eq!(data.number_of_sentences, 2);
     assert_eq!(data.sentence_num, 1);
@@ -302,7 +303,8 @@ fn test_parse_gsv_full() {
         message_id: b"GSV",
         data: b"3,3,10,72,40,075,43,87,00,000,",
         checksum: 0,
-    }).unwrap();
+    })
+    .unwrap();
     assert_eq!(data.gnss_type, GnssType::Glonass);
     assert_eq!(data.number_of_sentences, 3);
     assert_eq!(data.sentence_num, 3);
@@ -409,13 +411,14 @@ fn test_do_parse_lat_lon() {
 named!(
     parse_lat_lon<Option<(f64, f64)>>,
     alt_complete!(
-        map_res!(
-            tag!(",,,"),
-            |_| -> Result<Option<(f64, f64)>, &'static str> { Ok(None) }
-        ) | map_res!(
-            do_parse_lat_lon,
-            |v| -> Result<Option<(f64, f64)>, &'static str> { Ok(Some(v)) }
-        )
+        map_res!(tag!(",,,"), |_| -> Result<
+            Option<(f64, f64)>,
+            &'static str,
+        > { Ok(None) })
+            | map_res!(do_parse_lat_lon, |v| -> Result<
+                Option<(f64, f64)>,
+                &'static str,
+            > { Ok(Some(v)) })
     )
 );
 
@@ -519,7 +522,8 @@ fn test_parse_gga_full() {
         message_id: b"GGA",
         data: b"033745.0,5650.82344,N,03548.9778,E,1,07,1.8,101.2,M,14.7,M,,",
         checksum: 0x57,
-    }).unwrap();
+    })
+    .unwrap();
     assert_eq!(data.fix_time.unwrap(), NaiveTime::from_hms(3, 37, 45));
     assert_eq!(data.fix_type.unwrap(), FixType::Gps);
     relative_eq!(data.latitude.unwrap(), 56. + 50.82344 / 60.);
@@ -686,7 +690,8 @@ fn test_parse_rmc() {
     let s = parse_nmea_sentence(
         b"$GPRMC,225446.33,A,4916.45,N,12311.12,W,\
                                   000.5,054.7,191194,020.3,E,A*2B",
-    ).unwrap();
+    )
+    .unwrap();
     assert_eq!(s.checksum, s.calc_checksum());
     assert_eq!(s.checksum, 0x2b);
     let rmc_data = parse_rmc(&s).unwrap();
