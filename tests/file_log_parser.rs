@@ -1,9 +1,9 @@
-extern crate nmea;
-
-use std::error::Error;
-use std::fs::File;
-use std::io::{BufRead, BufReader};
-use std::path::Path;
+use std::{
+    error::Error,
+    fs::File,
+    io::{BufRead, BufReader},
+    path::Path,
+};
 
 fn err_to_string<E: Error>(e: E) -> String {
     e.description().to_string()

@@ -1,14 +1,12 @@
-use std;
 use std::str;
 
 use chrono::{NaiveDate, NaiveTime};
-use nom;
-use nom::{digit, AsChar, IError, IResult};
+use nom::{
+    alt, alt_complete, call, char, complete, digit, do_parse, eof, error_position, many0, map_res,
+    named, one_of, opt, tag, take, take_until, take_while, AsChar, IError, IResult,
+};
 
-use FixType;
-use GnssType;
-use Satellite;
-use SentenceType;
+use crate::{FixType, GnssType, Satellite, SentenceType};
 
 pub struct NmeaSentence<'a> {
     pub talker_id: &'a [u8],
@@ -139,7 +137,7 @@ named!(
                 >> azimuth: opt!(map_res!(digit, parse_num::<i32>))
                 >> char!(',')
                 >> signal_noise: opt!(map_res!(complete!(digit), parse_num::<i32>))
-                >> dbg!(alt!(eof!() | tag!(",")))
+                >> alt!(eof!() | tag!(","))
                 >> (prn, elevation, azimuth, signal_noise)
         ),
         construct_satellite
@@ -244,73 +242,6 @@ pub fn parse_gsv(sentence: &NmeaSentence) -> Result<GsvData, String> {
     Ok(res)
 }
 
-#[test]
-fn test_parse_gsv_full() {
-    let data = parse_gsv(&NmeaSentence {
-        talker_id: b"GP",
-        message_id: b"GSV",
-        data: b"2,1,08,01,,083,46,02,17,308,,12,07,344,39,14,22,228,",
-        checksum: 0,
-    })
-    .unwrap();
-    assert_eq!(data.gnss_type, GnssType::Gps);
-    assert_eq!(data.number_of_sentences, 2);
-    assert_eq!(data.sentence_num, 1);
-    assert_eq!(data._sats_in_view, 8);
-    assert_eq!(
-        data.sats_info[0].clone().unwrap(),
-        Satellite {
-            gnss_type: data.gnss_type.clone(),
-            prn: 1,
-            elevation: None,
-            azimuth: Some(83.),
-            snr: Some(46.),
-        }
-    );
-    assert_eq!(
-        data.sats_info[1].clone().unwrap(),
-        Satellite {
-            gnss_type: data.gnss_type.clone(),
-            prn: 2,
-            elevation: Some(17.),
-            azimuth: Some(308.),
-            snr: None,
-        }
-    );
-    assert_eq!(
-        data.sats_info[2].clone().unwrap(),
-        Satellite {
-            gnss_type: data.gnss_type.clone(),
-            prn: 12,
-            elevation: Some(7.),
-            azimuth: Some(344.),
-            snr: Some(39.),
-        }
-    );
-    assert_eq!(
-        data.sats_info[3].clone().unwrap(),
-        Satellite {
-            gnss_type: data.gnss_type.clone(),
-            prn: 14,
-            elevation: Some(22.),
-            azimuth: Some(228.),
-            snr: None,
-        }
-    );
-
-    let data = parse_gsv(&NmeaSentence {
-        talker_id: b"GL",
-        message_id: b"GSV",
-        data: b"3,3,10,72,40,075,43,87,00,000,",
-        checksum: 0,
-    })
-    .unwrap();
-    assert_eq!(data.gnss_type, GnssType::Glonass);
-    assert_eq!(data.number_of_sentences, 3);
-    assert_eq!(data.sentence_num, 3);
-    assert_eq!(data._sats_in_view, 10);
-}
-
 #[derive(Debug, PartialEq)]
 pub struct GgaData {
     pub fix_time: Option<NaiveTime>,
@@ -357,21 +288,6 @@ named!(
     )
 );
 
-#[test]
-fn test_parse_hms() {
-    use chrono::Timelike;
-    let (_, time) = parse_hms(b"125619,").unwrap();
-    assert_eq!(time.hour(), 12);
-    assert_eq!(time.minute(), 56);
-    assert_eq!(time.second(), 19);
-    assert_eq!(time.nanosecond(), 0);
-    let (_, time) = parse_hms(b"125619.5,").unwrap();
-    assert_eq!(time.hour(), 12);
-    assert_eq!(time.minute(), 56);
-    assert_eq!(time.second(), 19);
-    assert_eq!(time.nanosecond(), 5_00_000_000);
-}
-
 named!(
     do_parse_lat_lon<(f64, f64)>,
     map_res!(
@@ -401,13 +317,6 @@ named!(
     )
 );
 
-#[test]
-fn test_do_parse_lat_lon() {
-    let (_, lat_lon) = do_parse_lat_lon(b"4807.038,N,01131.324,E").unwrap();
-    relative_eq!(lat_lon.0, 48. + 7.038 / 60.);
-    relative_eq!(lat_lon.1, 11. + 31.324 / 60.);
-}
-
 named!(
     parse_lat_lon<Option<(f64, f64)>>,
     alt_complete!(
@@ -430,7 +339,7 @@ named!(
                 >> char!(',')
                 >> lat_lon: parse_lat_lon
                 >> char!(',')
-                >> fix_quality: dbg!(one_of!("012345678"))
+                >> fix_quality: one_of!("012345678")
                 >> char!(',')
                 >> tracked_sats: opt!(complete!(map_res!(digit, parse_num::<u32>)))
                 >> char!(',')
@@ -513,53 +422,6 @@ pub fn parse_gga(sentence: &NmeaSentence) -> Result<GgaData, String> {
             IError::Error(e) => e.to_string(),
         })?;
     Ok(res)
-}
-
-#[test]
-fn test_parse_gga_full() {
-    let data = parse_gga(&NmeaSentence {
-        talker_id: b"GP",
-        message_id: b"GGA",
-        data: b"033745.0,5650.82344,N,03548.9778,E,1,07,1.8,101.2,M,14.7,M,,",
-        checksum: 0x57,
-    })
-    .unwrap();
-    assert_eq!(data.fix_time.unwrap(), NaiveTime::from_hms(3, 37, 45));
-    assert_eq!(data.fix_type.unwrap(), FixType::Gps);
-    relative_eq!(data.latitude.unwrap(), 56. + 50.82344 / 60.);
-    relative_eq!(data.longitude.unwrap(), 35. + 48.9778 / 60.);
-    assert_eq!(data.fix_satellites.unwrap(), 7);
-    relative_eq!(data.hdop.unwrap(), 1.8);
-    relative_eq!(data.altitude.unwrap(), 101.2);
-    relative_eq!(data.geoid_height.unwrap(), 14.7);
-
-    let s = parse_nmea_sentence(b"$GPGGA,,,,,,0,,,,,,,,*66").unwrap();
-    assert_eq!(s.checksum, s.calc_checksum());
-    let data = parse_gga(&s).unwrap();
-    assert_eq!(
-        GgaData {
-            fix_time: None,
-            fix_type: Some(FixType::Invalid),
-            latitude: None,
-            longitude: None,
-            fix_satellites: None,
-            hdop: None,
-            altitude: None,
-            geoid_height: None,
-        },
-        data
-    );
-}
-
-#[test]
-fn test_parse_gga_with_optional_fields() {
-    let sentence =
-        parse_nmea_sentence(b"$GPGGA,133605.0,5521.75946,N,03731.93769,E,0,00,,,M,,M,,*4F")
-            .unwrap();
-    assert_eq!(sentence.checksum, sentence.calc_checksum());
-    assert_eq!(sentence.checksum, 0x4f);
-    let data = parse_gga(&sentence).unwrap();
-    assert_eq!(data.fix_type.unwrap(), FixType::Invalid);
 }
 
 #[derive(Debug, PartialEq)]
@@ -685,50 +547,6 @@ pub fn parse_rmc(sentence: &NmeaSentence) -> Result<RmcData, String> {
         })
 }
 
-#[test]
-fn test_parse_rmc() {
-    let s = parse_nmea_sentence(
-        b"$GPRMC,225446.33,A,4916.45,N,12311.12,W,\
-                                  000.5,054.7,191194,020.3,E,A*2B",
-    )
-    .unwrap();
-    assert_eq!(s.checksum, s.calc_checksum());
-    assert_eq!(s.checksum, 0x2b);
-    let rmc_data = parse_rmc(&s).unwrap();
-    assert_eq!(
-        rmc_data.fix_time.unwrap(),
-        NaiveTime::from_hms_milli(22, 54, 46, 330)
-    );
-    assert_eq!(rmc_data.fix_date.unwrap(), NaiveDate::from_ymd(94, 11, 19));
-
-    println!("lat: {}", rmc_data.lat.unwrap());
-    relative_eq!(rmc_data.lat.unwrap(), 49.0 + 16.45 / 60.);
-    println!(
-        "lon: {}, diff {}",
-        rmc_data.lon.unwrap(),
-        (rmc_data.lon.unwrap() + (123.0 + 11.12 / 60.)).abs()
-    );
-    relative_eq!(rmc_data.lon.unwrap(), -(123.0 + 11.12 / 60.));
-
-    relative_eq!(rmc_data.speed_over_ground.unwrap(), 0.5);
-    relative_eq!(rmc_data.true_course.unwrap(), 54.7);
-
-    let s = parse_nmea_sentence(b"$GPRMC,,V,,,,,,,,,,N*53").unwrap();
-    let rmc = parse_rmc(&s).unwrap();
-    assert_eq!(
-        RmcData {
-            fix_time: None,
-            fix_date: None,
-            status_of_fix: Some(RmcStatusOfFix::Invalid),
-            lat: None,
-            lon: None,
-            speed_over_ground: None,
-            true_course: None,
-        },
-        rmc
-    );
-}
-
 #[derive(PartialEq, Debug)]
 pub enum GsaMode1 {
     Manual,
@@ -759,17 +577,6 @@ named!(gsa_prn_fields_parse<&[u8], Vec<Option<u32>>>, many0!(map_res!(do_parse!(
         Ok(prn)
     }
 )));
-
-#[test]
-fn test_gsa_prn_fields_parse() {
-    let (_, ret) = gsa_prn_fields_parse(b"5,").unwrap();
-    assert_eq!(vec![Some(5)], ret);
-    let (_, ret) = gsa_prn_fields_parse(b",").unwrap();
-    assert_eq!(vec![None], ret);
-
-    let (_, ret) = gsa_prn_fields_parse(b",,5,6,").unwrap();
-    assert_eq!(vec![None, None, Some(5), Some(6)], ret);
-}
 
 type GsaTail = (Vec<Option<u32>>, Option<f32>, Option<f32>, Option<f32>);
 named!(
@@ -883,36 +690,6 @@ fn parse_gsa(s: &NmeaSentence) -> Result<GsaData, String> {
     Ok(ret)
 }
 
-#[test]
-fn smoke_test_parse_gsa() {
-    let s = parse_nmea_sentence(b"$GPGSA,A,3,,,,,,16,18,,22,24,,,3.6,2.1,2.2*3C").unwrap();
-    let gsa = parse_gsa(&s).unwrap();
-    assert_eq!(
-        GsaData {
-            mode1: GsaMode1::Automatic,
-            mode2: GsaMode2::Fix3D,
-            fix_sats_prn: vec![16, 18, 22, 24],
-            pdop: Some(3.6),
-            hdop: Some(2.1),
-            vdop: Some(2.2),
-        },
-        gsa
-    );
-    let gsa_examples = [
-        "$GPGSA,A,3,19,28,14,18,27,22,31,39,,,,,1.7,1.0,1.3*35",
-        "$GPGSA,A,3,23,31,22,16,03,07,,,,,,,1.8,1.1,1.4*3E",
-        "$BDGSA,A,3,214,,,,,,,,,,,,1.8,1.1,1.4*18",
-        "$GNGSA,A,3,31,26,21,,,,,,,,,,3.77,2.55,2.77*1A",
-        "$GNGSA,A,3,75,86,87,,,,,,,,,,3.77,2.55,2.77*1C",
-        "$GPGSA,A,1,,,,*32",
-    ];
-    for line in &gsa_examples {
-        println!("we parse line '{}'", line);
-        let s = parse_nmea_sentence(line.as_bytes()).unwrap();
-        parse_gsa(&s).unwrap();
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct VtgData {
     pub true_course: Option<f32>,
@@ -963,26 +740,6 @@ fn float_number(input: &[u8]) -> IResult<&[u8], &[u8]> {
         }
     }
     IResult::Done(input.slice(input_length..), input)
-}
-
-#[test]
-fn test_float_number() {
-    assert_eq!(
-        IResult::Done(&b""[..], &b"12.3"[..]),
-        float_number(&b"12.3"[..])
-    );
-    assert_eq!(
-        IResult::Done(&b"a"[..], &b"12.3"[..]),
-        float_number(&b"12.3a"[..])
-    );
-    assert_eq!(
-        IResult::Done(&b"a"[..], &b"12"[..]),
-        float_number(&b"12a"[..])
-    );
-    assert_eq!(
-        IResult::Error(nom::ErrorKind::Digit),
-        float_number(&b"a12a"[..])
-    );
 }
 
 named!(
@@ -1065,36 +822,6 @@ fn parse_vtg(s: &NmeaSentence) -> Result<VtgData, String> {
     Ok(ret)
 }
 
-#[test]
-fn test_parse_vtg() {
-    let run_parse_vtg = |line: &str| -> Result<VtgData, String> {
-        let s = parse_nmea_sentence(line.as_bytes()).expect("VTG sentence initial parse failed");
-        assert_eq!(s.checksum, s.calc_checksum());
-        parse_vtg(&s)
-    };
-    assert_eq!(
-        VtgData {
-            true_course: None,
-            speed_over_ground: None,
-        },
-        run_parse_vtg("$GPVTG,,T,,M,,N,,K,N*2C").unwrap()
-    );
-    assert_eq!(
-        VtgData {
-            true_course: Some(360.),
-            speed_over_ground: Some(0.),
-        },
-        run_parse_vtg("$GPVTG,360.0,T,348.7,M,000.0,N,000.0,K*43").unwrap()
-    );
-    assert_eq!(
-        VtgData {
-            true_course: Some(54.7),
-            speed_over_ground: Some(5.5),
-        },
-        run_parse_vtg("$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48").unwrap()
-    );
-}
-
 pub enum ParseResult {
     GGA(GgaData),
     RMC(RmcData),
@@ -1128,5 +855,283 @@ pub fn parse(xs: &[u8]) -> Result<ParseResult, String> {
         }
     } else {
         Err("Checksum mismatch".into())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use approx::relative_eq;
+
+    #[test]
+    fn test_do_parse_lat_lon() {
+        let (_, lat_lon) = do_parse_lat_lon(b"4807.038,N,01131.324,E").unwrap();
+        relative_eq!(lat_lon.0, 48. + 7.038 / 60.);
+        relative_eq!(lat_lon.1, 11. + 31.324 / 60.);
+    }
+
+    #[test]
+    fn test_parse_gga_full() {
+        let data = parse_gga(&NmeaSentence {
+            talker_id: b"GP",
+            message_id: b"GGA",
+            data: b"033745.0,5650.82344,N,03548.9778,E,1,07,1.8,101.2,M,14.7,M,,",
+            checksum: 0x57,
+        })
+        .unwrap();
+        assert_eq!(data.fix_time.unwrap(), NaiveTime::from_hms(3, 37, 45));
+        assert_eq!(data.fix_type.unwrap(), FixType::Gps);
+        relative_eq!(data.latitude.unwrap(), 56. + 50.82344 / 60.);
+        relative_eq!(data.longitude.unwrap(), 35. + 48.9778 / 60.);
+        assert_eq!(data.fix_satellites.unwrap(), 7);
+        relative_eq!(data.hdop.unwrap(), 1.8);
+        relative_eq!(data.altitude.unwrap(), 101.2);
+        relative_eq!(data.geoid_height.unwrap(), 14.7);
+
+        let s = parse_nmea_sentence(b"$GPGGA,,,,,,0,,,,,,,,*66").unwrap();
+        assert_eq!(s.checksum, s.calc_checksum());
+        let data = parse_gga(&s).unwrap();
+        assert_eq!(
+            GgaData {
+                fix_time: None,
+                fix_type: Some(FixType::Invalid),
+                latitude: None,
+                longitude: None,
+                fix_satellites: None,
+                hdop: None,
+                altitude: None,
+                geoid_height: None,
+            },
+            data
+        );
+    }
+
+    #[test]
+    fn test_parse_gga_with_optional_fields() {
+        let sentence =
+            parse_nmea_sentence(b"$GPGGA,133605.0,5521.75946,N,03731.93769,E,0,00,,,M,,M,,*4F")
+                .unwrap();
+        assert_eq!(sentence.checksum, sentence.calc_checksum());
+        assert_eq!(sentence.checksum, 0x4f);
+        let data = parse_gga(&sentence).unwrap();
+        assert_eq!(data.fix_type.unwrap(), FixType::Invalid);
+    }
+
+    #[test]
+    fn test_parse_rmc() {
+        let s = parse_nmea_sentence(
+            b"$GPRMC,225446.33,A,4916.45,N,12311.12,W,\
+                                  000.5,054.7,191194,020.3,E,A*2B",
+        )
+        .unwrap();
+        assert_eq!(s.checksum, s.calc_checksum());
+        assert_eq!(s.checksum, 0x2b);
+        let rmc_data = parse_rmc(&s).unwrap();
+        assert_eq!(
+            rmc_data.fix_time.unwrap(),
+            NaiveTime::from_hms_milli(22, 54, 46, 330)
+        );
+        assert_eq!(rmc_data.fix_date.unwrap(), NaiveDate::from_ymd(94, 11, 19));
+
+        println!("lat: {}", rmc_data.lat.unwrap());
+        relative_eq!(rmc_data.lat.unwrap(), 49.0 + 16.45 / 60.);
+        println!(
+            "lon: {}, diff {}",
+            rmc_data.lon.unwrap(),
+            (rmc_data.lon.unwrap() + (123.0 + 11.12 / 60.)).abs()
+        );
+        relative_eq!(rmc_data.lon.unwrap(), -(123.0 + 11.12 / 60.));
+
+        relative_eq!(rmc_data.speed_over_ground.unwrap(), 0.5);
+        relative_eq!(rmc_data.true_course.unwrap(), 54.7);
+
+        let s = parse_nmea_sentence(b"$GPRMC,,V,,,,,,,,,,N*53").unwrap();
+        let rmc = parse_rmc(&s).unwrap();
+        assert_eq!(
+            RmcData {
+                fix_time: None,
+                fix_date: None,
+                status_of_fix: Some(RmcStatusOfFix::Invalid),
+                lat: None,
+                lon: None,
+                speed_over_ground: None,
+                true_course: None,
+            },
+            rmc
+        );
+    }
+
+    #[test]
+    fn test_parse_gsv_full() {
+        let data = parse_gsv(&NmeaSentence {
+            talker_id: b"GP",
+            message_id: b"GSV",
+            data: b"2,1,08,01,,083,46,02,17,308,,12,07,344,39,14,22,228,",
+            checksum: 0,
+        })
+        .unwrap();
+        assert_eq!(data.gnss_type, GnssType::Gps);
+        assert_eq!(data.number_of_sentences, 2);
+        assert_eq!(data.sentence_num, 1);
+        assert_eq!(data._sats_in_view, 8);
+        assert_eq!(
+            data.sats_info[0].clone().unwrap(),
+            Satellite {
+                gnss_type: data.gnss_type.clone(),
+                prn: 1,
+                elevation: None,
+                azimuth: Some(83.),
+                snr: Some(46.),
+            }
+        );
+        assert_eq!(
+            data.sats_info[1].clone().unwrap(),
+            Satellite {
+                gnss_type: data.gnss_type.clone(),
+                prn: 2,
+                elevation: Some(17.),
+                azimuth: Some(308.),
+                snr: None,
+            }
+        );
+        assert_eq!(
+            data.sats_info[2].clone().unwrap(),
+            Satellite {
+                gnss_type: data.gnss_type.clone(),
+                prn: 12,
+                elevation: Some(7.),
+                azimuth: Some(344.),
+                snr: Some(39.),
+            }
+        );
+        assert_eq!(
+            data.sats_info[3].clone().unwrap(),
+            Satellite {
+                gnss_type: data.gnss_type.clone(),
+                prn: 14,
+                elevation: Some(22.),
+                azimuth: Some(228.),
+                snr: None,
+            }
+        );
+
+        let data = parse_gsv(&NmeaSentence {
+            talker_id: b"GL",
+            message_id: b"GSV",
+            data: b"3,3,10,72,40,075,43,87,00,000,",
+            checksum: 0,
+        })
+        .unwrap();
+        assert_eq!(data.gnss_type, GnssType::Glonass);
+        assert_eq!(data.number_of_sentences, 3);
+        assert_eq!(data.sentence_num, 3);
+        assert_eq!(data._sats_in_view, 10);
+    }
+
+    #[test]
+    fn test_parse_hms() {
+        use chrono::Timelike;
+        let (_, time) = parse_hms(b"125619,").unwrap();
+        assert_eq!(time.hour(), 12);
+        assert_eq!(time.minute(), 56);
+        assert_eq!(time.second(), 19);
+        assert_eq!(time.nanosecond(), 0);
+        let (_, time) = parse_hms(b"125619.5,").unwrap();
+        assert_eq!(time.hour(), 12);
+        assert_eq!(time.minute(), 56);
+        assert_eq!(time.second(), 19);
+        assert_eq!(time.nanosecond(), 5_00_000_000);
+    }
+
+    #[test]
+    fn test_gsa_prn_fields_parse() {
+        let (_, ret) = gsa_prn_fields_parse(b"5,").unwrap();
+        assert_eq!(vec![Some(5)], ret);
+        let (_, ret) = gsa_prn_fields_parse(b",").unwrap();
+        assert_eq!(vec![None], ret);
+
+        let (_, ret) = gsa_prn_fields_parse(b",,5,6,").unwrap();
+        assert_eq!(vec![None, None, Some(5), Some(6)], ret);
+    }
+
+    #[test]
+    fn smoke_test_parse_gsa() {
+        let s = parse_nmea_sentence(b"$GPGSA,A,3,,,,,,16,18,,22,24,,,3.6,2.1,2.2*3C").unwrap();
+        let gsa = parse_gsa(&s).unwrap();
+        assert_eq!(
+            GsaData {
+                mode1: GsaMode1::Automatic,
+                mode2: GsaMode2::Fix3D,
+                fix_sats_prn: vec![16, 18, 22, 24],
+                pdop: Some(3.6),
+                hdop: Some(2.1),
+                vdop: Some(2.2),
+            },
+            gsa
+        );
+        let gsa_examples = [
+            "$GPGSA,A,3,19,28,14,18,27,22,31,39,,,,,1.7,1.0,1.3*35",
+            "$GPGSA,A,3,23,31,22,16,03,07,,,,,,,1.8,1.1,1.4*3E",
+            "$BDGSA,A,3,214,,,,,,,,,,,,1.8,1.1,1.4*18",
+            "$GNGSA,A,3,31,26,21,,,,,,,,,,3.77,2.55,2.77*1A",
+            "$GNGSA,A,3,75,86,87,,,,,,,,,,3.77,2.55,2.77*1C",
+            "$GPGSA,A,1,,,,*32",
+        ];
+        for line in &gsa_examples {
+            println!("we parse line '{}'", line);
+            let s = parse_nmea_sentence(line.as_bytes()).unwrap();
+            parse_gsa(&s).unwrap();
+        }
+    }
+
+    #[test]
+    fn test_float_number() {
+        assert_eq!(
+            IResult::Done(&b""[..], &b"12.3"[..]),
+            float_number(&b"12.3"[..])
+        );
+        assert_eq!(
+            IResult::Done(&b"a"[..], &b"12.3"[..]),
+            float_number(&b"12.3a"[..])
+        );
+        assert_eq!(
+            IResult::Done(&b"a"[..], &b"12"[..]),
+            float_number(&b"12a"[..])
+        );
+        assert_eq!(
+            IResult::Error(nom::ErrorKind::Digit),
+            float_number(&b"a12a"[..])
+        );
+    }
+
+    #[test]
+    fn test_parse_vtg() {
+        let run_parse_vtg = |line: &str| -> Result<VtgData, String> {
+            let s =
+                parse_nmea_sentence(line.as_bytes()).expect("VTG sentence initial parse failed");
+            assert_eq!(s.checksum, s.calc_checksum());
+            parse_vtg(&s)
+        };
+        assert_eq!(
+            VtgData {
+                true_course: None,
+                speed_over_ground: None,
+            },
+            run_parse_vtg("$GPVTG,,T,,M,,N,,K,N*2C").unwrap()
+        );
+        assert_eq!(
+            VtgData {
+                true_course: Some(360.),
+                speed_over_ground: Some(0.),
+            },
+            run_parse_vtg("$GPVTG,360.0,T,348.7,M,000.0,N,000.0,K*43").unwrap()
+        );
+        assert_eq!(
+            VtgData {
+                true_course: Some(54.7),
+                speed_over_ground: Some(5.5),
+            },
+            run_parse_vtg("$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48").unwrap()
+        );
     }
 }

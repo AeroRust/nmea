@@ -8,6 +8,7 @@ keywords = ["NMEA", "gps", "glonass", "coordinate", "position"]
 repository = "https://github.com/Dushistov/rust-nmea"
 documentation = "https://docs.rs/nmea/"
 readme = "README.md"
+edition = "2018"
 
 [dependencies]
 nom = "3.2.1"
