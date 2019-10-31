@@ -4,11 +4,11 @@ use chrono::{NaiveDate, NaiveTime};
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take, take_until, take_while1};
 use nom::character::complete::{char, digit1, one_of};
-use nom::combinator::{all_consuming, cond, map, map_res, opt, rest_len};
-use nom::error::ErrorKind;
+use nom::combinator::{all_consuming, cond, map, map_parser, map_res, opt, rest_len, value};
 use nom::multi::many0;
+use nom::number::complete::{double, float};
 use nom::sequence::{preceded, terminated, tuple};
-use nom::{error_position, AsChar, IResult};
+use nom::IResult;
 
 use crate::{FixType, GnssType, Satellite, SentenceType};
 
@@ -43,17 +43,6 @@ pub fn checksum<'a, I: Iterator<Item = &'a u8>>(bytes: I) -> u8 {
     bytes.fold(0, |c, x| c ^ *x)
 }
 
-fn construct_sentence<'a>(
-    data: (&'a [u8], &'a [u8], &'a [u8], u8),
-) -> std::result::Result<NmeaSentence<'a>, &'static str> {
-    Ok(NmeaSentence {
-        talker_id: data.0,
-        message_id: data.1,
-        data: data.2,
-        checksum: data.3,
-    })
-}
-
 fn parse_hex(data: &[u8]) -> std::result::Result<u8, &'static str> {
     u8::from_str_radix(unsafe { str::from_utf8_unchecked(data) }, 16)
         .map_err(|_| "Failed to parse checksum as hex number")
@@ -64,15 +53,21 @@ fn parse_checksum(i: &[u8]) -> IResult<&[u8], u8> {
 }
 
 fn do_parse_nmea_sentence(i: &[u8]) -> IResult<&[u8], NmeaSentence> {
-    map_res(
-        tuple((
-            preceded(char('$'), take(2usize)),
-            terminated(take(3usize), char(',')),
-            take_until("*"),
-            parse_checksum,
-        )),
-        construct_sentence,
-    )(i)
+    let (i, talker_id) = preceded(char('$'), take(2usize))(i)?;
+    let (i, message_id) = take(3usize)(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, data) = take_until("*")(i)?;
+    let (i, checksum) = parse_checksum(i)?;
+
+    Ok((
+        i,
+        NmeaSentence {
+            talker_id,
+            message_id,
+            data,
+            checksum,
+        },
+    ))
 }
 
 pub fn parse_nmea_sentence(sentence: &[u8]) -> std::result::Result<NmeaSentence, String> {
@@ -110,67 +105,52 @@ fn parse_num<I: std::str::FromStr>(data: &[u8]) -> std::result::Result<I, &'stat
     //    println!("parse num {}", unsafe { str::from_utf8_unchecked(data) });
     str::parse::<I>(unsafe { str::from_utf8_unchecked(data) }).map_err(|_| "parse of number failed")
 }
-
-fn construct_satellite(
-    data: (u32, Option<i32>, Option<i32>, Option<i32>),
-) -> std::result::Result<Satellite, &'static str> {
-    //    println!("we construct sat {}", data.0);
-    Ok(Satellite {
-        gnss_type: GnssType::Galileo,
-        prn: data.0,
-        elevation: data.1.map(|v| v as f32),
-        azimuth: data.2.map(|v| v as f32),
-        snr: data.3.map(|v| v as f32),
-    })
+fn number<T: std::str::FromStr>(i: &[u8]) -> IResult<&[u8], T> {
+    map_res(digit1, parse_num)(i)
 }
 
 fn parse_gsv_sat_info(i: &[u8]) -> IResult<&[u8], Satellite> {
-    map_res(
-        tuple((
-            terminated(map_res(digit1, parse_num::<u32>), char(',')),
-            terminated(opt(map_res(digit1, parse_num::<i32>)), char(',')),
-            terminated(opt(map_res(digit1, parse_num::<i32>)), char(',')),
-            terminated(opt(map_res(digit1, parse_num::<i32>)), |i| {
-                cond(rest_len(i)?.1 > 0, char(','))(i)
-            }),
-        )),
-        construct_satellite,
-    )(i)
-}
-
-fn construct_gsv_data(
-    data: (
-        u16,
-        u16,
-        u16,
-        Option<Satellite>,
-        Option<Satellite>,
-        Option<Satellite>,
-        Option<Satellite>,
-    ),
-) -> std::result::Result<GsvData, &'static str> {
-    Ok(GsvData {
-        gnss_type: GnssType::Galileo,
-        number_of_sentences: data.0,
-        sentence_num: data.1,
-        _sats_in_view: data.2,
-        sats_info: [data.3, data.4, data.5, data.6],
-    })
+    let (i, prn) = number::<u32>(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, elevation) = opt(number::<i32>)(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, azimuth) = opt(number::<i32>)(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, snr) = opt(number::<i32>)(i)?;
+    let (i, _) = cond(rest_len(i)?.1 > 0, char(','))(i)?;
+    Ok((
+        i,
+        Satellite {
+            gnss_type: GnssType::Galileo,
+            prn,
+            elevation: elevation.map(|v| v as f32),
+            azimuth: azimuth.map(|v| v as f32),
+            snr: snr.map(|v| v as f32),
+        },
+    ))
 }
 
 fn do_parse_gsv(i: &[u8]) -> IResult<&[u8], GsvData> {
-    map_res(
-        tuple((
-            terminated(map_res(digit1, parse_num::<u16>), char(',')),
-            terminated(map_res(digit1, parse_num::<u16>), char(',')),
-            terminated(map_res(digit1, parse_num::<u16>), char(',')),
-            opt(parse_gsv_sat_info),
-            opt(parse_gsv_sat_info),
-            opt(parse_gsv_sat_info),
-            opt(parse_gsv_sat_info),
-        )),
-        construct_gsv_data,
-    )(i)
+    let (i, number_of_sentences) = number::<u16>(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, sentence_num) = number::<u16>(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, _sats_in_view) = number::<u16>(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, sat0) = opt(parse_gsv_sat_info)(i)?;
+    let (i, sat1) = opt(parse_gsv_sat_info)(i)?;
+    let (i, sat2) = opt(parse_gsv_sat_info)(i)?;
+    let (i, sat3) = opt(parse_gsv_sat_info)(i)?;
+    Ok((
+        i,
+        GsvData {
+            gnss_type: GnssType::Galileo,
+            number_of_sentences,
+            sentence_num,
+            _sats_in_view,
+            sats_info: [sat0, sat1, sat2, sat3],
+        },
+    ))
 }
 
 /// Parsin one GSV sentence
@@ -246,7 +226,7 @@ fn parse_hms(i: &[u8]) -> IResult<&[u8], NaiveTime> {
         tuple((
             map_res(take(2usize), parse_num::<u32>),
             map_res(take(2usize), parse_num::<u32>),
-            map_res(take_until(","), parse_float_num::<f64>),
+            map_parser(take_until(","), double),
         )),
         |(hour, minutes, sec)| -> std::result::Result<NaiveTime, &'static str> {
             if sec.is_sign_negative() {
@@ -269,27 +249,26 @@ fn parse_hms(i: &[u8]) -> IResult<&[u8], NaiveTime> {
 }
 
 fn do_parse_lat_lon(i: &[u8]) -> IResult<&[u8], (f64, f64)> {
-    map(
-        tuple((
-            map_res(take(2usize), parse_num::<u8>),
-            terminated(map_res(float_number, parse_float_num::<f64>), char(',')),
-            terminated(one_of("NS"), char(',')),
-            map_res(take(3usize), parse_num::<u8>),
-            terminated(map_res(float_number, parse_float_num::<f64>), char(',')),
-            one_of("EW"),
-        )),
-        |(lat_deg, lat_min, lat_dir, lon_deg, lon_min, lon_dir)| {
-            let mut lat = f64::from(lat_deg) + lat_min / 60.;
-            if lat_dir == 'S' {
-                lat = -lat;
-            }
-            let mut lon = f64::from(lon_deg) + lon_min / 60.;
-            if lon_dir == 'W' {
-                lon = -lon;
-            }
-            (lat, lon)
-        },
-    )(i)
+    let (i, lat_deg) = map_res(take(2usize), parse_num::<u8>)(i)?;
+    let (i, lat_min) = double(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, lat_dir) = one_of("NS")(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, lon_deg) = map_res(take(3usize), parse_num::<u8>)(i)?;
+    let (i, lon_min) = double(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, lon_dir) = one_of("EW")(i)?;
+
+    let mut lat = f64::from(lat_deg) + lat_min / 60.;
+    if lat_dir == 'S' {
+        lat = -lat;
+    }
+    let mut lon = f64::from(lon_deg) + lon_min / 60.;
+    if lon_dir == 'W' {
+        lon = -lon;
+    }
+
+    Ok((i, (lat, lon)))
 }
 
 fn parse_lat_lon(i: &[u8]) -> IResult<&[u8], Option<(f64, f64)>> {
@@ -297,26 +276,27 @@ fn parse_lat_lon(i: &[u8]) -> IResult<&[u8], Option<(f64, f64)>> {
 }
 
 fn do_parse_gga(i: &[u8]) -> IResult<&[u8], GgaData> {
-    map(
-        tuple((
-            terminated(opt(parse_hms), char(',')),
-            terminated(parse_lat_lon, char(',')),
-            terminated(one_of("012345678"), char(',')),
-            terminated(opt(map_res(digit1, parse_num::<u32>)), char(',')),
-            terminated(
-                opt(map_res(float_number, parse_float_num::<f32>)),
-                char(','),
-            ),
-            terminated(
-                opt(map_res(take_until(","), parse_float_num::<f32>)),
-                tuple((char(','), opt(char('M')), char(','))),
-            ),
-            terminated(
-                opt(map_res(take_until(","), parse_float_num::<f32>)),
-                tuple((char(','), opt(char('M')))),
-            ),
-        )),
-        |(fix_time, lat_lon, fix_quality, fix_satellites, hdop, altitude, geoid_height)| GgaData {
+    let (i, fix_time) = opt(parse_hms)(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, lat_lon) = parse_lat_lon(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, fix_quality) = one_of("012345678")(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, fix_satellites) = opt(number::<u32>)(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, hdop) = opt(float)(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, altitude) = opt(map_res(take_until(","), parse_float_num::<f32>))(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, _) = opt(char('M'))(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, geoid_height) = opt(map_res(take_until(","), parse_float_num::<f32>))(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, _) = opt(char('M'))(i)?;
+
+    Ok((
+        i,
+        GgaData {
             fix_time,
             fix_type: Some(FixType::from(fix_quality)),
             latitude: lat_lon.map(|v| v.0),
@@ -326,7 +306,7 @@ fn do_parse_gga(i: &[u8]) -> IResult<&[u8], GgaData> {
             altitude,
             geoid_height,
         },
-    )(i)
+    ))
 }
 
 /// Parse GGA message
@@ -406,11 +386,11 @@ fn do_parse_rmc(i: &[u8]) -> IResult<&[u8], RmcData> {
             terminated(one_of("ADV"), char(',')),
             terminated(parse_lat_lon, char(',')),
             terminated(
-                opt(map_res(float_number, parse_float_num::<f32>)),
+                opt(float),
                 char(','),
             ),
             terminated(
-                opt(map_res(float_number, parse_float_num::<f32>)),
+                opt(float),
                 char(','),
             ),
             terminated(opt(parse_date), char(',')),
@@ -491,44 +471,41 @@ pub struct GsaData {
 }
 
 fn gsa_prn_fields_parse(i: &[u8]) -> IResult<&[u8], Vec<Option<u32>>> {
-    many0(terminated(
-        opt(map_res(digit1, parse_num::<u32>)),
-        char(','),
-    ))(i)
+    many0(terminated(opt(number::<u32>), char(',')))(i)
 }
 
 type GsaTail = (Vec<Option<u32>>, Option<f32>, Option<f32>, Option<f32>);
 
 fn do_parse_gsa_tail(i: &[u8]) -> IResult<&[u8], GsaTail> {
-    map(
-        tuple((
-            gsa_prn_fields_parse,
-            terminated(map_res(float_number, parse_float_num::<f32>), char(',')),
-            terminated(map_res(float_number, parse_float_num::<f32>), char(',')),
-            map_res(float_number, parse_float_num::<f32>),
-        )),
-        |(prns, pdop, hdop, vdop)| (prns, Some(pdop), Some(hdop), Some(vdop)),
-    )(i)
+    let (i, prns) = gsa_prn_fields_parse(i)?;
+    let (i, pdop) = float(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, hdop) = float(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, vdop) = float(i)?;
+    Ok((i, (prns, Some(pdop), Some(hdop), Some(vdop))))
 }
 
 fn is_comma(x: u8) -> bool {
     x == b','
 }
 
-fn do_parse_empty_gsa_tail(input: &[u8]) -> IResult<&[u8], GsaTail> {
-    map(all_consuming(take_while1(is_comma)), |_| {
-        (Vec::new(), None, None, None)
-    })(input)
+fn do_parse_empty_gsa_tail(i: &[u8]) -> IResult<&[u8], GsaTail> {
+    value(
+        (Vec::new(), None, None, None),
+        all_consuming(take_while1(is_comma)),
+    )(i)
 }
 
 fn do_parse_gsa(i: &[u8]) -> IResult<&[u8], GsaData> {
-    map(
-        tuple((
-            terminated(one_of("MA"), char(',')),
-            terminated(one_of("123"), char(',')),
-            alt((do_parse_empty_gsa_tail, do_parse_gsa_tail)),
-        )),
-        |(mode1, mode2, mut tail)| GsaData {
+    let (i, mode1) = one_of("MA")(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, mode2) = one_of("123")(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, mut tail) = alt((do_parse_empty_gsa_tail, do_parse_gsa_tail))(i)?;
+    Ok((
+        i,
+        GsaData {
             mode1: match mode1 {
                 'M' => GsaMode1::Manual,
                 'A' => GsaMode1::Automatic,
@@ -545,7 +522,7 @@ fn do_parse_gsa(i: &[u8]) -> IResult<&[u8], GsaData> {
             hdop: tail.2,
             vdop: tail.3,
         },
-    )(i)
+    ))
 }
 
 /// Parse GSA
@@ -609,72 +586,25 @@ pub struct VtgData {
     pub speed_over_ground: Option<f32>,
 }
 
-fn float_number(input: &[u8]) -> IResult<&[u8], &[u8]> {
-    use nom::{InputIter, InputLength};
-
-    let input_length = input.input_len();
-    if input_length == 0 {
-        return Err(nom::Err::Incomplete(nom::Needed::Unknown));
-    }
-
-    #[derive(PartialEq)]
-    enum State {
-        BeforePoint,
-        Point,
-        AfterPoint,
-    }
-    let mut state = State::BeforePoint;
-
-    for (idx, item) in input.iter_indices() {
-        match state {
-            State::BeforePoint => {
-                if item.as_char() == '.' {
-                    state = State::Point;
-                } else if !item.is_dec_digit() {
-                    if idx == 0 {
-                        return Err(nom::Err::Error(error_position!(input, ErrorKind::Digit)));
-                    } else {
-                        return Ok((&input[idx..], &input[..idx]));
-                    }
-                }
-            }
-            State::Point => {
-                if !item.is_dec_digit() {
-                    return Err(nom::Err::Error(error_position!(input, ErrorKind::Digit)));
-                }
-                state = State::AfterPoint;
-            }
-            State::AfterPoint => {
-                if !item.is_dec_digit() {
-                    return Ok((&input[idx..], &input[..idx]));
-                }
-            }
-        }
-    }
-    Ok((&input[input_length..], input))
-}
-
 fn do_parse_vtg(i: &[u8]) -> IResult<&[u8], VtgData> {
-    map(
-        tuple((
-            terminated(
-                opt(map_res(float_number, parse_float_num::<f32>)),
-                tuple((char(','), opt(char('T')), char(','))),
-            ),
-            terminated(
-                opt(map_res(float_number, parse_float_num::<f32>)),
-                tuple((char(','), opt(char('M')), char(','))),
-            ),
-            terminated(
-                opt(map_res(float_number, parse_float_num::<f32>)),
-                tuple((char(','), opt(char('N')))),
-            ),
-            terminated(
-                opt(map_res(float_number, parse_float_num::<f32>)),
-                tuple((char(','), opt(char('K')))),
-            ),
-        )),
-        |(true_course, _magn_course, knots_ground_speed, kph_ground_speed)| VtgData {
+    let (i, true_course) = opt(float)(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, _) = opt(char('T'))(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, _magn_course) = opt(float)(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, _) = opt(char('M'))(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, knots_ground_speed) = opt(float)(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, _) = opt(char('N'))(i)?;
+    let (i, kph_ground_speed) = opt(float)(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, _) = opt(char('K'))(i)?;
+
+    Ok((
+        i,
+        VtgData {
             true_course,
             speed_over_ground: match (knots_ground_speed, kph_ground_speed) {
                 (Some(val), _) => Some(val),
@@ -682,7 +612,7 @@ fn do_parse_vtg(i: &[u8]) -> IResult<&[u8], VtgData> {
                 (None, None) => None,
             },
         },
-    )(i)
+    ))
 }
 
 /// parse VTG
@@ -991,17 +921,6 @@ mod tests {
             let s = parse_nmea_sentence(line.as_bytes()).unwrap();
             parse_gsa(&s).unwrap();
         }
-    }
-
-    #[test]
-    fn test_float_number() {
-        assert_eq!(Ok((&b""[..], &b"12.3"[..])), float_number(&b"12.3"[..]));
-        assert_eq!(Ok((&b"a"[..], &b"12.3"[..])), float_number(&b"12.3a"[..]));
-        assert_eq!(Ok((&b"a"[..], &b"12"[..])), float_number(&b"12a"[..]));
-        assert_eq!(
-            Err(nom::Err::Error((&b"a12a"[..], ErrorKind::Digit))),
-            float_number(&b"a12a"[..])
-        );
     }
 
     #[test]
