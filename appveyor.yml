@@ -6,9 +6,9 @@ environment:
   matrix:
   # Oldest supported
   - TARGET: x86_64-pc-windows-msvc
-    CHANNEL: 1.31.1
+    CHANNEL: 1.36.0
   - TARGET: x86_64-pc-windows-gnu
-    CHANNEL: 1.31.1
+    CHANNEL: 1.36.0
   # Stable channel
   - TARGET: i686-pc-windows-msvc
     CHANNEL: stable
