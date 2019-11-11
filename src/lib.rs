@@ -1075,5 +1075,4 @@ mod tests {
         assert_eq!(TestEnum::try_from(b"AAA").unwrap(), a);
         assert_eq!(TestEnum::try_from(b"BBB").unwrap(), b);
     }
-
 }
