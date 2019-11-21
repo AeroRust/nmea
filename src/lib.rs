@@ -29,7 +29,7 @@ use std::{
 };
 
 pub use crate::parse::{
-    parse, GgaData, GsaData, GsvData, ParseResult, RmcData, RmcStatusOfFix, VtgData,
+    parse, GgaData, GllData, GsaData, GsvData, ParseResult, RmcData, RmcStatusOfFix, VtgData,
 };
 use chrono::{NaiveDate, NaiveTime};
 
@@ -219,6 +219,12 @@ impl<'a> Nmea {
         self.true_course = vtg.true_course;
     }
 
+    fn merge_gll_data(&mut self, gll: GllData) {
+        self.latitude = Some(gll.latitude);
+        self.longitude = Some(gll.longitude);
+        self.fix_time = Some(gll.fix_time);
+    }
+
     /// Parse any NMEA sentence and stores the result. The type of sentence
     /// is returnd if implemented and valid.
     pub fn parse(&mut self, s: &'a str) -> Result<SentenceType, String> {
@@ -242,6 +248,10 @@ impl<'a> Nmea {
             ParseResult::GSA(gsa) => {
                 self.merge_gsa_data(gsa);
                 Ok(SentenceType::GSA)
+            }
+            ParseResult::GLL(gll) => {
+                self.merge_gll_data(gll);
+                Ok(SentenceType::GLL)
             }
             ParseResult::Unsupported(msg_id) => Err(format!(
                 "Unknown or implemented sentence type: {:?}",
@@ -333,6 +343,10 @@ impl<'a> Nmea {
                 }
                 self.merge_gga_data(gga_data);
                 self.sentences_for_this_time.insert(SentenceType::GGA);
+            }
+            ParseResult::GLL(gll_data) => {
+                self.merge_gll_data(gll_data);
+                return Ok(FixType::Invalid);
             }
             ParseResult::Unsupported(_) => {
                 return Ok(FixType::Invalid);
@@ -1074,5 +1088,29 @@ mod tests {
 
         assert_eq!(TestEnum::try_from(b"AAA").unwrap(), a);
         assert_eq!(TestEnum::try_from(b"BBB").unwrap(), b);
+    }
+
+    #[test]
+    fn test_gll() {
+        use chrono::Timelike;
+        let mut nmea = Nmea::new();
+
+        // Example from https://docs.novatel.com/OEM7/Content/Logs/GPGLL.htm
+        nmea.parse("$GPGLL,5107.0013414,N,11402.3279144,W,205412.00,A,A*73")
+            .unwrap();
+        assert_eq!(51. + 7.0013414 / 60., nmea.latitude().unwrap());
+        assert_eq!(-(114. + 2.3279144 / 60.), nmea.longitude().unwrap());
+        assert_eq!(20, nmea.fix_timestamp().unwrap().hour());
+        assert_eq!(54, nmea.fix_timestamp().unwrap().minute());
+        assert_eq!(12, nmea.fix_timestamp().unwrap().second());
+
+        // Example from https://www.gpsinformation.org/dale/nmea.htm#GLL
+        nmea.parse("$GPGLL,4916.45,N,12311.12,W,225444,A,*1D")
+            .unwrap();
+        assert_eq!(49. + 16.45 / 60., nmea.latitude().unwrap());
+        assert_eq!(-(123. + 11.12 / 60.), nmea.longitude().unwrap());
+        assert_eq!(22, nmea.fix_timestamp().unwrap().hour());
+        assert_eq!(54, nmea.fix_timestamp().unwrap().minute());
+        assert_eq!(44, nmea.fix_timestamp().unwrap().second());
     }
 }
