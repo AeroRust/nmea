@@ -238,6 +238,9 @@ fn parse_hms(i: &[u8]) -> IResult<&[u8], NaiveTime> {
             if minutes >= 60 {
                 return Err("Invalid time: min >= 60");
             }
+            if sec >= 60. {
+                return Err("Invalid time: sec >= 60");
+            }
             Ok(NaiveTime::from_hms_nano(
                 hour,
                 minutes,
