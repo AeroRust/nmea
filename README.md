@@ -2,8 +2,7 @@
 ===========
 
 [![Version](https://img.shields.io/crates/v/nmea.svg)](https://crates.io/crates/nmea)
-[![Build Status](https://travis-ci.org/Dushistov/rust-nmea.png)](https://travis-ci.org/Dushistov/rust-nmea)
-[![Build status](https://ci.appveyor.com/api/projects/status/u5p772sy1l4k90oq?svg=true)](https://ci.appveyor.com/project/Dushistov/rust-nmea)
+[![Build Status](https://github.com/AeroRust/nmea/workflows/CI/badge.svg)](https://github.com/AeroRust/nmea/actions?query=workflow%3ACI+branch%3Amaster)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/Dushistov/rust-nmea/blob/master/LICENSE.txt)
 
 NMEA 0183 sentence parser for Rust. 

@@ -5,7 +5,7 @@ authors = ["Felix Obenhuber <felix@obenhuber.de>", "Evgeniy A. Dushistov <dushis
 description = "Simple NMEA 0183 parser"
 license = "Apache-2.0"
 keywords = ["NMEA", "gps", "glonass", "coordinate", "position"]
-repository = "https://github.com/Dushistov/rust-nmea"
+repository = "https://github.com/AeroRust/nmea"
 documentation = "https://docs.rs/nmea/"
 readme = "README.md"
 edition = "2018"
@@ -19,5 +19,4 @@ quickcheck = "0.9"
 approx = "0.3"
 
 [badges]
-travis-ci = { repository = "Dushistov/rust-nmea" }
-appveyor = { repository = "Dushistov/rust-nmea" }
+github-actions = { repository = "AeroRust/nmea", workflow = "CI" }
