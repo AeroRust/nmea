@@ -7,8 +7,8 @@ on:
       - master
 
 jobs:
-  build:
-
+  rust:
+    name: Rust
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -17,8 +17,39 @@ jobs:
       RUSTUP_MAX_RETRIES: 10
       CARGO_NET_RETRY: 10
     steps:
-      - uses: actions/checkout@v1
-      - name: Build
-        run: cargo build --verbose
-      - name: Run tests
-        run: cargo test --verbose
+
+      - name: Checkout repository
+        uses: actions/checkout@v1
+
+      # We need to disable the existing toolchain to avoid updating rust-docs
+      # which takes a long time. The fastest way to do this is to rename the
+      # existing folder, as deleting it takes about as much time as not doing
+      # anything and just updating rust-docs.
+      - name: Rename existing rust toolchain (Windows)
+        if: matrix.os == 'windows-latest'
+        run: Rename-Item C:\Users\runneradmin\.rustup\toolchains\stable-x86_64-pc-windows-msvc C:\Users\runneradmin\.rustup\toolchains\stable-x86_64-pc-windows-msvc.old
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+          components: rustfmt, rust-src
+
+      - name: Compile
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-run
+
+      - name: Test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+
+      - name: Build Documentation
+        uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --all --no-deps
