@@ -389,7 +389,7 @@ impl fmt::Display for Nmea {
 }
 
 #[derive(Clone, PartialEq)]
-/// ! A Satellite
+/// Satellite information
 pub struct Satellite {
     gnss_type: GnssType,
     prn: u32,
@@ -451,7 +451,11 @@ impl fmt::Debug for Satellite {
 }
 
 macro_rules! define_sentence_type_enum {
-    ($Name:ident { $($Variant:ident),* $(,)* }) => {
+    (
+	$(#[$outer:meta])*
+	enum $Name:ident { $($Variant:ident),* $(,)* }
+    ) => {
+	$(#[$outer])*
         #[derive(PartialEq, Debug, Hash, Eq, Clone)]
         pub enum $Name {
             None,
@@ -478,133 +482,135 @@ macro_rules! define_sentence_type_enum {
     }
 }
 
-/// ! NMEA sentence type
-/// ! General: OSD |
-/// ! Autopilot: APA | APB | ASD |
-/// ! Decca: DCN |
-/// ! D-GPS: MSK
-/// ! Echo: DBK | DBS | DBT |
-/// ! Radio: FSI | SFI | TLL
-/// ! Speed: VBW | VHW | VLW |
-/// ! GPS: ALM | GBS | GGA | GNS | GSA | GSV |
-/// ! Course: DPT | HDG | HDM | HDT | HSC | ROT | VDR |
-/// ! Loran-C: GLC | LCD |
-/// ! Machine: RPM |
-/// ! Navigation: RMA | RMB | RMC |
-/// ! Omega: OLN |
-/// ! Position: GLL | DTM
-/// ! Radar: RSD | TLL | TTM |
-/// ! Rudder: RSA |
-/// ! Temperature: MTW |
-/// ! Transit: GXA | RTF |
-/// ! Waypoints and tacks: AAM | BEC | BOD | BWC | BWR | BWW | ROO | RTE |
-/// !                      VTG | WCV | WNC | WPL | XDR | XTE | XTR |
-/// ! Wind: MWV | VPW | VWR |
-/// ! Date and Time: GDT | ZDA | ZFO | ZTG |
-define_sentence_type_enum!(SentenceType {
-    AAM,
-    ABK,
-    ACA,
-    ACK,
-    ACS,
-    AIR,
-    ALM,
-    ALR,
-    APA,
-    APB,
-    ASD,
-    BEC,
-    BOD,
-    BWC,
-    BWR,
-    BWW,
-    CUR,
-    DBK,
-    DBS,
-    DBT,
-    DCN,
-    DPT,
-    DSC,
-    DSE,
-    DSI,
-    DSR,
-    DTM,
-    FSI,
-    GBS,
-    GGA,
-    GLC,
-    GLL,
-    GMP,
-    GNS,
-    GRS,
-    GSA,
-    GST,
-    GSV,
-    GTD,
-    GXA,
-    HDG,
-    HDM,
-    HDT,
-    HMR,
-    HMS,
-    HSC,
-    HTC,
-    HTD,
-    LCD,
-    LRF,
-    LRI,
-    LR1,
-    LR2,
-    LR3,
-    MLA,
-    MSK,
-    MSS,
-    MWD,
-    MTW,
-    MWV,
-    OLN,
-    OSD,
-    ROO,
-    RMA,
-    RMB,
-    RMC,
-    ROT,
-    RPM,
-    RSA,
-    RSD,
-    RTE,
-    SFI,
-    SSD,
-    STN,
-    TLB,
-    TLL,
-    TRF,
-    TTM,
-    TUT,
-    TXT,
-    VBW,
-    VDM,
-    VDO,
-    VDR,
-    VHW,
-    VLW,
-    VPW,
-    VSD,
-    VTG,
-    VWR,
-    WCV,
-    WNC,
-    WPL,
-    XDR,
-    XTE,
-    XTR,
-    ZDA,
-    ZDL,
-    ZFO,
-    ZTG,
-});
+define_sentence_type_enum!(
+    /// NMEA sentence type
+    /// General: OSD |
+    /// Autopilot: APA | APB | ASD |
+    /// Decca: DCN |
+    /// D-GPS: MSK
+    /// Echo: DBK | DBS | DBT |
+    /// Radio: FSI | SFI | TLL
+    /// Speed: VBW | VHW | VLW |
+    /// GPS: ALM | GBS | GGA | GNS | GSA | GSV |
+    /// Course: DPT | HDG | HDM | HDT | HSC | ROT | VDR |
+    /// Loran-C: GLC | LCD |
+    /// Machine: RPM |
+    /// Navigation: RMA | RMB | RMC |
+    /// Omega: OLN |
+    /// Position: GLL | DTM
+    /// Radar: RSD | TLL | TTM |
+    /// Rudder: RSA |
+    /// Temperature: MTW |
+    /// Transit: GXA | RTF |
+    /// Waypoints and tacks: AAM | BEC | BOD | BWC | BWR | BWW | ROO | RTE |
+    ///                      VTG | WCV | WNC | WPL | XDR | XTE | XTR |
+    /// Wind: MWV | VPW | VWR |
+    /// Date and Time: GDT | ZDA | ZFO | ZTG |
+    enum SentenceType {
+        AAM,
+        ABK,
+        ACA,
+        ACK,
+        ACS,
+        AIR,
+        ALM,
+        ALR,
+        APA,
+        APB,
+        ASD,
+        BEC,
+        BOD,
+        BWC,
+        BWR,
+        BWW,
+        CUR,
+        DBK,
+        DBS,
+        DBT,
+        DCN,
+        DPT,
+        DSC,
+        DSE,
+        DSI,
+        DSR,
+        DTM,
+        FSI,
+        GBS,
+        GGA,
+        GLC,
+        GLL,
+        GMP,
+        GNS,
+        GRS,
+        GSA,
+        GST,
+        GSV,
+        GTD,
+        GXA,
+        HDG,
+        HDM,
+        HDT,
+        HMR,
+        HMS,
+        HSC,
+        HTC,
+        HTD,
+        LCD,
+        LRF,
+        LRI,
+        LR1,
+        LR2,
+        LR3,
+        MLA,
+        MSK,
+        MSS,
+        MWD,
+        MTW,
+        MWV,
+        OLN,
+        OSD,
+        ROO,
+        RMA,
+        RMB,
+        RMC,
+        ROT,
+        RPM,
+        RSA,
+        RSD,
+        RTE,
+        SFI,
+        SSD,
+        STN,
+        TLB,
+        TLL,
+        TRF,
+        TTM,
+        TUT,
+        TXT,
+        VBW,
+        VDM,
+        VDO,
+        VDR,
+        VHW,
+        VLW,
+        VPW,
+        VSD,
+        VTG,
+        VWR,
+        WCV,
+        WNC,
+        WPL,
+        XDR,
+        XTE,
+        XTR,
+        ZDA,
+        ZDL,
+        ZFO,
+        ZTG,
+    }
+);
 
-/// ! Fix type
+/// Fix type
 #[derive(Clone, PartialEq, Debug)]
 pub enum FixType {
     Invalid,
@@ -618,7 +624,7 @@ pub enum FixType {
     Simulation,
 }
 
-/// ! GNSS type
+/// GNSS type
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub enum GnssType {
     Galileo,
@@ -1077,7 +1083,12 @@ mod tests {
 
     #[test]
     fn test_define_sentence_type_enum() {
-        define_sentence_type_enum!(TestEnum { AAA, BBB });
+        define_sentence_type_enum!(
+            enum TestEnum {
+                AAA,
+                BBB,
+            }
+        );
 
         let a = TestEnum::AAA;
         let b = TestEnum::BBB;
