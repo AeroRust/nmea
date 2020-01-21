@@ -13,6 +13,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        rust: [stable, beta]
     env:
       RUSTUP_MAX_RETRIES: 10
       CARGO_NET_RETRY: 10
@@ -32,7 +33,7 @@ jobs:
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.rust }}
           profile: minimal
           override: true
           components: rustfmt, rust-src
