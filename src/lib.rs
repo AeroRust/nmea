@@ -21,6 +21,7 @@
 //
 
 mod parse;
+mod sentences;
 
 use std::{
     collections::{HashMap, HashSet},
@@ -261,7 +262,7 @@ impl<'a> Nmea {
     }
 
     fn new_tick(&mut self) {
-        let old = mem::replace(self, Self::default());
+        let old = mem::take(self);
         self.satellites_scan = old.satellites_scan;
         self.satellites = old.satellites;
         self.required_sentences_for_nav = old.required_sentences_for_nav;
