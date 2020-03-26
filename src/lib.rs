@@ -34,7 +34,7 @@ pub use crate::parse::{
 use chrono::{NaiveDate, NaiveTime};
 
 /// NMEA parser
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct Nmea {
     pub fix_time: Option<NaiveTime>,
     pub fix_date: Option<NaiveDate>,
