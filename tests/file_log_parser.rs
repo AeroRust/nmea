@@ -6,7 +6,7 @@ use std::{
 };
 
 fn err_to_string<E: Error>(e: E) -> String {
-    e.description().to_string()
+    e.to_string()
 }
 
 fn process_file(n: &Path) -> Result<Vec<String>, String> {
