@@ -98,21 +98,28 @@ pub enum ParseResult {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum NmeaError<'a> {
+    /// The provided input was not a proper UTF-8 string
     Utf8DecodingError,
+    /// The checksum of the sentence was corrupt or wrong
     ChecksumMismatch,
-    /// First is expected, second is found
+    /// For some reason a sentence was passed to the wrong sentence specific parser, this error
+    /// should never happen. First slice is the expected header, second is the found one
     WrongSentenceHeader(&'a [u8], &'a [u8]),
-    IncompleteSentence,
-    FormatError(nom::Err<(&'a [u8], nom::error::ErrorKind)>),
+    /// The sentence could not be parsed because its format was invalid
+    ParsingError(nom::Err<(&'a [u8], nom::error::ErrorKind)>),
+    /// The sentence was too long to be parsed, our current limit is 102 characters
     SentenceLength(usize),
+    /// The type of a GSV sentence was not a valid Gnss type
     InvalidGnssType,
+    /// The sentence has and maybe will never be implemented
     Unsupported(SentenceType),
+    /// The provided navigation configuration was empty and thus invalid
     EmptyNavConfig,
 }
 
 impl<'a> From<nom::Err<(&'a [u8], nom::error::ErrorKind)>> for NmeaError<'a> {
     fn from(error: nom::Err<(&'a [u8], nom::error::ErrorKind)>) -> Self {
-        Self::FormatError(error)
+        Self::ParsingError(error)
     }
 }
 
