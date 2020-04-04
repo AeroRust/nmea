@@ -6,7 +6,7 @@ use nom::combinator::opt;
 use nom::number::complete::float;
 use nom::IResult;
 
-use crate::parse::{NmeaSentence, ParseError};
+use crate::parse::{NmeaError, NmeaSentence};
 use crate::sentences::utils::{parse_date, parse_hms, parse_lat_lon};
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum RmcStatusOfFix {
@@ -76,9 +76,9 @@ fn do_parse_rmc(i: &[u8]) -> IResult<&[u8], RmcData> {
 /// *68        mandatory nmea_checksum
 ///
 /// SiRF chipsets don't return either Mode Indicator or magnetic variation.
-pub fn parse_rmc(sentence: NmeaSentence) -> Result<RmcData, ParseError> {
+pub fn parse_rmc(sentence: NmeaSentence) -> Result<RmcData, NmeaError> {
     if sentence.message_id != b"RMC" {
-        Err(ParseError::WrongSentenceHeader(sentence.message_id, b"RMC"))
+        Err(NmeaError::WrongSentenceHeader(sentence.message_id, b"RMC"))
     } else {
         Ok(do_parse_rmc(sentence.data)?.1)
     }

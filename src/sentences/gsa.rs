@@ -7,10 +7,10 @@ use nom::number::complete::float;
 use nom::sequence::terminated;
 use nom::IResult;
 
-use crate::parse::{NmeaSentence, ParseError};
+use crate::parse::{NmeaError, NmeaSentence};
 use crate::sentences::utils::number;
 
-#[derive(PartialEq, Copy, Clone,Debug)]
+#[derive(PartialEq, Copy, Clone, Debug)]
 pub enum GsaMode1 {
     Manual,
     Automatic,
@@ -128,9 +128,9 @@ fn do_parse_gsa(i: &[u8]) -> IResult<&[u8], GsaData> {
 /// in at least two ways: it's got the wrong number of fields, and
 /// it claims to be a valid sentence (A flag) when it isn't.
 /// Alarmingly, it's possible this error may be generic to SiRFstarIII
-pub fn parse_gsa(sentence: NmeaSentence) -> Result<GsaData, ParseError> {
+pub fn parse_gsa(sentence: NmeaSentence) -> Result<GsaData, NmeaError> {
     if sentence.message_id != b"GSA" {
-        Err(ParseError::WrongSentenceHeader(sentence.message_id, b"GSA"))
+        Err(NmeaError::WrongSentenceHeader(sentence.message_id, b"GSA"))
     } else {
         Ok(do_parse_gsa(sentence.data)?.1)
     }

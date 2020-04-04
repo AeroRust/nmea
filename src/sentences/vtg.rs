@@ -3,7 +3,7 @@ use nom::combinator::opt;
 use nom::number::complete::float;
 use nom::IResult;
 
-use crate::parse::{NmeaSentence, ParseError};
+use crate::parse::{NmeaError, NmeaSentence};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct VtgData {
@@ -71,9 +71,9 @@ fn do_parse_vtg(i: &[u8]) -> IResult<&[u8], VtgData> {
 /// x.x,M = Track, degrees Magnetic
 /// x.x,N = Speed, knots
 /// x.x,K = Speed, Km/hr
-pub fn parse_vtg(sentence: NmeaSentence) -> Result<VtgData, ParseError> {
+pub fn parse_vtg(sentence: NmeaSentence) -> Result<VtgData, NmeaError> {
     if sentence.message_id != b"VTG" {
-        Err(ParseError::WrongSentenceHeader(sentence.message_id, b"VTG"))
+        Err(NmeaError::WrongSentenceHeader(sentence.message_id, b"VTG"))
     } else {
         Ok(do_parse_vtg(sentence.data)?.1)
     }
@@ -83,9 +83,9 @@ pub fn parse_vtg(sentence: NmeaSentence) -> Result<VtgData, ParseError> {
 mod tests {
     use super::*;
 
-    use crate::parse::{parse_nmea_sentence, ParseError};
+    use crate::parse::{parse_nmea_sentence, NmeaError};
 
-    fn run_parse_vtg(line: &[u8]) -> Result<VtgData, ParseError> {
+    fn run_parse_vtg(line: &[u8]) -> Result<VtgData, NmeaError> {
         let s = parse_nmea_sentence(line).expect("VTG sentence initial parse failed");
         assert_eq!(s.checksum, s.calc_checksum());
         parse_vtg(s)

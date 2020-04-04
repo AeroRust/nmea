@@ -5,7 +5,7 @@ use nom::combinator::{map, opt};
 use nom::sequence::terminated;
 use nom::IResult;
 
-use crate::parse::{NmeaSentence, ParseError};
+use crate::parse::{NmeaError, NmeaSentence};
 use crate::sentences::utils::{do_parse_lat_lon, parse_hms};
 
 /// Parse GPGLL (Geographic position)
@@ -22,9 +22,9 @@ use crate::sentences::utils::{do_parse_lat_lon, parse_hms};
 /// | 7     | data status | Data status: A = Data valid, V = Data invalid
 /// | 8     | mode ind    | Positioning system mode indicator, see `PosSystemIndicator`
 /// | 9     | *xx         | Check sum
-pub fn parse_gll(sentence: NmeaSentence) -> Result<GllData, ParseError> {
+pub fn parse_gll(sentence: NmeaSentence) -> Result<GllData, NmeaError> {
     if sentence.message_id != b"GLL" {
-        Err(ParseError::WrongSentenceHeader(sentence.message_id, b"GLL"))
+        Err(NmeaError::WrongSentenceHeader(sentence.message_id, b"GLL"))
     } else {
         Ok(do_parse_gll(sentence.data)?.1)
     }

@@ -2,7 +2,7 @@ use nom::character::complete::char;
 use nom::combinator::{cond, opt, rest_len};
 use nom::IResult;
 
-use crate::parse::{NmeaSentence, ParseError};
+use crate::parse::{NmeaError, NmeaSentence};
 use crate::sentences::utils::number;
 use crate::{GnssType, Satellite};
 
@@ -83,15 +83,15 @@ fn do_parse_gsv(i: &[u8]) -> IResult<&[u8], GsvData> {
 /// GL may be (incorrectly) used when GSVs are mixed containing
 /// GLONASS, GN may be (incorrectly) used when GSVs contain GLONASS
 /// only.  Usage is inconsistent.
-pub fn parse_gsv(sentence: NmeaSentence) -> Result<GsvData, ParseError> {
+pub fn parse_gsv(sentence: NmeaSentence) -> Result<GsvData, NmeaError> {
     if sentence.message_id != b"GSV" {
-        Err(ParseError::WrongSentenceHeader(sentence.message_id, b"GSV"))
+        Err(NmeaError::WrongSentenceHeader(sentence.message_id, b"GSV"))
     } else {
         let gnss_type = match sentence.talker_id {
             b"GP" => GnssType::Gps,
             b"GL" => GnssType::Glonass,
             _ => {
-                return Err(ParseError::WrongSentenceHeader(
+                return Err(NmeaError::WrongSentenceHeader(
                     sentence.message_id,
                     b"GP|GL",
                 ))

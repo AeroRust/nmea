@@ -61,7 +61,7 @@ fn do_parse_nmea_sentence(i: &[u8]) -> IResult<&[u8], NmeaSentence> {
     ))
 }
 
-pub fn parse_nmea_sentence<'a>(sentence: &'a [u8]) -> Result<NmeaSentence, ParseError<'a>> {
+pub fn parse_nmea_sentence<'a>(sentence: &'a [u8]) -> Result<NmeaSentence, NmeaError<'a>> {
     /*
      * From gpsd:
      * We've had reports that on the Garmin GPS-10 the device sometimes
@@ -79,7 +79,7 @@ pub fn parse_nmea_sentence<'a>(sentence: &'a [u8]) -> Result<NmeaSentence, Parse
      * a 100-character PSTI message.
      */
     if sentence.len() > 102 {
-        Err(ParseError::SentenceLength(sentence.len()))
+        Err(NmeaError::SentenceLength(sentence.len()))
     } else {
         Ok(do_parse_nmea_sentence(sentence)?.1)
     }
@@ -97,7 +97,7 @@ pub enum ParseResult {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum ParseError<'a> {
+pub enum NmeaError<'a> {
     Utf8DecodingError,
     ChecksumMismatch,
     /// First is expected, second is found
@@ -107,16 +107,17 @@ pub enum ParseError<'a> {
     SentenceLength(usize),
     InvalidGnssType,
     Unsupported(SentenceType),
+    EmptyNavConfig,
 }
 
-impl<'a> From<nom::Err<(&'a [u8], nom::error::ErrorKind)>> for ParseError<'a> {
+impl<'a> From<nom::Err<(&'a [u8], nom::error::ErrorKind)>> for NmeaError<'a> {
     fn from(error: nom::Err<(&'a [u8], nom::error::ErrorKind)>) -> Self {
         Self::FormatError(error)
     }
 }
 
 /// parse nmea 0183 sentence and extract data from it
-pub fn parse(xs: & [u8]) -> Result<ParseResult, ParseError> {
+pub fn parse(xs: &[u8]) -> Result<ParseResult, NmeaError> {
     let nmea_sentence = parse_nmea_sentence(xs)?;
 
     if nmea_sentence.checksum == nmea_sentence.calc_checksum() {
@@ -130,6 +131,6 @@ pub fn parse(xs: & [u8]) -> Result<ParseResult, ParseError> {
             msg_id => Ok(ParseResult::Unsupported(msg_id)),
         }
     } else {
-        Err(ParseError::ChecksumMismatch)
+        Err(NmeaError::ChecksumMismatch)
     }
 }
