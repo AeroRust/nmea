@@ -37,7 +37,7 @@ use chrono::{NaiveDate, NaiveTime};
 use std::collections::{HashMap, HashSet};
 
 /// NMEA parser
-#[derive(Debug, Default, Clone, PartialEq)]
+#[derive(Default, Debug, Clone)]
 pub struct Nmea {
     pub fix_time: Option<NaiveTime>,
     pub fix_date: Option<NaiveDate>,
