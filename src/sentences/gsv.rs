@@ -114,7 +114,7 @@ mod tests {
 
     #[test]
     fn test_parse_gsv_full() {
-        let data = parse_gsv(&NmeaSentence {
+        let data = parse_gsv(NmeaSentence {
             talker_id: b"GP",
             message_id: b"GSV",
             data: b"2,1,08,01,,083,46,02,17,308,,12,07,344,39,14,22,228,",
@@ -166,7 +166,7 @@ mod tests {
             }
         );
 
-        let data = parse_gsv(&NmeaSentence {
+        let data = parse_gsv(NmeaSentence {
             talker_id: b"GL",
             message_id: b"GSV",
             data: b"3,3,10,72,40,075,43,87,00,000,",

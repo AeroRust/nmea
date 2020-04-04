@@ -156,7 +156,7 @@ mod tests {
     #[test]
     fn smoke_test_parse_gsa() {
         let s = parse_nmea_sentence(b"$GPGSA,A,3,,,,,,16,18,,22,24,,,3.6,2.1,2.2*3C").unwrap();
-        let gsa = parse_gsa(&s).unwrap();
+        let gsa = parse_gsa(s).unwrap();
         assert_eq!(
             GsaData {
                 mode1: GsaMode1::Automatic,
@@ -179,7 +179,7 @@ mod tests {
         for line in &gsa_examples {
             println!("we parse line '{}'", line);
             let s = parse_nmea_sentence(line.as_bytes()).unwrap();
-            parse_gsa(&s).unwrap();
+            parse_gsa(s).unwrap();
         }
     }
 }

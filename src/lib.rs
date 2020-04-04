@@ -73,7 +73,7 @@ impl<'a> Nmea {
     /// let mut nmea= Nmea::new();
     /// let gga = "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76";
     /// nmea.parse(gga).unwrap();
-    /// println!("{}", nmea);
+    /// println!("{:?}", nmea);
     /// ```
     pub fn new() -> Nmea {
         // TODO: This looks ugly.
@@ -97,7 +97,7 @@ impl<'a> Nmea {
     ///                                                .collect()).unwrap();
     /// let gga = "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76";
     /// nmea.parse(gga).unwrap();
-    /// println!("{}", nmea);
+    /// println!("{:?}", nmea);
     /// ```
     pub fn create_for_navigation(
         required_sentences_for_nav: HashSet<SentenceType>,
@@ -1032,7 +1032,7 @@ mod tests {
                     continue;
                 }
                 Err(msg) => {
-                    println!("update_gnss_info_nmea: parse_for_fix failed: {}", msg);
+                    println!("update_gnss_info_nmea: parse_for_fix failed: {:?}", msg);
                     continue;
                 }
                 Ok(_) => nfixes += 1,

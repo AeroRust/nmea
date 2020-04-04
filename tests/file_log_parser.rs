@@ -19,7 +19,7 @@ fn process_file(n: &Path) -> Result<Vec<String>, String> {
             .map_err(|s| format!("{} at line {}", s, num + 1))?;
         let parse_res = nmea
             .parse(&line)
-            .map_err(|s| format!("{} at line {}", s, num + 1))?;
+            .map_err(|s| format!("{:?} at line {}", s, num + 1))?;
         ret.push(format!("{:?}", parse_res));
     }
     Ok(ret)

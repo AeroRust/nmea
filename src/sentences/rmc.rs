@@ -99,7 +99,7 @@ mod tests {
         .unwrap();
         assert_eq!(s.checksum, s.calc_checksum());
         assert_eq!(s.checksum, 0x2b);
-        let rmc_data = parse_rmc(&s).unwrap();
+        let rmc_data = parse_rmc(s).unwrap();
         assert_eq!(
             rmc_data.fix_time.unwrap(),
             NaiveTime::from_hms_milli(22, 54, 46, 330)
@@ -119,7 +119,7 @@ mod tests {
         relative_eq!(rmc_data.true_course.unwrap(), 54.7);
 
         let s = parse_nmea_sentence(b"$GPRMC,,V,,,,,,,,,,N*53").unwrap();
-        let rmc = parse_rmc(&s).unwrap();
+        let rmc = parse_rmc(s).unwrap();
         assert_eq!(
             RmcData {
                 fix_time: None,

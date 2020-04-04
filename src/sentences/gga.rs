@@ -91,7 +91,7 @@ mod tests {
 
     #[test]
     fn test_parse_gga_full() {
-        let data = parse_gga(&NmeaSentence {
+        let data = parse_gga(NmeaSentence {
             talker_id: b"GP",
             message_id: b"GGA",
             data: b"033745.0,5650.82344,N,03548.9778,E,1,07,1.8,101.2,M,14.7,M,,",
@@ -109,7 +109,7 @@ mod tests {
 
         let s = parse_nmea_sentence(b"$GPGGA,,,,,,0,,,,,,,,*66").unwrap();
         assert_eq!(s.checksum, s.calc_checksum());
-        let data = parse_gga(&s).unwrap();
+        let data = parse_gga(s).unwrap();
         assert_eq!(
             GgaData {
                 fix_time: None,
@@ -132,7 +132,7 @@ mod tests {
                 .unwrap();
         assert_eq!(sentence.checksum, sentence.calc_checksum());
         assert_eq!(sentence.checksum, 0x4f);
-        let data = parse_gga(&sentence).unwrap();
+        let data = parse_gga(sentence).unwrap();
         assert_eq!(data.fix_type.unwrap(), FixType::Invalid);
     }
 }

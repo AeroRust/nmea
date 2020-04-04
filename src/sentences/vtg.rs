@@ -83,36 +83,36 @@ pub fn parse_vtg(sentence: NmeaSentence) -> Result<VtgData, ParseError> {
 mod tests {
     use super::*;
 
-    use crate::parse::parse_nmea_sentence;
+    use crate::parse::{parse_nmea_sentence, ParseError};
+
+    fn run_parse_vtg(line: &[u8]) -> Result<VtgData, ParseError> {
+        let s = parse_nmea_sentence(line).expect("VTG sentence initial parse failed");
+        assert_eq!(s.checksum, s.calc_checksum());
+        parse_vtg(s)
+    }
 
     #[test]
     fn test_parse_vtg() {
-        let run_parse_vtg = |line: &str| -> Result<VtgData, String> {
-            let s =
-                parse_nmea_sentence(line.as_bytes()).expect("VTG sentence initial parse failed");
-            assert_eq!(s.checksum, s.calc_checksum());
-            parse_vtg(&s)
-        };
         assert_eq!(
             VtgData {
                 true_course: None,
                 speed_over_ground: None,
             },
-            run_parse_vtg("$GPVTG,,T,,M,,N,,K,N*2C").unwrap()
+            run_parse_vtg(b"$GPVTG,,T,,M,,N,,K,N*2C").unwrap()
         );
         assert_eq!(
             VtgData {
                 true_course: Some(360.),
                 speed_over_ground: Some(0.),
             },
-            run_parse_vtg("$GPVTG,360.0,T,348.7,M,000.0,N,000.0,K*43").unwrap()
+            run_parse_vtg(b"$GPVTG,360.0,T,348.7,M,000.0,N,000.0,K*43").unwrap()
         );
         assert_eq!(
             VtgData {
                 true_course: Some(54.7),
                 speed_over_ground: Some(5.5),
             },
-            run_parse_vtg("$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48").unwrap()
+            run_parse_vtg(b"$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48").unwrap()
         );
     }
 }
