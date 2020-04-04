@@ -12,7 +12,7 @@ use crate::parse::{NmeaSentence, ParseError};
 use crate::sentences::utils::{number, parse_float_num, parse_hms, parse_lat_lon};
 use crate::FixType;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct GgaData {
     pub fix_time: Option<NaiveTime>,
     pub fix_type: Option<FixType>,
@@ -75,13 +75,11 @@ fn do_parse_gga(i: &[u8]) -> IResult<&[u8], GgaData> {
 /// ellipsoid, in Meters
 /// (empty field) time in seconds since last DGPS update
 /// (empty field) DGPS station ID number (0000-1023)
-pub fn parse_gga<'a>(sentence: NmeaSentence<'a>) -> Result<GgaData, ParseError<'a>> {
+pub fn parse_gga(sentence: NmeaSentence) -> Result<GgaData, ParseError> {
     if sentence.message_id != b"GGA" {
         Err(ParseError::WrongSentenceHeader(sentence.message_id, b"GGA"))
     } else {
-        Ok(do_parse_gga(sentence.data)
-            .map_err(|err| ParseError::FormatError(err))?
-            .1)
+        Ok(do_parse_gga(sentence.data)?.1)
     }
 }
 

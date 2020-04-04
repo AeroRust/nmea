@@ -6,6 +6,7 @@ use crate::parse::{NmeaSentence, ParseError};
 use crate::sentences::utils::number;
 use crate::{GnssType, Satellite};
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct GsvData {
     pub gnss_type: GnssType,
     pub number_of_sentences: u16,
@@ -82,7 +83,7 @@ fn do_parse_gsv(i: &[u8]) -> IResult<&[u8], GsvData> {
 /// GL may be (incorrectly) used when GSVs are mixed containing
 /// GLONASS, GN may be (incorrectly) used when GSVs contain GLONASS
 /// only.  Usage is inconsistent.
-pub fn parse_gsv<'a>(sentence: NmeaSentence<'a>) -> Result<GsvData, ParseError<'a>> {
+pub fn parse_gsv(sentence: NmeaSentence) -> Result<GsvData, ParseError> {
     if sentence.message_id != b"GSV" {
         Err(ParseError::WrongSentenceHeader(sentence.message_id, b"GSV"))
     } else {
@@ -96,13 +97,11 @@ pub fn parse_gsv<'a>(sentence: NmeaSentence<'a>) -> Result<GsvData, ParseError<'
                 ))
             }
         };
-        let mut res = do_parse_gsv(sentence.data)
-            .map_err(|err| ParseError::FormatError(err))?
-            .1;
-        res.gnss_type = gnss_type.clone();
+        let mut res = do_parse_gsv(sentence.data)?.1;
+        res.gnss_type = gnss_type;
         for sat in &mut res.sats_info {
             if let Some(v) = (*sat).as_mut() {
-                v.gnss_type = gnss_type.clone();
+                v.gnss_type = gnss_type;
             }
         }
         Ok(res)

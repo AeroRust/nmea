@@ -10,7 +10,7 @@ use nom::IResult;
 pub use crate::sentences::*;
 use crate::SentenceType;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NmeaSentence<'a> {
     pub talker_id: &'a [u8],
     pub message_id: &'a [u8],
@@ -81,12 +81,11 @@ pub fn parse_nmea_sentence<'a>(sentence: &'a [u8]) -> Result<NmeaSentence, Parse
     if sentence.len() > 102 {
         Err(ParseError::SentenceLength(sentence.len()))
     } else {
-        Ok(do_parse_nmea_sentence(sentence)
-            .map_err(|err| ParseError::FormatError(err))?
-            .1)
+        Ok(do_parse_nmea_sentence(sentence)?.1)
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum ParseResult {
     GGA(GgaData),
     RMC(RmcData),
@@ -97,6 +96,7 @@ pub enum ParseResult {
     Unsupported(SentenceType),
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum ParseError<'a> {
     Utf8DecodingError,
     ChecksumMismatch,
@@ -109,8 +109,14 @@ pub enum ParseError<'a> {
     Unsupported(SentenceType),
 }
 
+impl<'a> From<nom::Err<(&'a [u8], nom::error::ErrorKind)>> for ParseError<'a> {
+    fn from(error: nom::Err<(&'a [u8], nom::error::ErrorKind)>) -> Self {
+        Self::FormatError(error)
+    }
+}
+
 /// parse nmea 0183 sentence and extract data from it
-pub fn parse<'a>(xs: &'a [u8]) -> Result<ParseResult, ParseError<'a>> {
+pub fn parse(xs: & [u8]) -> Result<ParseResult, ParseError> {
     let nmea_sentence = parse_nmea_sentence(xs)?;
 
     if nmea_sentence.checksum == nmea_sentence.calc_checksum() {

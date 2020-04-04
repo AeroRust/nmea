@@ -8,14 +8,14 @@ use nom::IResult;
 
 use crate::parse::{NmeaSentence, ParseError};
 use crate::sentences::utils::{parse_date, parse_hms, parse_lat_lon};
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum RmcStatusOfFix {
     Autonomous,
     Differential,
     Invalid,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct RmcData {
     pub fix_time: Option<NaiveTime>,
     pub fix_date: Option<NaiveDate>,
@@ -76,13 +76,11 @@ fn do_parse_rmc(i: &[u8]) -> IResult<&[u8], RmcData> {
 /// *68        mandatory nmea_checksum
 ///
 /// SiRF chipsets don't return either Mode Indicator or magnetic variation.
-pub fn parse_rmc<'a>(sentence: NmeaSentence<'a>) -> Result<RmcData, ParseError<'a>> {
+pub fn parse_rmc(sentence: NmeaSentence) -> Result<RmcData, ParseError> {
     if sentence.message_id != b"RMC" {
         Err(ParseError::WrongSentenceHeader(sentence.message_id, b"RMC"))
     } else {
-        Ok(do_parse_rmc(sentence.data)
-            .map_err(|err| ParseError::FormatError(err))?
-            .1)
+        Ok(do_parse_rmc(sentence.data)?.1)
     }
 }
 

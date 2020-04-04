@@ -5,7 +5,7 @@ use nom::IResult;
 
 use crate::parse::{NmeaSentence, ParseError};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct VtgData {
     pub true_course: Option<f32>,
     pub speed_over_ground: Option<f32>,
@@ -71,13 +71,11 @@ fn do_parse_vtg(i: &[u8]) -> IResult<&[u8], VtgData> {
 /// x.x,M = Track, degrees Magnetic
 /// x.x,N = Speed, knots
 /// x.x,K = Speed, Km/hr
-pub fn parse_vtg<'a>(sentence: NmeaSentence<'a>) -> Result<VtgData, ParseError<'a>> {
+pub fn parse_vtg(sentence: NmeaSentence) -> Result<VtgData, ParseError> {
     if sentence.message_id != b"VTG" {
         Err(ParseError::WrongSentenceHeader(sentence.message_id, b"VTG"))
     } else {
-        Ok(do_parse_vtg(sentence.data)
-            .map_err(|err| ParseError::FormatError(err))?
-            .1)
+        Ok(do_parse_vtg(sentence.data)?.1)
     }
 }
 

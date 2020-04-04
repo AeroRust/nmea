@@ -26,7 +26,7 @@ mod sentences;
 
 use core::{
     iter::Iterator,
-    {fmt, mem, str},
+    {mem, str},
 };
 
 pub use crate::parse::{
@@ -37,7 +37,7 @@ use chrono::{NaiveDate, NaiveTime};
 use std::collections::{HashMap, HashSet};
 
 /// NMEA parser
-#[derive(Default, Debug)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct Nmea {
     pub fix_time: Option<NaiveTime>,
     pub fix_date: Option<NaiveDate>,
@@ -117,7 +117,7 @@ impl<'a> Nmea {
 
     /// Returns fix type
     pub fn fix_type(&self) -> Option<FixType> {
-        self.fix_type.clone()
+        self.fix_type
     }
 
     /// Returns last fixed latitude in degress. None if not fixed.
@@ -359,7 +359,7 @@ impl<'a> Nmea {
                     .required_sentences_for_nav
                     .is_subset(&self.sentences_for_this_time) =>
             {
-                Ok(fix_type.clone())
+                Ok(*fix_type)
             }
             _ => Ok(FixType::Invalid),
         }
@@ -388,7 +388,7 @@ impl<'a> Nmea {
 //    }
 //}
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 /// Satellite information
 pub struct Satellite {
     gnss_type: GnssType,
@@ -400,7 +400,7 @@ pub struct Satellite {
 
 impl Satellite {
     pub fn gnss_type(&self) -> GnssType {
-        self.gnss_type.clone()
+        self.gnss_type
     }
 
     pub fn prn(&self) -> u32 {
@@ -417,36 +417,6 @@ impl Satellite {
 
     pub fn snr(&self) -> Option<f32> {
         self.snr
-    }
-}
-
-//impl fmt::Display for Satellite {
-//    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//        write!(
-//            f,
-//            "{}: {} elv: {} ath: {} snr: {}",
-//            self.gnss_type,
-//            self.prn,
-//            self.elevation
-//                .map(|e| format!("{}", e))
-//                .unwrap_or_else(|| "--".to_owned()),
-//            self.azimuth
-//                .map(|e| format!("{}", e))
-//                .unwrap_or_else(|| "--".to_owned()),
-//            self.snr
-//                .map(|e| format!("{}", e))
-//                .unwrap_or_else(|| "--".to_owned())
-//        )
-//    }
-//}
-
-impl fmt::Debug for Satellite {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "[{:?},{:?},{:?},{:?},{:?}]",
-            self.gnss_type, self.prn, self.elevation, self.azimuth, self.snr
-        )
     }
 }
 
@@ -611,7 +581,7 @@ define_sentence_type_enum!(
 );
 
 /// Fix type
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum FixType {
     Invalid,
     Gps,
@@ -625,21 +595,11 @@ pub enum FixType {
 }
 
 /// GNSS type
-#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
 pub enum GnssType {
     Galileo,
     Gps,
     Glonass,
-}
-
-impl fmt::Display for GnssType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            GnssType::Galileo => write!(f, "Galileo"),
-            GnssType::Gps => write!(f, "GPS"),
-            GnssType::Glonass => write!(f, "GLONASS"),
-        }
-    }
 }
 
 impl From<char> for FixType {

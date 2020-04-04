@@ -22,13 +22,11 @@ use crate::sentences::utils::{do_parse_lat_lon, parse_hms};
 /// | 7     | data status | Data status: A = Data valid, V = Data invalid
 /// | 8     | mode ind    | Positioning system mode indicator, see `PosSystemIndicator`
 /// | 9     | *xx         | Check sum
-pub fn parse_gll<'a>(sentence: NmeaSentence<'a>) -> Result<GllData, ParseError<'a>> {
+pub fn parse_gll(sentence: NmeaSentence) -> Result<GllData, ParseError> {
     if sentence.message_id != b"GLL" {
         Err(ParseError::WrongSentenceHeader(sentence.message_id, b"GLL"))
     } else {
-        Ok(do_parse_gll(sentence.data)
-            .map_err(|err| ParseError::FormatError(err))?
-            .1)
+        Ok(do_parse_gll(sentence.data)?.1)
     }
 }
 
@@ -55,7 +53,7 @@ impl From<char> for PosSystemIndicator {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct GllData {
     pub latitude: f64,
     pub longitude: f64,
