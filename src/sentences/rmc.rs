@@ -6,7 +6,7 @@ use nom::combinator::opt;
 use nom::number::complete::float;
 use nom::IResult;
 
-use crate::parse::NmeaSentence;
+use crate::parse::{NmeaSentence, ParseError};
 use crate::sentences::utils::{parse_date, parse_hms, parse_lat_lon};
 #[derive(Debug, PartialEq)]
 pub enum RmcStatusOfFix {
@@ -76,18 +76,14 @@ fn do_parse_rmc(i: &[u8]) -> IResult<&[u8], RmcData> {
 /// *68        mandatory nmea_checksum
 ///
 /// SiRF chipsets don't return either Mode Indicator or magnetic variation.
-pub fn parse_rmc(sentence: &NmeaSentence) -> Result<RmcData, String> {
+pub fn parse_rmc<'a>(sentence: NmeaSentence<'a>) -> Result<RmcData, ParseError<'a>> {
     if sentence.message_id != b"RMC" {
-        return Err("RMC message should starts with $..RMC".into());
+        Err(ParseError::WrongSentenceHeader(sentence.message_id, b"RMC"))
+    } else {
+        Ok(do_parse_rmc(sentence.data)
+            .map_err(|err| ParseError::FormatError(err))?
+            .1)
     }
-    do_parse_rmc(sentence.data)
-        .map(|(_, data)| data)
-        .map_err(|err| match err {
-            nom::Err::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-            nom::Err::Error((_, kind)) | nom::Err::Failure((_, kind)) => {
-                kind.description().to_string()
-            }
-        })
 }
 
 #[cfg(test)]

@@ -8,7 +8,7 @@ use nom::number::complete::float;
 
 use nom::IResult;
 
-use crate::parse::NmeaSentence;
+use crate::parse::{NmeaSentence, ParseError};
 use crate::sentences::utils::{number, parse_float_num, parse_hms, parse_lat_lon};
 use crate::FixType;
 
@@ -75,19 +75,14 @@ fn do_parse_gga(i: &[u8]) -> IResult<&[u8], GgaData> {
 /// ellipsoid, in Meters
 /// (empty field) time in seconds since last DGPS update
 /// (empty field) DGPS station ID number (0000-1023)
-pub fn parse_gga(sentence: &NmeaSentence) -> Result<GgaData, String> {
+pub fn parse_gga<'a>(sentence: NmeaSentence<'a>) -> Result<GgaData, ParseError<'a>> {
     if sentence.message_id != b"GGA" {
-        return Err("GGA sentence not starts with $..GGA".into());
+        Err(ParseError::WrongSentenceHeader(sentence.message_id, b"GGA"))
+    } else {
+        Ok(do_parse_gga(sentence.data)
+            .map_err(|err| ParseError::FormatError(err))?
+            .1)
     }
-    let res: GgaData = do_parse_gga(sentence.data)
-        .map_err(|err| match err {
-            nom::Err::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-            nom::Err::Error((_, kind)) | nom::Err::Failure((_, kind)) => {
-                kind.description().to_string()
-            }
-        })?
-        .1;
-    Ok(res)
 }
 
 #[cfg(test)]

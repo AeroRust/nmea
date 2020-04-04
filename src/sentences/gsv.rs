@@ -2,7 +2,7 @@ use nom::character::complete::char;
 use nom::combinator::{cond, opt, rest_len};
 use nom::IResult;
 
-use crate::parse::NmeaSentence;
+use crate::parse::{NmeaSentence, ParseError};
 use crate::sentences::utils::number;
 use crate::{GnssType, Satellite};
 
@@ -82,31 +82,31 @@ fn do_parse_gsv(i: &[u8]) -> IResult<&[u8], GsvData> {
 /// GL may be (incorrectly) used when GSVs are mixed containing
 /// GLONASS, GN may be (incorrectly) used when GSVs contain GLONASS
 /// only.  Usage is inconsistent.
-pub fn parse_gsv(sentence: &NmeaSentence) -> Result<GsvData, String> {
+pub fn parse_gsv<'a>(sentence: NmeaSentence<'a>) -> Result<GsvData, ParseError<'a>> {
     if sentence.message_id != b"GSV" {
-        return Err("GSV sentence not starts with $..GSV".into());
-    }
-    let gnss_type = match sentence.talker_id {
-        b"GP" => GnssType::Gps,
-        b"GL" => GnssType::Glonass,
-        _ => return Err("Unknown GNSS type in GSV sentence".into()),
-    };
-    //    println!("parse: '{}'", str::from_utf8(sentence.data).unwrap());
-    let mut res: GsvData = do_parse_gsv(sentence.data)
-        .map_err(|err| match err {
-            nom::Err::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-            nom::Err::Error((_, kind)) | nom::Err::Failure((_, kind)) => {
-                kind.description().to_string()
+        Err(ParseError::WrongSentenceHeader(sentence.message_id, b"GSV"))
+    } else {
+        let gnss_type = match sentence.talker_id {
+            b"GP" => GnssType::Gps,
+            b"GL" => GnssType::Glonass,
+            _ => {
+                return Err(ParseError::WrongSentenceHeader(
+                    sentence.message_id,
+                    b"GP|GL",
+                ))
             }
-        })?
-        .1;
-    res.gnss_type = gnss_type.clone();
-    for sat in &mut res.sats_info {
-        if let Some(v) = (*sat).as_mut() {
-            v.gnss_type = gnss_type.clone();
+        };
+        let mut res = do_parse_gsv(sentence.data)
+            .map_err(|err| ParseError::FormatError(err))?
+            .1;
+        res.gnss_type = gnss_type.clone();
+        for sat in &mut res.sats_info {
+            if let Some(v) = (*sat).as_mut() {
+                v.gnss_type = gnss_type.clone();
+            }
         }
+        Ok(res)
     }
-    Ok(res)
 }
 
 #[cfg(test)]

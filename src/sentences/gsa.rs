@@ -7,7 +7,7 @@ use nom::number::complete::float;
 use nom::sequence::terminated;
 use nom::IResult;
 
-use crate::parse::NmeaSentence;
+use crate::parse::{NmeaSentence, ParseError};
 use crate::sentences::utils::number;
 
 #[derive(PartialEq, Debug)]
@@ -128,19 +128,14 @@ fn do_parse_gsa(i: &[u8]) -> IResult<&[u8], GsaData> {
 /// in at least two ways: it's got the wrong number of fields, and
 /// it claims to be a valid sentence (A flag) when it isn't.
 /// Alarmingly, it's possible this error may be generic to SiRFstarIII
-pub fn parse_gsa(s: &NmeaSentence) -> Result<GsaData, String> {
-    if s.message_id != b"GSA" {
-        return Err("GSA message should starts with $..GSA".into());
+pub fn parse_gsa<'a>(sentence: NmeaSentence<'a>) -> Result<GsaData, ParseError<'a>> {
+    if sentence.message_id != b"GSA" {
+        Err(ParseError::WrongSentenceHeader(sentence.message_id, b"GSA"))
+    } else {
+        Ok(do_parse_gsa(sentence.data)
+            .map_err(|err| ParseError::FormatError(err))?
+            .1)
     }
-    let ret: GsaData = do_parse_gsa(s.data)
-        .map(|(_, data)| data)
-        .map_err(|err| match err {
-            nom::Err::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-            nom::Err::Error((_, kind)) | nom::Err::Failure((_, kind)) => {
-                kind.description().to_string()
-            }
-        })?;
-    Ok(ret)
 }
 
 #[cfg(test)]

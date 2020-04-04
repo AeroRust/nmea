@@ -5,7 +5,7 @@ use nom::combinator::{map, opt};
 use nom::sequence::terminated;
 use nom::IResult;
 
-use crate::parse::NmeaSentence;
+use crate::parse::{NmeaSentence, ParseError};
 use crate::sentences::utils::{do_parse_lat_lon, parse_hms};
 
 /// Parse GPGLL (Geographic position)
@@ -22,19 +22,14 @@ use crate::sentences::utils::{do_parse_lat_lon, parse_hms};
 /// | 7     | data status | Data status: A = Data valid, V = Data invalid
 /// | 8     | mode ind    | Positioning system mode indicator, see `PosSystemIndicator`
 /// | 9     | *xx         | Check sum
-pub fn parse_gll(s: &NmeaSentence) -> Result<GllData, String> {
-    if s.message_id != b"GLL" {
-        return Err("GLL message should starts with $..GLL".into());
+pub fn parse_gll<'a>(sentence: NmeaSentence<'a>) -> Result<GllData, ParseError<'a>> {
+    if sentence.message_id != b"GLL" {
+        Err(ParseError::WrongSentenceHeader(sentence.message_id, b"GLL"))
+    } else {
+        Ok(do_parse_gll(sentence.data)
+            .map_err(|err| ParseError::FormatError(err))?
+            .1)
     }
-    let ret = do_parse_gll(s.data)
-        .map(|(_, data)| data)
-        .map_err(|err| match err {
-            nom::Err::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-            nom::Err::Error((_, kind)) | nom::Err::Failure((_, kind)) => {
-                kind.description().to_string()
-            }
-        })?;
-    Ok(ret)
 }
 
 /// Positioning System Mode Indicator (present from NMEA >= 2.3)

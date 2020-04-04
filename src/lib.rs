@@ -19,20 +19,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+//#![no_std]
 
 mod parse;
 mod sentences;
 
-use std::{
-    collections::{HashMap, HashSet},
+use core::{
     iter::Iterator,
     {fmt, mem, str},
 };
 
 pub use crate::parse::{
-    parse, GgaData, GllData, GsaData, GsvData, ParseResult, RmcData, RmcStatusOfFix, VtgData,
+    parse, GgaData, GllData, GsaData, GsvData, ParseError, ParseResult, RmcData, RmcStatusOfFix,
+    VtgData,
 };
 use chrono::{NaiveDate, NaiveTime};
+use std::collections::{HashMap, HashSet};
 
 /// NMEA parser
 #[derive(Default, Debug)]
@@ -164,12 +166,12 @@ impl<'a> Nmea {
         self.geoid_height = gga_data.geoid_height;
     }
 
-    fn merge_gsv_data(&mut self, data: GsvData) -> Result<(), &'static str> {
+    fn merge_gsv_data(&mut self, data: GsvData) -> Result<(), ParseError<'a>> {
         {
             let d = self
                 .satellites_scan
                 .get_mut(&data.gnss_type)
-                .ok_or("Invalid GNSS type")?;
+                .ok_or(ParseError::InvalidGnssType)?;
             // Adjust size to this scan
             d.resize(data.number_of_sentences as usize, vec![]);
             // Replace data at index with new scan data
@@ -228,7 +230,7 @@ impl<'a> Nmea {
 
     /// Parse any NMEA sentence and stores the result. The type of sentence
     /// is returnd if implemented and valid.
-    pub fn parse(&mut self, s: &'a str) -> Result<SentenceType, String> {
+    pub fn parse(&mut self, s: &'a str) -> Result<SentenceType, ParseError<'a>> {
         match parse(s.as_bytes())? {
             ParseResult::VTG(vtg) => {
                 self.merge_vtg_data(vtg);
@@ -254,10 +256,7 @@ impl<'a> Nmea {
                 self.merge_gll_data(gll);
                 Ok(SentenceType::GLL)
             }
-            ParseResult::Unsupported(msg_id) => Err(format!(
-                "Unknown or implemented sentence type: {:?}",
-                msg_id
-            )),
+            ParseResult::Unsupported(sentence_type) => Err(ParseError::Unsupported(sentence_type)),
         }
     }
 
@@ -274,7 +273,7 @@ impl<'a> Nmea {
         self.new_tick();
     }
 
-    pub fn parse_for_fix(&mut self, xs: &[u8]) -> Result<FixType, String> {
+    pub fn parse_for_fix(&mut self, xs: &'a [u8]) -> Result<FixType, ParseError<'a>> {
         match parse(xs)? {
             ParseResult::GSA(gsa) => {
                 self.merge_gsa_data(gsa);
@@ -366,28 +365,28 @@ impl<'a> Nmea {
         }
     }
 }
-
-impl fmt::Display for Nmea {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}: lat: {} lon: {} alt: {} {:?}",
-            self.fix_time
-                .map(|l| format!("{:?}", l))
-                .unwrap_or_else(|| "None".to_owned()),
-            self.latitude
-                .map(|l| format!("{:3.8}", l))
-                .unwrap_or_else(|| "None".to_owned()),
-            self.longitude
-                .map(|l| format!("{:3.8}", l))
-                .unwrap_or_else(|| "None".to_owned()),
-            self.altitude
-                .map(|l| format!("{:.3}", l))
-                .unwrap_or_else(|| "None".to_owned()),
-            self.satellites()
-        )
-    }
-}
+//
+//impl fmt::Display for Nmea {
+//    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//        write!(
+//            f,
+//            "{}: lat: {} lon: {} alt: {} {:?}",
+//            self.fix_time
+//                .map(|l| format!("{:?}", l))
+//                .unwrap_or_else(|| "None".to_owned()),
+//            self.latitude
+//                .map(|l| format!("{:3.8}", l))
+//                .unwrap_or_else(|| "None".to_owned()),
+//            self.longitude
+//                .map(|l| format!("{:3.8}", l))
+//                .unwrap_or_else(|| "None".to_owned()),
+//            self.altitude
+//                .map(|l| format!("{:.3}", l))
+//                .unwrap_or_else(|| "None".to_owned()),
+//            self.satellites()
+//        )
+//    }
+//}
 
 #[derive(Clone, PartialEq)]
 /// Satellite information
@@ -421,25 +420,25 @@ impl Satellite {
     }
 }
 
-impl fmt::Display for Satellite {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}: {} elv: {} ath: {} snr: {}",
-            self.gnss_type,
-            self.prn,
-            self.elevation
-                .map(|e| format!("{}", e))
-                .unwrap_or_else(|| "--".to_owned()),
-            self.azimuth
-                .map(|e| format!("{}", e))
-                .unwrap_or_else(|| "--".to_owned()),
-            self.snr
-                .map(|e| format!("{}", e))
-                .unwrap_or_else(|| "--".to_owned())
-        )
-    }
-}
+//impl fmt::Display for Satellite {
+//    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//        write!(
+//            f,
+//            "{}: {} elv: {} ath: {} snr: {}",
+//            self.gnss_type,
+//            self.prn,
+//            self.elevation
+//                .map(|e| format!("{}", e))
+//                .unwrap_or_else(|| "--".to_owned()),
+//            self.azimuth
+//                .map(|e| format!("{}", e))
+//                .unwrap_or_else(|| "--".to_owned()),
+//            self.snr
+//                .map(|e| format!("{}", e))
+//                .unwrap_or_else(|| "--".to_owned())
+//        )
+//    }
+//}
 
 impl fmt::Debug for Satellite {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -473,8 +472,8 @@ macro_rules! define_sentence_type_enum {
         }
 
         impl $Name {
-            fn try_from(s: &[u8]) -> Result<Self, &'static str> {
-                match str::from_utf8(s).map_err(|_| "invalid header")? {
+            fn try_from(s: &[u8]) -> Result<Self, ParseError> {
+                match str::from_utf8(s).map_err(|_| ParseError::Utf8DecodingError)? {
                     $(stringify!($Variant) => Ok($Name::$Variant),)*
                     _ => Ok($Name::None),
                 }

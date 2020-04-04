@@ -3,7 +3,7 @@ use nom::combinator::opt;
 use nom::number::complete::float;
 use nom::IResult;
 
-use crate::parse::NmeaSentence;
+use crate::parse::{NmeaSentence, ParseError};
 
 #[derive(Debug, PartialEq)]
 pub struct VtgData {
@@ -71,19 +71,14 @@ fn do_parse_vtg(i: &[u8]) -> IResult<&[u8], VtgData> {
 /// x.x,M = Track, degrees Magnetic
 /// x.x,N = Speed, knots
 /// x.x,K = Speed, Km/hr
-pub fn parse_vtg(s: &NmeaSentence) -> Result<VtgData, String> {
-    if s.message_id != b"VTG" {
-        return Err("VTG message should starts with $..VTG".into());
+pub fn parse_vtg<'a>(sentence: NmeaSentence<'a>) -> Result<VtgData, ParseError<'a>> {
+    if sentence.message_id != b"VTG" {
+        Err(ParseError::WrongSentenceHeader(sentence.message_id, b"VTG"))
+    } else {
+        Ok(do_parse_vtg(sentence.data)
+            .map_err(|err| ParseError::FormatError(err))?
+            .1)
     }
-    let ret: VtgData = do_parse_vtg(s.data)
-        .map(|(_, data)| data)
-        .map_err(|err| match err {
-            nom::Err::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-            nom::Err::Error((_, kind)) | nom::Err::Failure((_, kind)) => {
-                kind.description().to_string()
-            }
-        })?;
-    Ok(ret)
 }
 
 #[cfg(test)]

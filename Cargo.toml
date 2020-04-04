@@ -11,8 +11,11 @@ readme = "README.md"
 edition = "2018"
 
 [dependencies]
-nom = "5"
 chrono = "0.4"
+
+[dependencies.nom]
+version = "5.0.0"
+default-features = true
 
 [dev-dependencies]
 quickcheck = "0.9"
