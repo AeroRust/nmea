@@ -28,6 +28,7 @@ mod sentences;
 
 use core::{
     iter::Iterator,
+    ops::BitOr,
     {mem, str},
 };
 
@@ -39,7 +40,7 @@ pub use crate::parse::NmeaError;
 
 use alloc::vec::Vec;
 use chrono::{NaiveDate, NaiveTime};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 /// NMEA parser
 #[derive(Default, Debug, Clone)]
@@ -60,9 +61,9 @@ pub struct Nmea {
     pub satellites: Vec<Satellite>,
     pub fix_satellites_prns: Option<Vec<u32>>,
     satellites_scan: HashMap<GnssType, Vec<Vec<Satellite>>>,
-    required_sentences_for_nav: HashSet<SentenceType>,
+    required_sentences_for_nav: SentenceMask,
     last_fix_time: Option<NaiveTime>,
-    sentences_for_this_time: HashSet<SentenceType>,
+    sentences_for_this_time: SentenceMask,
 }
 
 impl<'a> Nmea {
@@ -96,16 +97,13 @@ impl<'a> Nmea {
     /// ```
     /// use nmea::{Nmea, SentenceType};
     ///
-    /// let mut nmea = Nmea::create_for_navigation([SentenceType::RMC, SentenceType::GGA]
-    ///                                                .iter()
-    ///                                                .map(|v| v.clone())
-    ///                                                .collect()).unwrap();
+    /// let mut nmea = Nmea::create_for_navigation(SentenceType::RMC | SentenceType::GGA).unwrap();
     /// let gga = "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76";
     /// nmea.parse(gga).unwrap();
     /// println!("{:?}", nmea);
     /// ```
     pub fn create_for_navigation(
-        required_sentences_for_nav: HashSet<SentenceType>,
+        required_sentences_for_nav: SentenceMask,
     ) -> Result<Nmea, NmeaError<'a>> {
         if required_sentences_for_nav.is_empty() {
             return Err(NmeaError::EmptyNavConfig);
@@ -290,13 +288,13 @@ impl<'a> Nmea {
             }
             ParseResult::VTG(vtg) => {
                 //have no time field, so only if user explicity mention it
-                if self.required_sentences_for_nav.contains(&SentenceType::VTG) {
+                if self.required_sentences_for_nav.contains(SentenceType::VTG) {
                     if vtg.true_course.is_none() || vtg.speed_over_ground.is_none() {
                         self.clear_position_info();
                         return Ok(FixType::Invalid);
                     }
                     self.merge_vtg_data(vtg);
-                    self.sentences_for_this_time.insert(SentenceType::VTG);
+                    self.sentences_for_this_time.add_type(SentenceType::VTG);
                 } else {
                     return Ok(FixType::Invalid);
                 }
@@ -323,7 +321,7 @@ impl<'a> Nmea {
                     }
                 }
                 self.merge_rmc_data(rmc_data);
-                self.sentences_for_this_time.insert(SentenceType::RMC);
+                self.sentences_for_this_time.add_type(SentenceType::RMC);
             }
             ParseResult::GGA(gga_data) => {
                 match gga_data.fix_type {
@@ -347,7 +345,7 @@ impl<'a> Nmea {
                     }
                 }
                 self.merge_gga_data(gga_data);
-                self.sentences_for_this_time.insert(SentenceType::GGA);
+                self.sentences_for_this_time.add_type(SentenceType::GGA);
             }
             ParseResult::GLL(gll_data) => {
                 self.merge_gll_data(gll_data);
@@ -362,7 +360,7 @@ impl<'a> Nmea {
             Some(fix_type)
                 if self
                     .required_sentences_for_nav
-                    .is_subset(&self.sentences_for_this_time) =>
+                    .contains_mask(self.sentences_for_this_time) =>
             {
                 Ok(fix_type)
             }
@@ -427,31 +425,36 @@ impl Satellite {
 
 macro_rules! define_sentence_type_enum {
     (
-	$(#[$outer:meta])*
-	enum $Name:ident { $($Variant:ident),* $(,)* }
+        $(#[$outer:meta])*
+        $( $variant:ident, $bit:literal );+
     ) => {
-	$(#[$outer])*
-        #[derive(PartialEq, Debug, Hash, Eq, Clone)]
-        pub enum $Name {
+        $(#[$outer])*
+        #[derive(PartialEq, Debug, Hash, Eq, Clone, Copy)]
+        #[repr(u32)]
+        pub enum SentenceType {
             None,
-            $($Variant),*,
+            $($variant = $bit),+
         }
 
-        impl<'a> From<&'a str> for $Name {
+        impl<'a> From<&'a str> for SentenceType {
             fn from(s: &str) -> Self {
                 match s {
-                    $(stringify!($Variant) => $Name::$Variant,)*
-                    _ => $Name::None,
+                    $(stringify!($variant) => SentenceType::$variant,)+
+                    _ => SentenceType::None,
                 }
             }
         }
 
-        impl $Name {
+        impl SentenceType {
             fn try_from(s: &[u8]) -> Result<Self, NmeaError> {
                 match str::from_utf8(s).map_err(|_| NmeaError::Utf8DecodingError)? {
-                    $(stringify!($Variant) => Ok($Name::$Variant),)*
-                    _ => Ok($Name::None),
+                    $(stringify!($variant) => Ok(SentenceType::$variant),)+
+                    _ => Ok(SentenceType::None),
                 }
+            }
+
+            fn to_mask_value(&self) -> u128 {
+                0b1 << *self as u32
             }
         }
     }
@@ -481,110 +484,149 @@ define_sentence_type_enum!(
     ///                      VTG | WCV | WNC | WPL | XDR | XTE | XTR |
     /// Wind: MWV | VPW | VWR |
     /// Date and Time: GDT | ZDA | ZFO | ZTG |
-    enum SentenceType {
-        AAM,
-        ABK,
-        ACA,
-        ACK,
-        ACS,
-        AIR,
-        ALM,
-        ALR,
-        APA,
-        APB,
-        ASD,
-        BEC,
-        BOD,
-        BWC,
-        BWR,
-        BWW,
-        CUR,
-        DBK,
-        DBS,
-        DBT,
-        DCN,
-        DPT,
-        DSC,
-        DSE,
-        DSI,
-        DSR,
-        DTM,
-        FSI,
-        GBS,
-        GGA,
-        GLC,
-        GLL,
-        GMP,
-        GNS,
-        GRS,
-        GSA,
-        GST,
-        GSV,
-        GTD,
-        GXA,
-        HDG,
-        HDM,
-        HDT,
-        HMR,
-        HMS,
-        HSC,
-        HTC,
-        HTD,
-        LCD,
-        LRF,
-        LRI,
-        LR1,
-        LR2,
-        LR3,
-        MLA,
-        MSK,
-        MSS,
-        MWD,
-        MTW,
-        MWV,
-        OLN,
-        OSD,
-        ROO,
-        RMA,
-        RMB,
-        RMC,
-        ROT,
-        RPM,
-        RSA,
-        RSD,
-        RTE,
-        SFI,
-        SSD,
-        STN,
-        TLB,
-        TLL,
-        TRF,
-        TTM,
-        TUT,
-        TXT,
-        VBW,
-        VDM,
-        VDO,
-        VDR,
-        VHW,
-        VLW,
-        VPW,
-        VSD,
-        VTG,
-        VWR,
-        WCV,
-        WNC,
-        WPL,
-        XDR,
-        XTE,
-        XTR,
-        ZDA,
-        ZDL,
-        ZFO,
-        ZTG,
-    }
+    AAM, 1;
+    ABK, 2;
+    ACA, 3;
+    ACK, 4;
+    ACS, 5;
+    AIR, 6;
+    ALM, 7;
+    ALR, 8;
+    APA, 9;
+    APB, 10;
+    ASD, 11;
+    BEC, 12;
+    BOD, 13;
+    BWC, 14;
+    BWR, 15;
+    BWW, 16;
+    CUR, 17;
+    DBK, 18;
+    DBS, 19;
+    DBT, 20;
+    DCN, 21;
+    DPT, 22;
+    DSC, 23;
+    DSE, 24;
+    DSI, 25;
+    DSR, 26;
+    DTM, 27;
+    FSI, 28;
+    GBS, 29;
+    GGA, 30;
+    GLC, 31;
+    GLL, 32;
+    GMP, 33;
+    GNS, 34;
+    GRS, 35;
+    GSA, 36;
+    GST, 37;
+    GSV, 38;
+    GTD, 39;
+    GXA, 40;
+    HDG, 41;
+    HDM, 42;
+    HDT, 43;
+    HMR, 44;
+    HMS, 45;
+    HSC, 46;
+    HTC, 47;
+    HTD, 48;
+    LCD, 49;
+    LRF, 50;
+    LRI, 51;
+    LR1, 52;
+    LR2, 53;
+    LR3, 54;
+    MLA, 55;
+    MSK, 56;
+    MSS, 57;
+    MWD, 58;
+    MTW, 59;
+    MWV, 60;
+    OLN, 61;
+    OSD, 62;
+    ROO, 63;
+    RMA, 64;
+    RMB, 65;
+    RMC, 66;
+    ROT, 67;
+    RPM, 68;
+    RSA, 69;
+    RSD, 70;
+    RTE, 71;
+    SFI, 72;
+    SSD, 73;
+    STN, 74;
+    TLB, 75;
+    TLL, 76;
+    TRF, 77;
+    TTM, 78;
+    TUT, 79;
+    TXT, 80;
+    VBW, 81;
+    VDM, 82;
+    VDO, 83;
+    VDR, 84;
+    VHW, 85;
+    VLW, 86;
+    VPW, 87;
+    VSD, 88;
+    VTG, 89;
+    VWR, 90;
+    WCV, 91;
+    WNC, 92;
+    WPL, 93;
+    XDR, 94;
+    XTE, 95;
+    XTR, 96;
+    ZDA, 97;
+    ZDL, 98;
+    ZFO, 99;
+    ZTG, 100
 );
 
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
+pub struct SentenceMask {
+    mask: u128,
+}
+
+impl SentenceMask {
+    fn contains(&self, sentence_type: SentenceType) -> bool {
+        sentence_type.to_mask_value() & self.mask != 0
+    }
+
+    fn contains_mask(&self, mask: Self) -> bool {
+        // basically a is_subset for our binary mask class
+        (mask.mask | self.mask) == mask.mask
+    }
+
+    fn add_type(&mut self, sentence_type: SentenceType) {
+        self.mask |= sentence_type.to_mask_value()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.mask == 0
+    }
+}
+
+impl BitOr for SentenceType {
+    type Output = SentenceMask;
+    fn bitor(self, rhs: Self) -> Self::Output {
+        SentenceMask {
+            mask: self.to_mask_value() | rhs.to_mask_value(),
+        }
+    }
+}
+
+impl BitOr<SentenceType> for SentenceMask {
+    type Output = Self;
+    fn bitor(self, rhs: SentenceType) -> Self {
+        SentenceMask {
+            mask: self.mask | rhs.to_mask_value(),
+        }
+    }
+}
 /// Fix type
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum FixType {
@@ -866,13 +908,8 @@ mod tests {
     #[test]
     fn test_parse_for_fix() {
         {
-            let mut nmea = Nmea::create_for_navigation(
-                [SentenceType::RMC, SentenceType::GGA]
-                    .iter()
-                    .map(|v| v.clone())
-                    .collect(),
-            )
-            .unwrap();
+            let mut nmea =
+                Nmea::create_for_navigation(SentenceType::RMC | SentenceType::GGA).unwrap();
             let log = [
                 (
                     "$GPRMC,123308.2,A,5521.76474,N,03731.92553,E,000.48,071.9,090317,010.2,E,A*3B",
@@ -974,13 +1011,8 @@ mod tests {
         }
 
         {
-            let mut nmea = Nmea::create_for_navigation(
-                [SentenceType::RMC, SentenceType::GGA]
-                    .iter()
-                    .map(|v| v.clone())
-                    .collect(),
-            )
-            .unwrap();
+            let mut nmea =
+                Nmea::create_for_navigation(SentenceType::RMC | SentenceType::GGA).unwrap();
             let log = [
                 (
                     "$GPRMC,123308.2,A,5521.76474,N,03731.92553,E,000.48,071.9,090317,010.2,E,A*3B",
@@ -1010,24 +1042,18 @@ mod tests {
     #[test]
     fn test_some_reciever() {
         let lines = [
-            "$GPRMC,171724.000,A,6847.2474,N,03245.8351,E,0.26,140.74,250317,,*02",
-            "$GPGGA,171725.000,6847.2473,N,03245.8351,E,1,08,1.0,87.7,M,18.5,M,,0000*66",
-            "$GPGSA,A,3,02,25,29,12,31,06,23,14,,,,,2.0,1.0,1.7*3A",
-            "$GPRMC,171725.000,A,6847.2473,N,03245.8351,E,0.15,136.12,250317,,*05",
-            "$GPGGA,171726.000,6847.2473,N,03245.8352,E,1,08,1.0,87.8,M,18.5,M,,0000*69",
-            "$GPGSA,A,3,02,25,29,12,31,06,23,14,,,,,2.0,1.0,1.7*3A",
-            "$GPRMC,171726.000,A,6847.2473,N,03245.8352,E,0.16,103.49,250317,,*0E",
-            "$GPGGA,171727.000,6847.2474,N,03245.8353,E,1,08,1.0,87.9,M,18.5,M,,0000*6F",
-            "$GPGSA,A,3,02,25,29,12,31,06,23,14,,,,,2.0,1.0,1.7*3A",
-            "$GPRMC,171727.000,A,6847.2474,N,03245.8353,E,0.49,42.80,250317,,*32",
+            "$GPRMC,171724.000,A,6847.2474,N,03245.8351,E,0.26,140.74,250317,,*02", // invalid
+            "$GPGGA,171725.000,6847.2473,N,03245.8351,E,1,08,1.0,87.7,M,18.5,M,,0000*66", // invalid
+            "$GPGSA,A,3,02,25,29,12,31,06,23,14,,,,,2.0,1.0,1.7*3A", //invalid
+            "$GPRMC,171725.000,A,6847.2473,N,03245.8351,E,0.15,136.12,250317,,*05", // valid
+            "$GPGGA,171726.000,6847.2473,N,03245.8352,E,1,08,1.0,87.8,M,18.5,M,,0000*69", //invalid
+            "$GPGSA,A,3,02,25,29,12,31,06,23,14,,,,,2.0,1.0,1.7*3A", // invalid
+            "$GPRMC,171726.000,A,6847.2473,N,03245.8352,E,0.16,103.49,250317,,*0E", // valid
+            "$GPGGA,171727.000,6847.2474,N,03245.8353,E,1,08,1.0,87.9,M,18.5,M,,0000*6F", // invalid
+            "$GPGSA,A,3,02,25,29,12,31,06,23,14,,,,,2.0,1.0,1.7*3A", // invalid
+            "$GPRMC,171727.000,A,6847.2474,N,03245.8353,E,0.49,42.80,250317,,*32", // valid
         ];
-        let mut nmea = Nmea::create_for_navigation(
-            [SentenceType::RMC, SentenceType::GGA]
-                .iter()
-                .map(|v| v.clone())
-                .collect(),
-        )
-        .unwrap();
+        let mut nmea = Nmea::create_for_navigation(SentenceType::RMC | SentenceType::GGA).unwrap();
         println!("start test");
         let mut nfixes = 0_usize;
         for line in &lines {
@@ -1040,30 +1066,13 @@ mod tests {
                     println!("update_gnss_info_nmea: parse_for_fix failed: {:?}", msg);
                     continue;
                 }
-                Ok(_) => nfixes += 1,
+                Ok(_) => {
+                    nfixes += 1;
+                    println!("Valid");
+                }
             }
         }
         assert_eq!(nfixes, 3);
-    }
-
-    #[test]
-    fn test_define_sentence_type_enum() {
-        define_sentence_type_enum!(
-            enum TestEnum {
-                AAA,
-                BBB,
-            }
-        );
-
-        let a = TestEnum::AAA;
-        let b = TestEnum::BBB;
-        let n = TestEnum::None;
-        assert_eq!(TestEnum::from("AAA"), a);
-        assert_eq!(TestEnum::from("BBB"), b);
-        assert_eq!(TestEnum::from("fdafa"), n);
-
-        assert_eq!(TestEnum::try_from(b"AAA").unwrap(), a);
-        assert_eq!(TestEnum::try_from(b"BBB").unwrap(), b);
     }
 
     #[test]
