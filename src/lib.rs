@@ -423,6 +423,16 @@ impl Satellite {
     }
 }
 
+// Taken from the Little Book of Rust Macros
+#[cfg(test)]
+macro_rules! replace_expr {
+    ($_t:tt $sub:expr) => {$sub};
+}
+
+#[cfg(test)]
+macro_rules! count_tts {
+    ($($tts:tt)*) => {<[()]>::len(&[$(replace_expr!($tts ())),*])};
+}
 macro_rules! define_sentence_type_enum {
     (
         $(#[$outer:meta])*
@@ -454,6 +464,13 @@ macro_rules! define_sentence_type_enum {
             }
 
             fn to_mask_value(&self) -> u128 {
+                // This should make our tests catch invalidly big enums
+                // Yes it is a hack but assert! aren't allowed outside of functions sadly :(
+                #[cfg(test)]
+                {
+                    assert!(count_tts!($($variant)+) < 128);
+                    assert!([$($bit,)+].iter().all(|bit| *bit < 128));
+                }
                 0b1 << *self as u32
             }
         }
