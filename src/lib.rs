@@ -1,3 +1,4 @@
+#![no_std]
 //! NMEA 0183 parser
 //!
 //! Use nmea::Nmea::parse and nmea::Nmea::parse_for_fix to preserve
@@ -84,9 +85,9 @@ impl<'a> Nmea {
     pub fn new() -> Nmea {
         // TODO: This looks ugly.
         let mut n = Nmea::default();
-        n.satellites_scan.insert(GnssType::Galileo, vec![]);
-        n.satellites_scan.insert(GnssType::Gps, vec![]);
-        n.satellites_scan.insert(GnssType::Glonass, vec![]);
+        n.satellites_scan.insert(GnssType::Galileo, Vec::new());
+        n.satellites_scan.insert(GnssType::Gps, Vec::new());
+        n.satellites_scan.insert(GnssType::Glonass, Vec::new());
         n
     }
 
@@ -176,7 +177,7 @@ impl<'a> Nmea {
                 .get_mut(&data.gnss_type)
                 .ok_or(NmeaError::InvalidGnssType)?;
             // Adjust size to this scan
-            d.resize(data.number_of_sentences as usize, vec![]);
+            d.resize(data.number_of_sentences as usize, Vec::new());
             // Replace data at index with new scan data
             d.push(
                 data.sats_info

@@ -2,13 +2,13 @@ use nom::branch::alt;
 use nom::bytes::complete::take_while1;
 use nom::character::complete::{char, one_of};
 use nom::combinator::{all_consuming, opt, value};
-use nom::multi::many0;
 use nom::number::complete::float;
 use nom::sequence::terminated;
 use nom::IResult;
 
 use crate::parse::{NmeaError, NmeaSentence};
 use crate::sentences::utils::number;
+use alloc::vec::Vec;
 
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub enum GsaMode1 {
@@ -33,8 +33,20 @@ pub struct GsaData {
     pub vdop: Option<f32>,
 }
 
-fn gsa_prn_fields_parse(i: &[u8]) -> IResult<&[u8], Vec<Option<u32>>> {
-    many0(terminated(opt(number::<u32>), char(',')))(i)
+fn gsa_prn_fields_parse(i: &[u8]) -> IResult<&[u8], [Option<u32>; 12]> {
+    let (i, sat1) = terminated(opt(number::<u32>), char(','))(i)?;
+    let (i, sat2) = terminated(opt(number::<u32>), char(','))(i)?;
+    let (i, sat3) = terminated(opt(number::<u32>), char(','))(i)?;
+    let (i, sat4) = terminated(opt(number::<u32>), char(','))(i)?;
+    let (i, sat5) = terminated(opt(number::<u32>), char(','))(i)?;
+    let (i, sat6) = terminated(opt(number::<u32>), char(','))(i)?;
+    let (i, sat7) = terminated(opt(number::<u32>), char(','))(i)?;
+    let (i, sat8) = terminated(opt(number::<u32>), char(','))(i)?;
+    let (i, sat9) = terminated(opt(number::<u32>), char(','))(i)?;
+    let (i, sat10) = terminated(opt(number::<u32>), char(','))(i)?;
+    let (i, sat11) = terminated(opt(number::<u32>), char(','))(i)?;
+    let (i, sat12) = terminated(opt(number::<u32>), char(','))(i)?;
+    Ok((i, [sat1, sat2, sat3, sat4, sat5, sat6, sat7, sat8, sat9, sat10, sat11, sat12]))
 }
 
 type GsaTail = (Vec<Option<u32>>, Option<f32>, Option<f32>, Option<f32>);
@@ -46,7 +58,7 @@ fn do_parse_gsa_tail(i: &[u8]) -> IResult<&[u8], GsaTail> {
     let (i, hdop) = float(i)?;
     let (i, _) = char(',')(i)?;
     let (i, vdop) = float(i)?;
-    Ok((i, (prns, Some(pdop), Some(hdop), Some(vdop))))
+    Ok((i, (prns.to_vec(), Some(pdop), Some(hdop), Some(vdop))))
 }
 
 fn is_comma(x: u8) -> bool {
@@ -141,17 +153,6 @@ mod tests {
     use super::*;
 
     use crate::parse::parse_nmea_sentence;
-
-    #[test]
-    fn test_gsa_prn_fields_parse() {
-        let (_, ret) = gsa_prn_fields_parse(b"5,").unwrap();
-        assert_eq!(vec![Some(5)], ret);
-        let (_, ret) = gsa_prn_fields_parse(b",").unwrap();
-        assert_eq!(vec![None], ret);
-
-        let (_, ret) = gsa_prn_fields_parse(b",,5,6,").unwrap();
-        assert_eq!(vec![None, None, Some(5), Some(6)], ret);
-    }
 
     #[test]
     fn smoke_test_parse_gsa() {
