@@ -1,16 +1,24 @@
 name: CI
 
 on:
-  pull_request: 
   push:
     branches:
       - master
-
+  pull_request:
+    branches:
+      - master
+  schedule:
+    - cron: '00 01 * * *'
+env:
+  RUST_BACKTRACE: 1
 jobs:
-  rust:
-    name: Rust
+  test:
+    name: Test
+
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
+
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         rust: [stable, beta]
@@ -19,8 +27,7 @@ jobs:
       CARGO_NET_RETRY: 10
     steps:
 
-      - name: Checkout repository
-        uses: actions/checkout@v1
+      - uses: actions/checkout@v1
 
       # We need to disable the existing toolchain to avoid updating rust-docs
       # which takes a long time. The fastest way to do this is to rename the
@@ -44,13 +51,31 @@ jobs:
           command: test
           args: --no-run
 
-      - name: Test
+      - name: Test (Debug)
         uses: actions-rs/cargo@v1
         with:
           command: test
-
-      - name: Build Documentation
+      - name: Test (Release)
         uses: actions-rs/cargo@v1
         with:
-          command: doc
-          args: --all --no-deps
+          command: test
+          args: --release
+
+  # Detect cases where documentation links don't resolve and such.
+  doc:
+    name: Docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          # Docs.rs uses nightly, which allows for easier syntax for linking to functions.
+          toolchain: nightly
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          # Need to use `cargo rustdoc` to actually get it to respect -D
+          # warnings... Note: this also requires nightly.
+          command: rustdoc
+          args: -- -D warnings
