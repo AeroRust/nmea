@@ -1,0 +1,2 @@
+ignore:
+  - "tests/file_log_parser.rs"
