@@ -3,6 +3,7 @@
 
 [![Version](https://img.shields.io/crates/v/nmea.svg)](https://crates.io/crates/nmea)
 [![Build Status](https://github.com/AeroRust/nmea/workflows/CI/badge.svg)](https://github.com/AeroRust/nmea/actions?query=workflow%3ACI+branch%3Amaster)
+[![codecov](https://codecov.io/gh/AeroRust/nmea/branch/master/graph/badge.svg)](https://codecov.io/gh/rusqlite/rusqlite)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/Dushistov/rust-nmea/blob/master/LICENSE.txt)
 
 NMEA 0183 sentence parser for Rust. 
