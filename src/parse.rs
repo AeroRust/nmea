@@ -98,6 +98,7 @@ pub enum ParseResult {
     GSA(GsaData),
     VTG(VtgData),
     GLL(GllData),
+    TXT(TxtData),
     Unsupported(SentenceType),
 }
 
@@ -122,6 +123,7 @@ pub fn parse(xs: &[u8]) -> Result<ParseResult, String> {
             SentenceType::GSA => Ok(ParseResult::GSA(parse_gsa(&nmea_sentence)?)),
             SentenceType::VTG => Ok(ParseResult::VTG(parse_vtg(&nmea_sentence)?)),
             SentenceType::GLL => Ok(ParseResult::GLL(parse_gll(&nmea_sentence)?)),
+            SentenceType::TXT => Ok(ParseResult::TXT(parse_txt(&nmea_sentence)?)),
             msg_id => Ok(ParseResult::Unsupported(msg_id)),
         }
     } else {
