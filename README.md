@@ -6,13 +6,16 @@
 [![codecov](https://codecov.io/gh/AeroRust/nmea/branch/master/graph/badge.svg)](https://codecov.io/gh/rusqlite/rusqlite)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/Dushistov/rust-nmea/blob/master/LICENSE.txt)
 
-NMEA 0183 sentence parser for Rust. 
+**[Full Documentation][doc]**
 
-Currently only _GGA_,_GSV_, _GSA_, _VTG_ and _RMC_ sentences are supported. Feel free to add others.
+`nmea` is an NMEA 0183 parser made in Rust. Currently only `GGA`, `GSV`, `GSA`,
+`VTG` and `RMC` sentences are supported. Feel free to add others.
 
-[Complete Documentation][doc]
+The current units this crate is tested to handle are:
 
-[doc]: https://docs.rs/nmea/
+- Degrees
+- Knots
+- Meters (of altitude)
 
 ## Usage
 
@@ -23,19 +26,15 @@ Put this in your `Cargo.toml`:
 nmea = "0.0.7"
 ```
 
-And put this in your crate root:
-
-```rust
-extern crate nmea;
-```
-
-To use the NMEA parser create a Nmea struct and feed it with NMEA sentences:
+Then you can import and feed it nmea sentances!
 
 ```rust
 use nmea::Nmea;
 
 let mut nmea = Nmea::new();
 let gga = "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76";
+
 nmea.parse(gga).unwrap();
+
 println!("{}", nmea);
 ```

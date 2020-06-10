@@ -1,10 +1,38 @@
-//! NMEA 0183 parser
+//! `nmea` is an NMEA 0183 parser made in Rust. Currently only `GGA`, `GSV`, `GSA`,
+//! `VTG` and `RMC` sentences are supported. Feel free to add others.
 //!
-//! Use nmea::Nmea::parse and nmea::Nmea::parse_for_fix to preserve
-//! state between recieving new nmea sentence, and nmea::parse
-//! to parse sentences without state
+//! If you would like to preserve the state between nmea sentances, you may use
+//! [nmea::Nmea::parse] and [Nmea::parse_for_fix]. If this is not a requirement,
+//! use [parse].
 //!
-//! Units that used every where: degrees, knots, meters for altitude
+//! The current units this crate is tested to handle are:
+//!
+//! - Degrees
+//! - Knots
+//! - Meters (of altitude)
+//!
+//! ## Usage
+//!
+//! Put this in your `Cargo.toml`:
+//!
+//! ```toml
+//! [dependencies]
+//! nmea = "0.0.7"
+//! ```
+//!
+//! Then you can import and feed it nmea sentances!
+//!
+//! ```rust
+//! use nmea::Nmea;
+//!
+//! let mut nmea = Nmea::new();
+//! let gga = "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76";
+//!
+//! nmea.parse(gga).unwrap();
+//!
+//! println!("{}", nmea);
+//! ```
+
 // Copyright (C) 2016 Felix Obenhuber
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
