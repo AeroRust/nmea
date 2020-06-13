@@ -30,7 +30,8 @@ use std::{
 };
 
 pub use crate::parse::{
-    parse, GgaData, GllData, GsaData, GsvData, ParseResult, RmcData, RmcStatusOfFix, VtgData,
+    parse, GgaData, GllData, GsaData, GsvData, ParseResult, RmcData, RmcStatusOfFix, TxtData,
+    VtgData,
 };
 use chrono::{NaiveDate, NaiveTime};
 
@@ -52,9 +53,11 @@ pub struct Nmea {
     pub geoid_height: Option<f32>,
     pub satellites: Vec<Satellite>,
     pub fix_satellites_prns: Option<Vec<u32>>,
+
     satellites_scan: HashMap<GnssType, Vec<Vec<Satellite>>>,
     required_sentences_for_nav: HashSet<SentenceType>,
     last_fix_time: Option<NaiveTime>,
+    last_txt: Option<TxtData>,
     sentences_for_this_time: HashSet<SentenceType>,
 }
 
@@ -226,6 +229,10 @@ impl<'a> Nmea {
         self.fix_time = Some(gll.fix_time);
     }
 
+    fn merge_txt_data(&mut self, txt: TxtData) {
+        self.last_txt = Some(txt);
+    }
+
     /// Parse any NMEA sentence and stores the result. The type of sentence
     /// is returnd if implemented and valid.
     pub fn parse(&mut self, s: &'a str) -> Result<SentenceType, String> {
@@ -253,6 +260,10 @@ impl<'a> Nmea {
             ParseResult::GLL(gll) => {
                 self.merge_gll_data(gll);
                 Ok(SentenceType::GLL)
+            }
+            ParseResult::TXT(txt) => {
+                self.merge_txt_data(txt);
+                Ok(SentenceType::TXT)
             }
             ParseResult::Unsupported(msg_id) => Err(format!(
                 "Unknown or implemented sentence type: {:?}",
@@ -349,6 +360,10 @@ impl<'a> Nmea {
                 self.merge_gll_data(gll_data);
                 return Ok(FixType::Invalid);
             }
+            ParseResult::TXT(txt_data) => {
+                self.merge_txt_data(txt_data);
+                return Ok(FixType::Invalid);
+            }
             ParseResult::Unsupported(_) => {
                 return Ok(FixType::Invalid);
             }
@@ -364,6 +379,10 @@ impl<'a> Nmea {
             }
             _ => Ok(FixType::Invalid),
         }
+    }
+
+    pub fn last_txt(&self) -> Option<&TxtData> {
+        self.last_txt.as_ref()
     }
 }
 
