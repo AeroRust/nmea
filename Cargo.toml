@@ -13,11 +13,8 @@ edition = "2018"
 [dependencies]
 nom = "5"
 chrono = "0.4"
-arrayvec = "0.4"
+arrayvec = "0.5"
 
 [dev-dependencies]
 quickcheck = "0.9"
 approx = "0.3"
-
-[badges]
-github-actions = { repository = "AeroRust/nmea", workflow = "CI" }
