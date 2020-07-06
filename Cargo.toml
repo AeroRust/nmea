@@ -18,6 +18,3 @@ arrayvec = "0.4"
 [dev-dependencies]
 quickcheck = "0.9"
 approx = "0.3"
-
-[badges]
-github-actions = { repository = "AeroRust/nmea", workflow = "CI" }
