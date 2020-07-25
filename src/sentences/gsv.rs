@@ -4,7 +4,7 @@ use nom::IResult;
 
 use crate::parse::NmeaSentence;
 use crate::sentences::utils::number;
-use crate::{GnssType, Satellite};
+use crate::{GnssType, Satellite, NmeaError};
 
 pub struct GsvData {
     pub gnss_type: GnssType,
@@ -82,31 +82,29 @@ fn do_parse_gsv(i: &[u8]) -> IResult<&[u8], GsvData> {
 /// GL may be (incorrectly) used when GSVs are mixed containing
 /// GLONASS, GN may be (incorrectly) used when GSVs contain GLONASS
 /// only.  Usage is inconsistent.
-pub fn parse_gsv(sentence: &NmeaSentence) -> Result<GsvData, String> {
+pub fn parse_gsv(sentence: NmeaSentence) -> Result<GsvData, NmeaError> {
     if sentence.message_id != b"GSV" {
-        return Err("GSV sentence not starts with $..GSV".into());
-    }
-    let gnss_type = match sentence.talker_id {
-        b"GP" => GnssType::Gps,
-        b"GL" => GnssType::Glonass,
-        _ => return Err("Unknown GNSS type in GSV sentence".into()),
-    };
-    //    println!("parse: '{}'", str::from_utf8(sentence.data).unwrap());
-    let mut res: GsvData = do_parse_gsv(sentence.data)
-        .map_err(|err| match err {
-            nom::Err::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-            nom::Err::Error((_, kind)) | nom::Err::Failure((_, kind)) => {
-                kind.description().to_string()
+        Err(NmeaError::WrongSentenceHeader{expected: b"GSV", found: sentence.message_id})
+    } else {
+        let gnss_type = match sentence.talker_id {
+            b"GP" => GnssType::Gps,
+            b"GL" => GnssType::Glonass,
+            _ => {
+                return Err(NmeaError::WrongSentenceHeader{
+                    expected: b"GP|GL",
+                    found: sentence.message_id,
+                })
             }
-        })?
-        .1;
-    res.gnss_type = gnss_type.clone();
-    for sat in &mut res.sats_info {
-        if let Some(v) = (*sat).as_mut() {
-            v.gnss_type = gnss_type.clone();
+        };
+        let mut res = do_parse_gsv(sentence.data)?.1;
+        res.gnss_type = gnss_type;
+        for sat in &mut res.sats_info {
+            if let Some(v) = (*sat).as_mut() {
+                v.gnss_type = gnss_type;
+            }
         }
+        Ok(res)
     }
-    Ok(res)
 }
 
 #[cfg(test)]
@@ -115,7 +113,7 @@ mod tests {
 
     #[test]
     fn test_parse_gsv_full() {
-        let data = parse_gsv(&NmeaSentence {
+        let data = parse_gsv(NmeaSentence {
             talker_id: b"GP",
             message_id: b"GSV",
             data: b"2,1,08,01,,083,46,02,17,308,,12,07,344,39,14,22,228,",
@@ -167,7 +165,7 @@ mod tests {
             }
         );
 
-        let data = parse_gsv(&NmeaSentence {
+        let data = parse_gsv(NmeaSentence {
             talker_id: b"GL",
             message_id: b"GSV",
             data: b"3,3,10,72,40,075,43,87,00,000,",

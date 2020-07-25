@@ -3,7 +3,7 @@ use nom::combinator::opt;
 use nom::number::complete::float;
 use nom::IResult;
 
-use crate::parse::NmeaSentence;
+use crate::{NmeaError, parse::NmeaSentence};
 
 #[derive(Debug, PartialEq)]
 pub struct VtgData {
@@ -71,55 +71,48 @@ fn do_parse_vtg(i: &[u8]) -> IResult<&[u8], VtgData> {
 /// x.x,M = Track, degrees Magnetic
 /// x.x,N = Speed, knots
 /// x.x,K = Speed, Km/hr
-pub fn parse_vtg(s: &NmeaSentence) -> Result<VtgData, String> {
-    if s.message_id != b"VTG" {
-        return Err("VTG message should starts with $..VTG".into());
+pub fn parse_vtg(sentence: NmeaSentence) -> Result<VtgData, NmeaError> {
+    if sentence.message_id != b"VTG" {
+        Err(NmeaError::WrongSentenceHeader{expected: b"VTG", found: sentence.message_id})
+    } else {
+        Ok(do_parse_vtg(sentence.data)?.1)
     }
-    let ret: VtgData = do_parse_vtg(s.data)
-        .map(|(_, data)| data)
-        .map_err(|err| match err {
-            nom::Err::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-            nom::Err::Error((_, kind)) | nom::Err::Failure((_, kind)) => {
-                kind.description().to_string()
-            }
-        })?;
-    Ok(ret)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    use crate::parse::parse_nmea_sentence;
+    use crate::parse::{parse_nmea_sentence, NmeaError};
+
+    fn run_parse_vtg(line: &[u8]) -> Result<VtgData, NmeaError> {
+        let s = parse_nmea_sentence(line).expect("VTG sentence initial parse failed");
+        assert_eq!(s.checksum, s.calc_checksum());
+        parse_vtg(s)
+    }
 
     #[test]
     fn test_parse_vtg() {
-        let run_parse_vtg = |line: &str| -> Result<VtgData, String> {
-            let s =
-                parse_nmea_sentence(line.as_bytes()).expect("VTG sentence initial parse failed");
-            assert_eq!(s.checksum, s.calc_checksum());
-            parse_vtg(&s)
-        };
         assert_eq!(
             VtgData {
                 true_course: None,
                 speed_over_ground: None,
             },
-            run_parse_vtg("$GPVTG,,T,,M,,N,,K,N*2C").unwrap()
+            run_parse_vtg(b"$GPVTG,,T,,M,,N,,K,N*2C").unwrap()
         );
         assert_eq!(
             VtgData {
                 true_course: Some(360.),
                 speed_over_ground: Some(0.),
             },
-            run_parse_vtg("$GPVTG,360.0,T,348.7,M,000.0,N,000.0,K*43").unwrap()
+            run_parse_vtg(b"$GPVTG,360.0,T,348.7,M,000.0,N,000.0,K*43").unwrap()
         );
         assert_eq!(
             VtgData {
                 true_course: Some(54.7),
                 speed_over_ground: Some(5.5),
             },
-            run_parse_vtg("$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48").unwrap()
+            run_parse_vtg(b"$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48").unwrap()
         );
     }
 }
