@@ -22,7 +22,7 @@ pub fn parse_txt(s: NmeaSentence) -> Result<TxtData, NmeaError> {
 
     let ret = do_parse_txt(s.data).map_err(|err| NmeaError::ParsingError(err))?.1;
 
-    let text_str = std::str::from_utf8(ret.text).map_err(|_e| NmeaError::Utf8DecodingError)?;
+    let text_str = core::str::from_utf8(ret.text).map_err(|_e| NmeaError::Utf8DecodingError)?;
 
     let text = ArrayString::from(text_str).map_err(|_e| NmeaError::SentenceLength(text_str.len()))?;
 

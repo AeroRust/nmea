@@ -1,4 +1,4 @@
-use std::str;
+use core::str;
 
 use nom::bytes::complete::{take, take_until};
 use nom::character::complete::char;
@@ -35,7 +35,7 @@ pub fn checksum<'a, I: Iterator<Item = &'a u8>>(bytes: I) -> u8 {
     bytes.fold(0, |c, x| c ^ *x)
 }
 
-fn parse_hex(data: &[u8]) -> std::result::Result<u8, &'static str> {
+fn parse_hex(data: &[u8]) -> core::result::Result<u8, &'static str> {
     u8::from_str_radix(unsafe { str::from_utf8_unchecked(data) }, 16)
         .map_err(|_| "Failed to parse checksum as hex number")
 }
@@ -62,7 +62,7 @@ fn do_parse_nmea_sentence(i: &[u8]) -> IResult<&[u8], NmeaSentence> {
     ))
 }
 
-pub fn parse_nmea_sentence<'a>(sentence: &'a [u8]) -> std::result::Result<NmeaSentence, NmeaError<'a>> {
+pub fn parse_nmea_sentence<'a>(sentence: &'a [u8]) -> core::result::Result<NmeaSentence, NmeaError<'a>> {
     /*
      * From gpsd:
      * We've had reports that on the Garmin GPS-10 the device sometimes
