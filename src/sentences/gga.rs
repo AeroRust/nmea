@@ -10,7 +10,7 @@ use nom::IResult;
 
 use crate::parse::NmeaSentence;
 use crate::sentences::utils::{number, parse_float_num, parse_hms, parse_lat_lon};
-use crate::FixType;
+use crate::{NmeaError, FixType};
 
 #[derive(Debug, PartialEq)]
 pub struct GgaData {
@@ -75,19 +75,12 @@ fn do_parse_gga(i: &[u8]) -> IResult<&[u8], GgaData> {
 /// ellipsoid, in Meters
 /// (empty field) time in seconds since last DGPS update
 /// (empty field) DGPS station ID number (0000-1023)
-pub fn parse_gga(sentence: &NmeaSentence) -> Result<GgaData, String> {
+pub fn parse_gga(sentence: NmeaSentence) -> Result<GgaData, NmeaError> {
     if sentence.message_id != b"GGA" {
-        return Err("GGA sentence not starts with $..GGA".into());
+        Err(NmeaError::WrongSentenceHeader(sentence.message_id, b"GGA"))
+    } else {
+        Ok(do_parse_gga(sentence.data)?.1)
     }
-    let res: GgaData = do_parse_gga(sentence.data)
-        .map_err(|err| match err {
-            nom::Err::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-            nom::Err::Error((_, kind)) | nom::Err::Failure((_, kind)) => {
-                kind.description().to_string()
-            }
-        })?
-        .1;
-    Ok(res)
 }
 
 #[cfg(test)]
@@ -98,7 +91,7 @@ mod tests {
 
     #[test]
     fn test_parse_gga_full() {
-        let data = parse_gga(&NmeaSentence {
+        let data = parse_gga(NmeaSentence {
             talker_id: b"GP",
             message_id: b"GGA",
             data: b"033745.0,5650.82344,N,03548.9778,E,1,07,1.8,101.2,M,14.7,M,,",
@@ -116,7 +109,7 @@ mod tests {
 
         let s = parse_nmea_sentence(b"$GPGGA,,,,,,0,,,,,,,,*66").unwrap();
         assert_eq!(s.checksum, s.calc_checksum());
-        let data = parse_gga(&s).unwrap();
+        let data = parse_gga(s).unwrap();
         assert_eq!(
             GgaData {
                 fix_time: None,
@@ -139,7 +132,7 @@ mod tests {
                 .unwrap();
         assert_eq!(sentence.checksum, sentence.calc_checksum());
         assert_eq!(sentence.checksum, 0x4f);
-        let data = parse_gga(&sentence).unwrap();
+        let data = parse_gga(sentence).unwrap();
         assert_eq!(data.fix_type.unwrap(), FixType::Invalid);
     }
 }

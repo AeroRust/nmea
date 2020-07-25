@@ -7,7 +7,7 @@ use nom::number::complete::float;
 use nom::IResult;
 
 use crate::parse::NmeaSentence;
-use crate::sentences::utils::{parse_date, parse_hms, parse_lat_lon};
+use crate::{NmeaError, sentences::utils::{parse_date, parse_hms, parse_lat_lon}};
 #[derive(Debug, PartialEq)]
 pub enum RmcStatusOfFix {
     Autonomous,
@@ -76,18 +76,12 @@ fn do_parse_rmc(i: &[u8]) -> IResult<&[u8], RmcData> {
 /// *68        mandatory nmea_checksum
 ///
 /// SiRF chipsets don't return either Mode Indicator or magnetic variation.
-pub fn parse_rmc(sentence: &NmeaSentence) -> Result<RmcData, String> {
+pub fn parse_rmc(sentence: NmeaSentence) -> Result<RmcData, NmeaError> {
     if sentence.message_id != b"RMC" {
-        return Err("RMC message should starts with $..RMC".into());
+        Err(NmeaError::WrongSentenceHeader(b"RMC", sentence.message_id))
+    } else {
+        Ok(do_parse_rmc(sentence.data)?.1)
     }
-    do_parse_rmc(sentence.data)
-        .map(|(_, data)| data)
-        .map_err(|err| match err {
-            nom::Err::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-            nom::Err::Error((_, kind)) | nom::Err::Failure((_, kind)) => {
-                kind.description().to_string()
-            }
-        })
 }
 
 #[cfg(test)]
@@ -105,7 +99,7 @@ mod tests {
         .unwrap();
         assert_eq!(s.checksum, s.calc_checksum());
         assert_eq!(s.checksum, 0x2b);
-        let rmc_data = parse_rmc(&s).unwrap();
+        let rmc_data = parse_rmc(s).unwrap();
         assert_eq!(
             rmc_data.fix_time.unwrap(),
             NaiveTime::from_hms_milli(22, 54, 46, 330)
@@ -125,7 +119,7 @@ mod tests {
         relative_eq!(rmc_data.true_course.unwrap(), 54.7);
 
         let s = parse_nmea_sentence(b"$GPRMC,,V,,,,,,,,,,N*53").unwrap();
-        let rmc = parse_rmc(&s).unwrap();
+        let rmc = parse_rmc(s).unwrap();
         assert_eq!(
             RmcData {
                 fix_time: None,

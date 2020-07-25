@@ -31,7 +31,7 @@ use std::{
 
 pub use crate::parse::{
     parse, GgaData, GllData, GsaData, GsvData, ParseResult, RmcData, RmcStatusOfFix, TxtData,
-    VtgData,
+    VtgData, NmeaError
 };
 use chrono::{NaiveDate, NaiveTime};
 
@@ -102,9 +102,9 @@ impl<'a> Nmea {
     /// ```
     pub fn create_for_navigation(
         required_sentences_for_nav: HashSet<SentenceType>,
-    ) -> Result<Nmea, &'static str> {
+    ) -> Result<Nmea, NmeaError<'a>> {
         if required_sentences_for_nav.is_empty() {
-            return Err("Should be at least one sentence type in required");
+             return Err(NmeaError::EmptyNavConfig);
         }
         let mut n = Self::new();
         n.required_sentences_for_nav = required_sentences_for_nav;
@@ -167,12 +167,12 @@ impl<'a> Nmea {
         self.geoid_height = gga_data.geoid_height;
     }
 
-    fn merge_gsv_data(&mut self, data: GsvData) -> Result<(), &'static str> {
+    fn merge_gsv_data(&mut self, data: GsvData) -> Result<(), NmeaError<'a>> {
         {
             let d = self
                 .satellites_scan
                 .get_mut(&data.gnss_type)
-                .ok_or("Invalid GNSS type")?;
+                .ok_or(NmeaError::InvalidGnssType)?;
             // Adjust size to this scan
             d.resize(data.number_of_sentences as usize, vec![]);
             // Replace data at index with new scan data
@@ -235,7 +235,7 @@ impl<'a> Nmea {
 
     /// Parse any NMEA sentence and stores the result. The type of sentence
     /// is returnd if implemented and valid.
-    pub fn parse(&mut self, s: &'a str) -> Result<SentenceType, String> {
+    pub fn parse(&mut self, s: &'a str) -> Result<SentenceType, NmeaError<'a>> {
         match parse(s.as_bytes())? {
             ParseResult::VTG(vtg) => {
                 self.merge_vtg_data(vtg);
@@ -265,10 +265,7 @@ impl<'a> Nmea {
                 self.merge_txt_data(txt);
                 Ok(SentenceType::TXT)
             }
-            ParseResult::Unsupported(msg_id) => Err(format!(
-                "Unknown or implemented sentence type: {:?}",
-                msg_id
-            )),
+            ParseResult::Unsupported(sentence_type) => Err(NmeaError::Unsupported(sentence_type)),
         }
     }
 
@@ -285,7 +282,7 @@ impl<'a> Nmea {
         self.new_tick();
     }
 
-    pub fn parse_for_fix(&mut self, xs: &[u8]) -> Result<FixType, String> {
+    pub fn parse_for_fix(&mut self, xs: &'a [u8]) -> Result<FixType, NmeaError<'a>> {
         match parse(xs)? {
             ParseResult::GSA(gsa) => {
                 self.merge_gsa_data(gsa);
@@ -492,8 +489,8 @@ macro_rules! define_sentence_type_enum {
         }
 
         impl $Name {
-            fn try_from(s: &[u8]) -> Result<Self, &'static str> {
-                match str::from_utf8(s).map_err(|_| "invalid header")? {
+            fn try_from(s: &[u8]) -> Result<Self, NmeaError> {
+                match str::from_utf8(s).map_err(|_| NmeaError::Utf8DecodingError)? {
                     $(stringify!($Variant) => Ok($Name::$Variant),)*
                     _ => Ok($Name::None),
                 }
@@ -645,7 +642,7 @@ pub enum FixType {
 }
 
 /// GNSS type
-#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
 pub enum GnssType {
     Galileo,
     Gps,
@@ -1092,7 +1089,7 @@ mod tests {
                     continue;
                 }
                 Err(msg) => {
-                    println!("update_gnss_info_nmea: parse_for_fix failed: {}", msg);
+                    println!("update_gnss_info_nmea: parse_for_fix failed: {:?}", msg);
                     continue;
                 }
                 Ok(_) => nfixes += 1,

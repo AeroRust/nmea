@@ -60,7 +60,7 @@ fn do_parse_nmea_sentence(i: &[u8]) -> IResult<&[u8], NmeaSentence> {
     ))
 }
 
-pub fn parse_nmea_sentence(sentence: &[u8]) -> std::result::Result<NmeaSentence, String> {
+pub fn parse_nmea_sentence<'a>(sentence: &'a [u8]) -> std::result::Result<NmeaSentence, NmeaError<'a>> {
     /*
      * From gpsd:
      * We've had reports that on the Garmin GPS-10 the device sometimes
@@ -78,17 +78,10 @@ pub fn parse_nmea_sentence(sentence: &[u8]) -> std::result::Result<NmeaSentence,
      * a 100-character PSTI message.
      */
     if sentence.len() > 102 {
-        return Err("Too long message".to_string());
+        Err(NmeaError::SentenceLength(sentence.len()))
+    } else {
+        Ok(do_parse_nmea_sentence(sentence)?.1)
     }
-    let res: NmeaSentence = do_parse_nmea_sentence(sentence)
-        .map_err(|err| match err {
-            nom::Err::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-            nom::Err::Error((_, kind)) | nom::Err::Failure((_, kind)) => {
-                kind.description().to_string()
-            }
-        })?
-        .1;
-    Ok(res)
 }
 
 pub enum ParseResult {
@@ -102,31 +95,59 @@ pub enum ParseResult {
     Unsupported(SentenceType),
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum NmeaError<'a> {
+    /// The provided input was not a proper UTF-8 string
+    Utf8DecodingError,
+    /// The checksum of the sentence was corrupt or wrong
+    ChecksumMismatch,
+    /// For some reason a sentence was passed to the wrong sentence specific parser, this error
+    /// should never happen. First slice is the expected header, second is the found one
+    WrongSentenceHeader(&'a [u8], &'a [u8]),
+    /// The sentence could not be parsed because its format was invalid
+    ParsingError(nom::Err<(&'a [u8], nom::error::ErrorKind)>),
+    /// The sentence was too long to be parsed, our current limit is 102 characters
+    SentenceLength(usize),
+    /// The type of a GSV sentence was not a valid Gnss type
+    InvalidGnssType,
+    /// The sentence has and maybe will never be implemented
+    Unsupported(SentenceType),
+    /// The provided navigation configuration was empty and thus invalid
+    EmptyNavConfig,
+}
+
+impl<'a> From<nom::Err<(&'a [u8], nom::error::ErrorKind)>> for NmeaError<'a> {
+    fn from(error: nom::Err<(&'a [u8], nom::error::ErrorKind)>) -> Self {
+        Self::ParsingError(error)
+    }
+}
+
+
 /// parse nmea 0183 sentence and extract data from it
-pub fn parse(xs: &[u8]) -> Result<ParseResult, String> {
+pub fn parse(xs: &[u8]) -> Result<ParseResult, NmeaError> {
     let nmea_sentence = parse_nmea_sentence(xs)?;
 
     if nmea_sentence.checksum == nmea_sentence.calc_checksum() {
         match SentenceType::try_from(nmea_sentence.message_id)? {
             SentenceType::GGA => {
-                let data = parse_gga(&nmea_sentence)?;
+                let data = parse_gga(nmea_sentence)?;
                 Ok(ParseResult::GGA(data))
             }
             SentenceType::GSV => {
-                let data = parse_gsv(&nmea_sentence)?;
+                let data = parse_gsv(nmea_sentence)?;
                 Ok(ParseResult::GSV(data))
             }
             SentenceType::RMC => {
-                let data = parse_rmc(&nmea_sentence)?;
+                let data = parse_rmc(nmea_sentence)?;
                 Ok(ParseResult::RMC(data))
             }
-            SentenceType::GSA => Ok(ParseResult::GSA(parse_gsa(&nmea_sentence)?)),
-            SentenceType::VTG => Ok(ParseResult::VTG(parse_vtg(&nmea_sentence)?)),
-            SentenceType::GLL => Ok(ParseResult::GLL(parse_gll(&nmea_sentence)?)),
-            SentenceType::TXT => Ok(ParseResult::TXT(parse_txt(&nmea_sentence)?)),
+            SentenceType::GSA => Ok(ParseResult::GSA(parse_gsa(nmea_sentence)?)),
+            SentenceType::VTG => Ok(ParseResult::VTG(parse_vtg(nmea_sentence)?)),
+            SentenceType::GLL => Ok(ParseResult::GLL(parse_gll(nmea_sentence)?)),
+            SentenceType::TXT => Ok(ParseResult::TXT(parse_txt(nmea_sentence)?)),
             msg_id => Ok(ParseResult::Unsupported(msg_id)),
         }
     } else {
-        Err("Checksum mismatch".into())
+        Err(NmeaError::ChecksumMismatch)
     }
 }

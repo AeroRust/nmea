@@ -8,7 +8,7 @@ use nom::sequence::terminated;
 use nom::IResult;
 
 use crate::parse::NmeaSentence;
-use crate::sentences::utils::number;
+use crate::{NmeaError, sentences::utils::number};
 
 #[derive(PartialEq, Debug)]
 pub enum GsaMode1 {
@@ -128,19 +128,12 @@ fn do_parse_gsa(i: &[u8]) -> IResult<&[u8], GsaData> {
 /// in at least two ways: it's got the wrong number of fields, and
 /// it claims to be a valid sentence (A flag) when it isn't.
 /// Alarmingly, it's possible this error may be generic to SiRFstarIII
-pub fn parse_gsa(s: &NmeaSentence) -> Result<GsaData, String> {
-    if s.message_id != b"GSA" {
-        return Err("GSA message should starts with $..GSA".into());
+pub fn parse_gsa(sentence: NmeaSentence) -> Result<GsaData, NmeaError> {
+    if sentence.message_id != b"GSA" {
+        Err(NmeaError::WrongSentenceHeader(sentence.message_id, b"GSA"))
+    } else {
+        Ok(do_parse_gsa(sentence.data)?.1)
     }
-    let ret: GsaData = do_parse_gsa(s.data)
-        .map(|(_, data)| data)
-        .map_err(|err| match err {
-            nom::Err::Incomplete(_) => "Incomplete nmea sentence".to_string(),
-            nom::Err::Error((_, kind)) | nom::Err::Failure((_, kind)) => {
-                kind.description().to_string()
-            }
-        })?;
-    Ok(ret)
 }
 
 #[cfg(test)]
@@ -163,7 +156,7 @@ mod tests {
     #[test]
     fn smoke_test_parse_gsa() {
         let s = parse_nmea_sentence(b"$GPGSA,A,3,,,,,,16,18,,22,24,,,3.6,2.1,2.2*3C").unwrap();
-        let gsa = parse_gsa(&s).unwrap();
+        let gsa = parse_gsa(s).unwrap();
         assert_eq!(
             GsaData {
                 mode1: GsaMode1::Automatic,
@@ -186,7 +179,7 @@ mod tests {
         for line in &gsa_examples {
             println!("we parse line '{}'", line);
             let s = parse_nmea_sentence(line.as_bytes()).unwrap();
-            parse_gsa(&s).unwrap();
+            parse_gsa(s).unwrap();
         }
     }
 }
