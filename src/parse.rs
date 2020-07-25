@@ -128,7 +128,7 @@ pub fn parse(xs: &[u8]) -> Result<ParseResult, NmeaError> {
     let nmea_sentence = parse_nmea_sentence(xs)?;
 
     if nmea_sentence.checksum == nmea_sentence.calc_checksum() {
-        match SentenceType::try_from(nmea_sentence.message_id)? {
+        match SentenceType::from_slice(nmea_sentence.message_id) {
             SentenceType::GGA => {
                 let data = parse_gga(nmea_sentence)?;
                 Ok(ParseResult::GGA(data))

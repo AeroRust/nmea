@@ -489,10 +489,15 @@ macro_rules! define_sentence_type_enum {
         }
 
         impl $Name {
-            fn try_from(s: &[u8]) -> Result<Self, NmeaError> {
-                match str::from_utf8(s).map_err(|_| NmeaError::Utf8DecodingError)? {
-                    $(stringify!($Variant) => Ok($Name::$Variant),)*
-                    _ => Ok($Name::None),
+            fn from_slice(s: &[u8]) -> Self {
+                match str::from_utf8(s) {
+                    Ok(s) => match s {
+                        $(stringify!($Variant) => $Name::$Variant,)*
+                        _ => $Name::None,
+                    },
+                    // It is not utf-8, however all sentence types we have as
+                    // of now are utf-8, hence we can be sure we don't know it
+                    Err(_e) => $Name::None
                 }
             }
         }
@@ -735,8 +740,8 @@ mod tests {
 
     #[test]
     fn test_message_type() {
-        assert_eq!(SentenceType::try_from(b"GGA").unwrap(), SentenceType::GGA);
-        assert_eq!(SentenceType::try_from(b"XXX").unwrap(), SentenceType::None);
+        assert_eq!(SentenceType::from_slice(b"GGA"), SentenceType::GGA);
+        assert_eq!(SentenceType::from_slice(b"XXX"), SentenceType::None);
     }
 
     #[test]
@@ -1114,8 +1119,8 @@ mod tests {
         assert_eq!(TestEnum::from("BBB"), b);
         assert_eq!(TestEnum::from("fdafa"), n);
 
-        assert_eq!(TestEnum::try_from(b"AAA").unwrap(), a);
-        assert_eq!(TestEnum::try_from(b"BBB").unwrap(), b);
+        assert_eq!(TestEnum::from_slice(b"AAA"), a);
+        assert_eq!(TestEnum::from_slice(b"BBB"), b);
     }
 
     #[test]
