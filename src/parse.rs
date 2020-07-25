@@ -10,6 +10,8 @@ use nom::IResult;
 pub use crate::sentences::*;
 use crate::SentenceType;
 
+pub const SENTENCE_MAX_LEN: usize = 102;
+
 pub struct NmeaSentence<'a> {
     pub talker_id: &'a [u8],
     pub message_id: &'a [u8],
@@ -77,7 +79,7 @@ pub fn parse_nmea_sentence<'a>(sentence: &'a [u8]) -> std::result::Result<NmeaSe
      * The current hog champion is the Skytraq S2525F8 which emits
      * a 100-character PSTI message.
      */
-    if sentence.len() > 102 {
+    if sentence.len() > SENTENCE_MAX_LEN {
         Err(NmeaError::SentenceLength(sentence.len()))
     } else {
         Ok(do_parse_nmea_sentence(sentence)?.1)
@@ -106,7 +108,7 @@ pub enum NmeaError<'a> {
     WrongSentenceHeader{ expected: &'a [u8], found: &'a [u8]},
     /// The sentence could not be parsed because its format was invalid
     ParsingError(nom::Err<(&'a [u8], nom::error::ErrorKind)>),
-    /// The sentence was too long to be parsed, our current limit is 102 characters
+    /// The sentence was too long to be parsed, our current limit is `SENTENCE_MAX_LEN` characters
     SentenceLength(usize),
     /// The type of a GSV sentence was not a valid Gnss type
     InvalidGnssType,

@@ -31,7 +31,7 @@ use std::{
 
 pub use crate::parse::{
     parse, GgaData, GllData, GsaData, GsvData, ParseResult, RmcData, RmcStatusOfFix, TxtData,
-    VtgData, NmeaError
+    VtgData, NmeaError, SENTENCE_MAX_LEN
 };
 use chrono::{NaiveDate, NaiveTime};
 
