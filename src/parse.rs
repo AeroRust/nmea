@@ -100,7 +100,8 @@ pub enum NmeaError<'a> {
     /// The provided input was not a proper UTF-8 string
     Utf8DecodingError,
     /// The checksum of the sentence was corrupt or wrong
-    ChecksumMismatch,
+    /// First is the expected checksum, second is the found one
+    ChecksumMismatch(u8, u8),
     /// For some reason a sentence was passed to the wrong sentence specific parser, this error
     /// should never happen. First slice is the expected header, second is the found one
     WrongSentenceHeader(&'a [u8], &'a [u8]),
@@ -126,8 +127,9 @@ impl<'a> From<nom::Err<(&'a [u8], nom::error::ErrorKind)>> for NmeaError<'a> {
 /// parse nmea 0183 sentence and extract data from it
 pub fn parse(xs: &[u8]) -> Result<ParseResult, NmeaError> {
     let nmea_sentence = parse_nmea_sentence(xs)?;
+    let calculated_checksum = nmea_sentence.calc_checksum();
 
-    if nmea_sentence.checksum == nmea_sentence.calc_checksum() {
+    if nmea_sentence.checksum == calculated_checksum{
         match SentenceType::from_slice(nmea_sentence.message_id) {
             SentenceType::GGA => {
                 let data = parse_gga(nmea_sentence)?;
@@ -148,6 +150,6 @@ pub fn parse(xs: &[u8]) -> Result<ParseResult, NmeaError> {
             msg_id => Ok(ParseResult::Unsupported(msg_id)),
         }
     } else {
-        Err(NmeaError::ChecksumMismatch)
+        Err(NmeaError::ChecksumMismatch(calculated_checksum, nmea_sentence.checksum))
     }
 }
