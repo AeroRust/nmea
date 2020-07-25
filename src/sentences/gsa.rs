@@ -130,7 +130,7 @@ fn do_parse_gsa(i: &[u8]) -> IResult<&[u8], GsaData> {
 /// Alarmingly, it's possible this error may be generic to SiRFstarIII
 pub fn parse_gsa(sentence: NmeaSentence) -> Result<GsaData, NmeaError> {
     if sentence.message_id != b"GSA" {
-        Err(NmeaError::WrongSentenceHeader(sentence.message_id, b"GSA"))
+        Err(NmeaError::WrongSentenceHeader{expected: b"GSA", found: sentence.message_id})
     } else {
         Ok(do_parse_gsa(sentence.data)?.1)
     }

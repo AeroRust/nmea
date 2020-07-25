@@ -17,7 +17,7 @@ const MAX_LEN: usize = 64;
 /// *68        mandatory nmea_checksum
 pub fn parse_txt(s: NmeaSentence) -> Result<TxtData, NmeaError> {
     if s.message_id != b"TXT" {
-        return Err(NmeaError::WrongSentenceHeader(b"TXT", s.message_id));
+        return Err(NmeaError::WrongSentenceHeader{expected: b"TXT", found: s.message_id});
     }
 
     let ret = do_parse_txt(s.data).map_err(|err| NmeaError::ParsingError(err))?.1;

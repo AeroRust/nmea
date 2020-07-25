@@ -84,16 +84,16 @@ fn do_parse_gsv(i: &[u8]) -> IResult<&[u8], GsvData> {
 /// only.  Usage is inconsistent.
 pub fn parse_gsv(sentence: NmeaSentence) -> Result<GsvData, NmeaError> {
     if sentence.message_id != b"GSV" {
-        Err(NmeaError::WrongSentenceHeader(sentence.message_id, b"GSV"))
+        Err(NmeaError::WrongSentenceHeader{expected: b"GSV", found: sentence.message_id})
     } else {
         let gnss_type = match sentence.talker_id {
             b"GP" => GnssType::Gps,
             b"GL" => GnssType::Glonass,
             _ => {
-                return Err(NmeaError::WrongSentenceHeader(
-                    sentence.message_id,
-                    b"GP|GL",
-                ))
+                return Err(NmeaError::WrongSentenceHeader{
+                    expected: b"GP|GL",
+                    found: sentence.message_id,
+                })
             }
         };
         let mut res = do_parse_gsv(sentence.data)?.1;

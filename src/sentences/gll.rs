@@ -24,7 +24,7 @@ use crate::{NmeaError, sentences::utils::{do_parse_lat_lon, parse_hms}};
 /// | 9     | *xx         | Check sum
 pub fn parse_gll(sentence: NmeaSentence) -> Result<GllData, NmeaError> {
     if sentence.message_id != b"GLL" {
-        Err(NmeaError::WrongSentenceHeader(sentence.message_id, b"GLL"))
+        Err(NmeaError::WrongSentenceHeader{expected: b"GLL", found: sentence.message_id})
     } else {
         Ok(do_parse_gll(sentence.data)?.1)
     }

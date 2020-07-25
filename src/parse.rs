@@ -100,11 +100,10 @@ pub enum NmeaError<'a> {
     /// The provided input was not a proper UTF-8 string
     Utf8DecodingError,
     /// The checksum of the sentence was corrupt or wrong
-    /// First is the expected checksum, second is the found one
-    ChecksumMismatch(u8, u8),
+    ChecksumMismatch{ calculated: u8, found: u8},
     /// For some reason a sentence was passed to the wrong sentence specific parser, this error
     /// should never happen. First slice is the expected header, second is the found one
-    WrongSentenceHeader(&'a [u8], &'a [u8]),
+    WrongSentenceHeader{ expected: &'a [u8], found: &'a [u8]},
     /// The sentence could not be parsed because its format was invalid
     ParsingError(nom::Err<(&'a [u8], nom::error::ErrorKind)>),
     /// The sentence was too long to be parsed, our current limit is 102 characters
@@ -150,6 +149,6 @@ pub fn parse(xs: &[u8]) -> Result<ParseResult, NmeaError> {
             msg_id => Ok(ParseResult::Unsupported(msg_id)),
         }
     } else {
-        Err(NmeaError::ChecksumMismatch(calculated_checksum, nmea_sentence.checksum))
+        Err(NmeaError::ChecksumMismatch{calculated: calculated_checksum, found: nmea_sentence.checksum})
     }
 }

@@ -73,7 +73,7 @@ fn do_parse_vtg(i: &[u8]) -> IResult<&[u8], VtgData> {
 /// x.x,K = Speed, Km/hr
 pub fn parse_vtg(sentence: NmeaSentence) -> Result<VtgData, NmeaError> {
     if sentence.message_id != b"VTG" {
-        Err(NmeaError::WrongSentenceHeader(sentence.message_id, b"VTG"))
+        Err(NmeaError::WrongSentenceHeader{expected: b"VTG", found: sentence.message_id})
     } else {
         Ok(do_parse_vtg(sentence.data)?.1)
     }

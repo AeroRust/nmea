@@ -78,7 +78,7 @@ fn do_parse_rmc(i: &[u8]) -> IResult<&[u8], RmcData> {
 /// SiRF chipsets don't return either Mode Indicator or magnetic variation.
 pub fn parse_rmc(sentence: NmeaSentence) -> Result<RmcData, NmeaError> {
     if sentence.message_id != b"RMC" {
-        Err(NmeaError::WrongSentenceHeader(b"RMC", sentence.message_id))
+        Err(NmeaError::WrongSentenceHeader{expected: b"RMC", found: sentence.message_id})
     } else {
         Ok(do_parse_rmc(sentence.data)?.1)
     }
