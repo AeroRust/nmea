@@ -23,7 +23,7 @@
 mod parse;
 mod sentences;
 
-use core::{fmt, iter::Iterator, mem, str};
+use core::{fmt, iter::Iterator, mem};
 use std::collections::{HashMap, HashSet};
 
 pub use crate::parse::{
@@ -487,14 +487,13 @@ macro_rules! define_sentence_type_enum {
 
         impl $Name {
             fn from_slice(s: &[u8]) -> Self {
-                match str::from_utf8(s) {
-                    Ok(s) => match s {
-                        $(stringify!($Variant) => $Name::$Variant,)*
-                        _ => $Name::None,
-                    },
-                    // It is not utf-8, however all sentence types we have as
-                    // of now are utf-8, hence we can be sure we don't know it
-                    Err(_e) => $Name::None
+                $(
+                    #[allow(nonstandard_style)]
+                    const $Variant: &[u8] = stringify!($Variant).as_bytes();
+                )*
+                match s {
+                    $($Variant => $Name::$Variant,)*
+                    _ => $Name::None,
                 }
             }
         }
