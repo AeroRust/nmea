@@ -10,7 +10,7 @@ use nom::IResult;
 
 use crate::parse::NmeaSentence;
 use crate::sentences::utils::{number, parse_float_num, parse_hms, parse_lat_lon};
-use crate::{NmeaError, FixType};
+use crate::{FixType, NmeaError};
 
 #[derive(Debug, PartialEq)]
 pub struct GgaData {
@@ -77,7 +77,10 @@ fn do_parse_gga(i: &[u8]) -> IResult<&[u8], GgaData> {
 /// (empty field) DGPS station ID number (0000-1023)
 pub fn parse_gga(sentence: NmeaSentence) -> Result<GgaData, NmeaError> {
     if sentence.message_id != b"GGA" {
-        Err(NmeaError::WrongSentenceHeader{expected: b"GGA", found: sentence.message_id})
+        Err(NmeaError::WrongSentenceHeader {
+            expected: b"GGA",
+            found: sentence.message_id,
+        })
     } else {
         Ok(do_parse_gga(sentence.data)?.1)
     }

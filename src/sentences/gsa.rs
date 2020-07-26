@@ -8,7 +8,7 @@ use nom::sequence::terminated;
 use nom::IResult;
 
 use crate::parse::NmeaSentence;
-use crate::{NmeaError, sentences::utils::number};
+use crate::{sentences::utils::number, NmeaError};
 
 #[derive(PartialEq, Debug)]
 pub enum GsaMode1 {
@@ -130,7 +130,10 @@ fn do_parse_gsa(i: &[u8]) -> IResult<&[u8], GsaData> {
 /// Alarmingly, it's possible this error may be generic to SiRFstarIII
 pub fn parse_gsa(sentence: NmeaSentence) -> Result<GsaData, NmeaError> {
     if sentence.message_id != b"GSA" {
-        Err(NmeaError::WrongSentenceHeader{expected: b"GSA", found: sentence.message_id})
+        Err(NmeaError::WrongSentenceHeader {
+            expected: b"GSA",
+            found: sentence.message_id,
+        })
     } else {
         Ok(do_parse_gsa(sentence.data)?.1)
     }

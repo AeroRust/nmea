@@ -6,7 +6,10 @@ use nom::sequence::terminated;
 use nom::IResult;
 
 use crate::parse::NmeaSentence;
-use crate::{NmeaError, sentences::utils::{do_parse_lat_lon, parse_hms}};
+use crate::{
+    sentences::utils::{do_parse_lat_lon, parse_hms},
+    NmeaError,
+};
 
 /// Parse GPGLL (Geographic position)
 /// From https://docs.novatel.com/OEM7/Content/Logs/GPGLL.htm
@@ -24,13 +27,14 @@ use crate::{NmeaError, sentences::utils::{do_parse_lat_lon, parse_hms}};
 /// | 9     | *xx         | Check sum
 pub fn parse_gll(sentence: NmeaSentence) -> Result<GllData, NmeaError> {
     if sentence.message_id != b"GLL" {
-        Err(NmeaError::WrongSentenceHeader{expected: b"GLL", found: sentence.message_id})
+        Err(NmeaError::WrongSentenceHeader {
+            expected: b"GLL",
+            found: sentence.message_id,
+        })
     } else {
         Ok(do_parse_gll(sentence.data)?.1)
     }
 }
-
-
 
 /// Positioning System Mode Indicator (present from NMEA >= 2.3)
 #[derive(Debug, PartialEq, Clone, Copy)]

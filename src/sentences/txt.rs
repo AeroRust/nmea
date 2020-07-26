@@ -3,7 +3,7 @@ use nom::character::complete::char;
 use nom::{bytes::complete::take_while, IResult};
 
 use super::utils::number;
-use crate::{NmeaError, parse::NmeaSentence};
+use crate::{parse::NmeaSentence, NmeaError};
 
 const MAX_LEN: usize = 64;
 
@@ -17,14 +17,20 @@ const MAX_LEN: usize = 64;
 /// *68        mandatory nmea_checksum
 pub fn parse_txt(s: NmeaSentence) -> Result<TxtData, NmeaError> {
     if s.message_id != b"TXT" {
-        return Err(NmeaError::WrongSentenceHeader{expected: b"TXT", found: s.message_id});
+        return Err(NmeaError::WrongSentenceHeader {
+            expected: b"TXT",
+            found: s.message_id,
+        });
     }
 
-    let ret = do_parse_txt(s.data).map_err(|err| NmeaError::ParsingError(err))?.1;
+    let ret = do_parse_txt(s.data)
+        .map_err(|err| NmeaError::ParsingError(err))?
+        .1;
 
     let text_str = core::str::from_utf8(ret.text).map_err(|_e| NmeaError::Utf8DecodingError)?;
 
-    let text = ArrayString::from(text_str).map_err(|_e| NmeaError::SentenceLength(text_str.len()))?;
+    let text =
+        ArrayString::from(text_str).map_err(|_e| NmeaError::SentenceLength(text_str.len()))?;
 
     Ok(TxtData {
         count: ret.count,

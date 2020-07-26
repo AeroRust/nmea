@@ -23,15 +23,12 @@
 mod parse;
 mod sentences;
 
+use core::{fmt, iter::Iterator, mem};
 use std::collections::{HashMap, HashSet};
-use core::{
-    iter::Iterator,
-    fmt, mem, str
-};
 
 pub use crate::parse::{
-    parse, GgaData, GllData, GsaData, GsvData, ParseResult, RmcData, RmcStatusOfFix, TxtData,
-    VtgData, NmeaError, SENTENCE_MAX_LEN
+    parse, GgaData, GllData, GsaData, GsvData, NmeaError, ParseResult, RmcData, RmcStatusOfFix,
+    TxtData, VtgData, SENTENCE_MAX_LEN,
 };
 use chrono::{NaiveDate, NaiveTime};
 
@@ -104,7 +101,7 @@ impl<'a> Nmea {
         required_sentences_for_nav: HashSet<SentenceType>,
     ) -> Result<Nmea, NmeaError<'a>> {
         if required_sentences_for_nav.is_empty() {
-             return Err(NmeaError::EmptyNavConfig);
+            return Err(NmeaError::EmptyNavConfig);
         }
         let mut n = Self::new();
         n.required_sentences_for_nav = required_sentences_for_nav;
@@ -490,14 +487,13 @@ macro_rules! define_sentence_type_enum {
 
         impl $Name {
             fn from_slice(s: &[u8]) -> Self {
-                match str::from_utf8(s) {
-                    Ok(s) => match s {
-                        $(stringify!($Variant) => $Name::$Variant,)*
-                        _ => $Name::None,
-                    },
-                    // It is not utf-8, however all sentence types we have as
-                    // of now are utf-8, hence we can be sure we don't know it
-                    Err(_e) => $Name::None
+                $(
+                    #[allow(nonstandard_style)]
+                    const $Variant: &[u8] = stringify!($Variant).as_bytes();
+                )*
+                match s {
+                    $($Variant => $Name::$Variant,)*
+                    _ => $Name::None,
                 }
             }
         }
