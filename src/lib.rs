@@ -20,11 +20,16 @@
 // limitations under the License.
 //
 
+#[macro_use]
+extern crate num_derive;
+
 mod parse;
 mod sentences;
 
 use core::{fmt, iter::Iterator, mem};
-use std::collections::{HashMap, HashSet};
+use heapless::consts::*;
+use heapless::{FnvIndexMap, FnvIndexSet};
+use num_traits::ToPrimitive;
 
 pub use crate::parse::{
     parse, GgaData, GllData, GsaData, GsvData, NmeaError, ParseResult, RmcData, RmcStatusOfFix,
@@ -33,7 +38,7 @@ pub use crate::parse::{
 use chrono::{NaiveDate, NaiveTime};
 
 /// NMEA parser
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug)]
 pub struct Nmea {
     pub fix_time: Option<NaiveTime>,
     pub fix_date: Option<NaiveDate>,
@@ -51,11 +56,80 @@ pub struct Nmea {
     pub satellites: Vec<Satellite>,
     pub fix_satellites_prns: Option<Vec<u32>>,
 
-    satellites_scan: HashMap<GnssType, Vec<Vec<Satellite>>>,
-    required_sentences_for_nav: HashSet<SentenceType>,
+    // This Map can at max contain 3 values since GnssType only has 3 variants.
+    // Capacity must be a power of 2 -> 4.
+    satellites_scan: FnvIndexMap<GnssType, Vec<Vec<Satellite>>, U4>,
+    // This set can theoretically contain all 99 sentences we have right now,
+    // however we only implement 7 parsers so a cpacity of 8 should be fine for
+    // now. (capacity has to be a power of 2)
+    required_sentences_for_nav: FnvIndexSet<SentenceType, U8>,
     last_fix_time: Option<NaiveTime>,
     last_txt: Option<TxtData>,
-    sentences_for_this_time: HashSet<SentenceType>,
+    // This set can theoretically contain all 99 sentences we have right now,
+    // however we only implement 7 parsers so a cpacity of 8 should be fine for
+    // now. (capacity has to be a power of 2)
+    sentences_for_this_time: FnvIndexSet<SentenceType, U8>,
+}
+
+// The heapless types don't implement clone so we have to do it.
+impl Clone for Nmea {
+    fn clone(&self) -> Self {
+        let mut required_sentences_for_nav = FnvIndexSet::new();
+        for sentence in self.required_sentences_for_nav.iter() {
+            required_sentences_for_nav.insert(*sentence).unwrap();
+        }
+
+        let mut sentences_for_this_time = FnvIndexSet::new();
+        for sentence in self.sentences_for_this_time.iter() {
+            sentences_for_this_time.insert(*sentence).unwrap();
+        }
+
+        let mut satellites_scan = FnvIndexMap::new();
+        for (gnss, sat_vec) in self.satellites_scan.iter() {
+            satellites_scan.insert(*gnss, sat_vec.clone()).unwrap();
+        }
+
+        Nmea {
+            fix_time: self.fix_time,
+            fix_date: self.fix_date,
+            fix_type: self.fix_type,
+            latitude: self.latitude,
+            longitude: self.longitude,
+            altitude: self.altitude,
+            speed_over_ground: self.speed_over_ground,
+            true_course: self.true_course,
+            num_of_fix_satellites: self.num_of_fix_satellites,
+            hdop: self.hdop,
+            vdop: self.vdop,
+            pdop: self.pdop,
+            geoid_height: self.geoid_height,
+            satellites: self.satellites.clone(),
+            fix_satellites_prns: self.fix_satellites_prns.clone(),
+            satellites_scan,
+            required_sentences_for_nav,
+            last_fix_time: self.last_fix_time,
+            last_txt: self.last_txt.clone(),
+            sentences_for_this_time,
+        }
+    }
+}
+
+impl hash32::Hash for SentenceType {
+    fn hash<H>(&self, state: &mut H)
+    where
+        H: hash32::Hasher,
+    {
+        self.to_u32().unwrap().hash(state);
+    }
+}
+
+impl hash32::Hash for GnssType {
+    fn hash<H>(&self, state: &mut H)
+    where
+        H: hash32::Hasher,
+    {
+        self.to_u32().unwrap().hash(state);
+    }
 }
 
 impl<'a> Nmea {
@@ -76,9 +150,9 @@ impl<'a> Nmea {
     pub fn new() -> Nmea {
         // TODO: This looks ugly.
         let mut n = Nmea::default();
-        n.satellites_scan.insert(GnssType::Galileo, vec![]);
-        n.satellites_scan.insert(GnssType::Gps, vec![]);
-        n.satellites_scan.insert(GnssType::Glonass, vec![]);
+        n.satellites_scan.insert(GnssType::Galileo, vec![]).unwrap();
+        n.satellites_scan.insert(GnssType::Gps, vec![]).unwrap();
+        n.satellites_scan.insert(GnssType::Glonass, vec![]).unwrap();
         n
     }
 
@@ -89,22 +163,22 @@ impl<'a> Nmea {
     /// ```
     /// use nmea::{Nmea, SentenceType};
     ///
-    /// let mut nmea = Nmea::create_for_navigation([SentenceType::RMC, SentenceType::GGA]
-    ///                                                .iter()
-    ///                                                .map(|v| v.clone())
-    ///                                                .collect()).unwrap();
+    /// let mut nmea = Nmea::create_for_navigation(&[SentenceType::RMC,
+    /// SentenceType::GGA]).unwrap();
     /// let gga = "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76";
     /// nmea.parse(gga).unwrap();
     /// println!("{}", nmea);
     /// ```
     pub fn create_for_navigation(
-        required_sentences_for_nav: HashSet<SentenceType>,
+        required_sentences_for_nav: &[SentenceType],
     ) -> Result<Nmea, NmeaError<'a>> {
         if required_sentences_for_nav.is_empty() {
             return Err(NmeaError::EmptyNavConfig);
         }
         let mut n = Self::new();
-        n.required_sentences_for_nav = required_sentences_for_nav;
+        for sentence in required_sentences_for_nav.iter() {
+            n.required_sentences_for_nav.insert(*sentence).unwrap();
+        }
         Ok(n)
     }
 
@@ -297,7 +371,9 @@ impl<'a> Nmea {
                         return Ok(FixType::Invalid);
                     }
                     self.merge_vtg_data(vtg);
-                    self.sentences_for_this_time.insert(SentenceType::VTG);
+                    self.sentences_for_this_time
+                        .insert(SentenceType::VTG)
+                        .unwrap();
                 } else {
                     return Ok(FixType::Invalid);
                 }
@@ -324,7 +400,9 @@ impl<'a> Nmea {
                     }
                 }
                 self.merge_rmc_data(rmc_data);
-                self.sentences_for_this_time.insert(SentenceType::RMC);
+                self.sentences_for_this_time
+                    .insert(SentenceType::RMC)
+                    .unwrap();
             }
             ParseResult::GGA(gga_data) => {
                 match gga_data.fix_type {
@@ -348,7 +426,9 @@ impl<'a> Nmea {
                     }
                 }
                 self.merge_gga_data(gga_data);
-                self.sentences_for_this_time.insert(SentenceType::GGA);
+                self.sentences_for_this_time
+                    .insert(SentenceType::GGA)
+                    .unwrap();
             }
             ParseResult::GLL(gll_data) => {
                 self.merge_gll_data(gll_data);
@@ -470,7 +550,7 @@ macro_rules! define_sentence_type_enum {
 	enum $Name:ident { $($Variant:ident),* $(,)* }
     ) => {
 	$(#[$outer])*
-        #[derive(PartialEq, Debug, Hash, Eq, Clone)]
+        #[derive(PartialEq, Debug, Hash, Eq, Copy, Clone, ToPrimitive)]
         pub enum $Name {
             None,
             $($Variant),*,
@@ -629,7 +709,7 @@ define_sentence_type_enum!(
 );
 
 /// Fix type
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum FixType {
     Invalid,
     Gps,
@@ -643,7 +723,7 @@ pub enum FixType {
 }
 
 /// GNSS type
-#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, ToPrimitive)]
 pub enum GnssType {
     Galileo,
     Gps,
@@ -919,13 +999,8 @@ mod tests {
     #[test]
     fn test_parse_for_fix() {
         {
-            let mut nmea = Nmea::create_for_navigation(
-                [SentenceType::RMC, SentenceType::GGA]
-                    .iter()
-                    .map(|v| v.clone())
-                    .collect(),
-            )
-            .unwrap();
+            let mut nmea =
+                Nmea::create_for_navigation(&[SentenceType::RMC, SentenceType::GGA]).unwrap();
             let log = [
                 (
                     "$GPRMC,123308.2,A,5521.76474,N,03731.92553,E,000.48,071.9,090317,010.2,E,A*3B",
@@ -1027,13 +1102,8 @@ mod tests {
         }
 
         {
-            let mut nmea = Nmea::create_for_navigation(
-                [SentenceType::RMC, SentenceType::GGA]
-                    .iter()
-                    .map(|v| v.clone())
-                    .collect(),
-            )
-            .unwrap();
+            let mut nmea =
+                Nmea::create_for_navigation(&[SentenceType::RMC, SentenceType::GGA]).unwrap();
             let log = [
                 (
                     "$GPRMC,123308.2,A,5521.76474,N,03731.92553,E,000.48,071.9,090317,010.2,E,A*3B",
@@ -1074,13 +1144,8 @@ mod tests {
             "$GPGSA,A,3,02,25,29,12,31,06,23,14,,,,,2.0,1.0,1.7*3A",
             "$GPRMC,171727.000,A,6847.2474,N,03245.8353,E,0.49,42.80,250317,,*32",
         ];
-        let mut nmea = Nmea::create_for_navigation(
-            [SentenceType::RMC, SentenceType::GGA]
-                .iter()
-                .map(|v| v.clone())
-                .collect(),
-        )
-        .unwrap();
+        let mut nmea =
+            Nmea::create_for_navigation(&[SentenceType::RMC, SentenceType::GGA]).unwrap();
         println!("start test");
         let mut nfixes = 0_usize;
         for line in &lines {
