@@ -20,16 +20,12 @@
 // limitations under the License.
 //
 
-#[macro_use]
-extern crate num_derive;
-
 mod parse;
 mod sentences;
 
 use core::{fmt, iter::Iterator, mem};
 use heapless::consts::*;
 use heapless::{FnvIndexMap, FnvIndexSet};
-use num_traits::ToPrimitive;
 
 pub use crate::parse::{
     parse, GgaData, GllData, GsaData, GsvData, NmeaError, ParseResult, RmcData, RmcStatusOfFix,
@@ -119,7 +115,7 @@ impl hash32::Hash for SentenceType {
     where
         H: hash32::Hasher,
     {
-        self.to_u32().unwrap().hash(state);
+        (*self as u32).hash(state);
     }
 }
 
@@ -128,7 +124,7 @@ impl hash32::Hash for GnssType {
     where
         H: hash32::Hasher,
     {
-        self.to_u32().unwrap().hash(state);
+        (*self as u32).hash(state);
     }
 }
 
@@ -550,7 +546,8 @@ macro_rules! define_sentence_type_enum {
 	enum $Name:ident { $($Variant:ident),* $(,)* }
     ) => {
 	$(#[$outer])*
-        #[derive(PartialEq, Debug, Hash, Eq, Copy, Clone, ToPrimitive)]
+        #[derive(PartialEq, Debug, Hash, Eq, Copy, Clone)]
+        #[repr(u32)]
         pub enum $Name {
             None,
             $($Variant),*,
@@ -723,7 +720,8 @@ pub enum FixType {
 }
 
 /// GNSS type
-#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq, ToPrimitive)]
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
+#[repr(u32)]
 pub enum GnssType {
     Galileo,
     Gps,
