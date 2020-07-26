@@ -23,15 +23,12 @@
 mod parse;
 mod sentences;
 
+use core::{fmt, iter::Iterator, mem, str};
 use std::collections::{HashMap, HashSet};
-use core::{
-    iter::Iterator,
-    fmt, mem, str
-};
 
 pub use crate::parse::{
-    parse, GgaData, GllData, GsaData, GsvData, ParseResult, RmcData, RmcStatusOfFix, TxtData,
-    VtgData, NmeaError, SENTENCE_MAX_LEN
+    parse, GgaData, GllData, GsaData, GsvData, NmeaError, ParseResult, RmcData, RmcStatusOfFix,
+    TxtData, VtgData, SENTENCE_MAX_LEN,
 };
 use chrono::{NaiveDate, NaiveTime};
 
@@ -104,7 +101,7 @@ impl<'a> Nmea {
         required_sentences_for_nav: HashSet<SentenceType>,
     ) -> Result<Nmea, NmeaError<'a>> {
         if required_sentences_for_nav.is_empty() {
-             return Err(NmeaError::EmptyNavConfig);
+            return Err(NmeaError::EmptyNavConfig);
         }
         let mut n = Self::new();
         n.required_sentences_for_nav = required_sentences_for_nav;

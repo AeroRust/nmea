@@ -62,7 +62,9 @@ fn do_parse_nmea_sentence(i: &[u8]) -> IResult<&[u8], NmeaSentence> {
     ))
 }
 
-pub fn parse_nmea_sentence<'a>(sentence: &'a [u8]) -> core::result::Result<NmeaSentence, NmeaError<'a>> {
+pub fn parse_nmea_sentence<'a>(
+    sentence: &'a [u8],
+) -> core::result::Result<NmeaSentence, NmeaError<'a>> {
     /*
      * From gpsd:
      * We've had reports that on the Garmin GPS-10 the device sometimes
@@ -102,10 +104,10 @@ pub enum NmeaError<'a> {
     /// The provided input was not a proper UTF-8 string
     Utf8DecodingError,
     /// The checksum of the sentence was corrupt or wrong
-    ChecksumMismatch{ calculated: u8, found: u8},
+    ChecksumMismatch { calculated: u8, found: u8 },
     /// For some reason a sentence was passed to the wrong sentence specific parser, this error
     /// should never happen. First slice is the expected header, second is the found one
-    WrongSentenceHeader{ expected: &'a [u8], found: &'a [u8]},
+    WrongSentenceHeader { expected: &'a [u8], found: &'a [u8] },
     /// The sentence could not be parsed because its format was invalid
     ParsingError(nom::Err<(&'a [u8], nom::error::ErrorKind)>),
     /// The sentence was too long to be parsed, our current limit is `SENTENCE_MAX_LEN` characters
@@ -124,13 +126,12 @@ impl<'a> From<nom::Err<(&'a [u8], nom::error::ErrorKind)>> for NmeaError<'a> {
     }
 }
 
-
 /// parse nmea 0183 sentence and extract data from it
 pub fn parse(xs: &[u8]) -> Result<ParseResult, NmeaError> {
     let nmea_sentence = parse_nmea_sentence(xs)?;
     let calculated_checksum = nmea_sentence.calc_checksum();
 
-    if nmea_sentence.checksum == calculated_checksum{
+    if nmea_sentence.checksum == calculated_checksum {
         match SentenceType::from_slice(nmea_sentence.message_id) {
             SentenceType::GGA => {
                 let data = parse_gga(nmea_sentence)?;
@@ -151,6 +152,9 @@ pub fn parse(xs: &[u8]) -> Result<ParseResult, NmeaError> {
             msg_id => Ok(ParseResult::Unsupported(msg_id)),
         }
     } else {
-        Err(NmeaError::ChecksumMismatch{calculated: calculated_checksum, found: nmea_sentence.checksum})
+        Err(NmeaError::ChecksumMismatch {
+            calculated: calculated_checksum,
+            found: nmea_sentence.checksum,
+        })
     }
 }
