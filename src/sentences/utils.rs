@@ -1,4 +1,4 @@
-use std::str;
+use core::str;
 
 use chrono::{NaiveDate, NaiveTime};
 use nom::branch::alt;
@@ -16,7 +16,7 @@ pub(crate) fn parse_hms(i: &[u8]) -> IResult<&[u8], NaiveTime> {
             map_res(take(2usize), parse_num::<u32>),
             map_parser(take_until(","), double),
         )),
-        |(hour, minutes, sec)| -> std::result::Result<NaiveTime, &'static str> {
+        |(hour, minutes, sec)| -> core::result::Result<NaiveTime, &'static str> {
             if sec.is_sign_negative() {
                 return Err("Invalid time: second is negative");
             }
@@ -86,19 +86,19 @@ pub(crate) fn parse_date(i: &[u8]) -> IResult<&[u8], NaiveDate> {
     )(i)
 }
 
-pub(crate) fn parse_num<I: std::str::FromStr>(data: &[u8]) -> std::result::Result<I, &'static str> {
+pub(crate) fn parse_num<I: str::FromStr>(data: &[u8]) -> core::result::Result<I, &'static str> {
     //    println!("parse num {}", unsafe { str::from_utf8_unchecked(data) });
     str::parse::<I>(unsafe { str::from_utf8_unchecked(data) }).map_err(|_| "parse of number failed")
 }
 
 pub(crate) fn parse_float_num<T: str::FromStr>(
     input: &[u8],
-) -> std::result::Result<T, &'static str> {
+) -> core::result::Result<T, &'static str> {
     let s = str::from_utf8(input).map_err(|_| "invalid float number")?;
     str::parse::<T>(s).map_err(|_| "parse of float number failed")
 }
 
-pub(crate) fn number<T: std::str::FromStr>(i: &[u8]) -> IResult<&[u8], T> {
+pub(crate) fn number<T: str::FromStr>(i: &[u8]) -> IResult<&[u8], T> {
     map_res(digit1, parse_num)(i)
 }
 

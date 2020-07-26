@@ -23,10 +23,10 @@
 mod parse;
 mod sentences;
 
-use std::{
-    collections::{HashMap, HashSet},
+use std::collections::{HashMap, HashSet};
+use core::{
     iter::Iterator,
-    {fmt, mem, str},
+    fmt, mem, str
 };
 
 pub use crate::parse::{
