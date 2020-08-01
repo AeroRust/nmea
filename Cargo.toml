@@ -17,8 +17,7 @@ edition = "2018"
 [dependencies]
 nom = "5"
 chrono = "0.4"
-heapless = "0.5"
-hash32 = "0.1"
+arrayvec = "0.5"
 
 [dev-dependencies]
 quickcheck = "0.9"

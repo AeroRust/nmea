@@ -23,18 +23,16 @@
 mod parse;
 mod sentences;
 
-use core::{fmt, iter::Iterator, mem};
-use heapless::consts::*;
-use heapless::{FnvIndexMap, FnvIndexSet};
-
 pub use crate::parse::{
     parse, GgaData, GllData, GsaData, GsvData, NmeaError, ParseResult, RmcData, RmcStatusOfFix,
     TxtData, VtgData, SENTENCE_MAX_LEN,
 };
 use chrono::{NaiveDate, NaiveTime};
+use core::{fmt, iter::Iterator, mem, ops::BitOr};
+use std::collections::HashMap;
 
 /// NMEA parser
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct Nmea {
     pub fix_time: Option<NaiveTime>,
     pub fix_date: Option<NaiveDate>,
@@ -51,81 +49,11 @@ pub struct Nmea {
     pub geoid_height: Option<f32>,
     pub satellites: Vec<Satellite>,
     pub fix_satellites_prns: Option<Vec<u32>>,
-
-    // This Map can at max contain 3 values since GnssType only has 3 variants.
-    // Capacity must be a power of 2 -> 4.
-    satellites_scan: FnvIndexMap<GnssType, Vec<Vec<Satellite>>, U4>,
-    // This set can theoretically contain all 99 sentences we have right now,
-    // however we only implement 7 parsers so a cpacity of 8 should be fine for
-    // now. (capacity has to be a power of 2)
-    required_sentences_for_nav: FnvIndexSet<SentenceType, U8>,
+    satellites_scan: HashMap<GnssType, Vec<Vec<Satellite>>>,
+    required_sentences_for_nav: SentenceMask,
     last_fix_time: Option<NaiveTime>,
     last_txt: Option<TxtData>,
-    // This set can theoretically contain all 99 sentences we have right now,
-    // however we only implement 7 parsers so a cpacity of 8 should be fine for
-    // now. (capacity has to be a power of 2)
-    sentences_for_this_time: FnvIndexSet<SentenceType, U8>,
-}
-
-// The heapless types don't implement clone so we have to do it.
-impl Clone for Nmea {
-    fn clone(&self) -> Self {
-        let mut required_sentences_for_nav = FnvIndexSet::new();
-        for sentence in self.required_sentences_for_nav.iter() {
-            required_sentences_for_nav.insert(*sentence).unwrap();
-        }
-
-        let mut sentences_for_this_time = FnvIndexSet::new();
-        for sentence in self.sentences_for_this_time.iter() {
-            sentences_for_this_time.insert(*sentence).unwrap();
-        }
-
-        let mut satellites_scan = FnvIndexMap::new();
-        for (gnss, sat_vec) in self.satellites_scan.iter() {
-            satellites_scan.insert(*gnss, sat_vec.clone()).unwrap();
-        }
-
-        Nmea {
-            fix_time: self.fix_time,
-            fix_date: self.fix_date,
-            fix_type: self.fix_type,
-            latitude: self.latitude,
-            longitude: self.longitude,
-            altitude: self.altitude,
-            speed_over_ground: self.speed_over_ground,
-            true_course: self.true_course,
-            num_of_fix_satellites: self.num_of_fix_satellites,
-            hdop: self.hdop,
-            vdop: self.vdop,
-            pdop: self.pdop,
-            geoid_height: self.geoid_height,
-            satellites: self.satellites.clone(),
-            fix_satellites_prns: self.fix_satellites_prns.clone(),
-            satellites_scan,
-            required_sentences_for_nav,
-            last_fix_time: self.last_fix_time,
-            last_txt: self.last_txt.clone(),
-            sentences_for_this_time,
-        }
-    }
-}
-
-impl hash32::Hash for SentenceType {
-    fn hash<H>(&self, state: &mut H)
-    where
-        H: hash32::Hasher,
-    {
-        (*self as u32).hash(state);
-    }
-}
-
-impl hash32::Hash for GnssType {
-    fn hash<H>(&self, state: &mut H)
-    where
-        H: hash32::Hasher,
-    {
-        (*self as u32).hash(state);
-    }
+    sentences_for_this_time: SentenceMask,
 }
 
 impl<'a> Nmea {
@@ -146,9 +74,9 @@ impl<'a> Nmea {
     pub fn new() -> Nmea {
         // TODO: This looks ugly.
         let mut n = Nmea::default();
-        n.satellites_scan.insert(GnssType::Galileo, vec![]).unwrap();
-        n.satellites_scan.insert(GnssType::Gps, vec![]).unwrap();
-        n.satellites_scan.insert(GnssType::Glonass, vec![]).unwrap();
+        n.satellites_scan.insert(GnssType::Galileo, vec![]);
+        n.satellites_scan.insert(GnssType::Gps, vec![]);
+        n.satellites_scan.insert(GnssType::Glonass, vec![]);
         n
     }
 
@@ -173,7 +101,7 @@ impl<'a> Nmea {
         }
         let mut n = Self::new();
         for sentence in required_sentences_for_nav.iter() {
-            n.required_sentences_for_nav.insert(*sentence).unwrap();
+            n.required_sentences_for_nav.insert(*sentence);
         }
         Ok(n)
     }
@@ -367,9 +295,7 @@ impl<'a> Nmea {
                         return Ok(FixType::Invalid);
                     }
                     self.merge_vtg_data(vtg);
-                    self.sentences_for_this_time
-                        .insert(SentenceType::VTG)
-                        .unwrap();
+                    self.sentences_for_this_time.insert(SentenceType::VTG);
                 } else {
                     return Ok(FixType::Invalid);
                 }
@@ -396,9 +322,7 @@ impl<'a> Nmea {
                     }
                 }
                 self.merge_rmc_data(rmc_data);
-                self.sentences_for_this_time
-                    .insert(SentenceType::RMC)
-                    .unwrap();
+                self.sentences_for_this_time.insert(SentenceType::RMC);
             }
             ParseResult::GGA(gga_data) => {
                 match gga_data.fix_type {
@@ -422,9 +346,7 @@ impl<'a> Nmea {
                     }
                 }
                 self.merge_gga_data(gga_data);
-                self.sentences_for_this_time
-                    .insert(SentenceType::GGA)
-                    .unwrap();
+                self.sentences_for_this_time.insert(SentenceType::GGA);
             }
             ParseResult::GLL(gll_data) => {
                 self.merge_gll_data(gll_data);
@@ -542,15 +464,15 @@ impl fmt::Debug for Satellite {
 
 macro_rules! define_sentence_type_enum {
     (
-	$(#[$outer:meta])*
-	enum $Name:ident { $($Variant:ident),* $(,)* }
+        $(#[$outer:meta])*
+        enum $Name:ident { $($Variant:ident),* $(,)* }
     ) => {
-	$(#[$outer])*
-        #[derive(PartialEq, Debug, Hash, Eq, Copy, Clone)]
-        #[repr(u32)]
+        $(#[$outer])*
+        #[derive(PartialEq, Debug, Hash, Eq, Clone, Copy)]
+        #[repr(C)]
         pub enum $Name {
-            None,
             $($Variant),*,
+            None
         }
 
         impl<'a> From<&'a str> for $Name {
@@ -572,6 +494,10 @@ macro_rules! define_sentence_type_enum {
                     $($Variant => $Name::$Variant,)*
                     _ => $Name::None,
                 }
+            }
+
+            fn to_mask_value(&self) -> u128 {
+                1 << *self as u32
             }
         }
     }
@@ -705,6 +631,42 @@ define_sentence_type_enum!(
     }
 );
 
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
+pub struct SentenceMask {
+    mask: u128,
+}
+
+impl SentenceMask {
+    fn contains(&self, sentence_type: &SentenceType) -> bool {
+        sentence_type.to_mask_value() & self.mask != 0
+    }
+
+    fn is_subset(&self, mask: &Self) -> bool {
+        (mask.mask | self.mask) == mask.mask
+    }
+
+    fn insert(&mut self, sentence_type: SentenceType) {
+        self.mask |= sentence_type.to_mask_value()
+    }
+}
+
+impl BitOr for SentenceType {
+    type Output = SentenceMask;
+    fn bitor(self, rhs: Self) -> Self::Output {
+        SentenceMask {
+            mask: self.to_mask_value() | rhs.to_mask_value(),
+        }
+    }
+}
+
+impl BitOr<SentenceType> for SentenceMask {
+    type Output = Self;
+    fn bitor(self, rhs: SentenceType) -> Self {
+        SentenceMask {
+            mask: self.mask | rhs.to_mask_value(),
+        }
+    }
+}
 /// Fix type
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum FixType {
@@ -721,7 +683,6 @@ pub enum FixType {
 
 /// GNSS type
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
-#[repr(u32)]
 pub enum GnssType {
     Galileo,
     Gps,
@@ -1161,25 +1122,11 @@ mod tests {
         }
         assert_eq!(nfixes, 3);
     }
-
     #[test]
-    fn test_define_sentence_type_enum() {
-        define_sentence_type_enum!(
-            enum TestEnum {
-                AAA,
-                BBB,
-            }
-        );
-
-        let a = TestEnum::AAA;
-        let b = TestEnum::BBB;
-        let n = TestEnum::None;
-        assert_eq!(TestEnum::from("AAA"), a);
-        assert_eq!(TestEnum::from("BBB"), b);
-        assert_eq!(TestEnum::from("fdafa"), n);
-
-        assert_eq!(TestEnum::from_slice(b"AAA"), a);
-        assert_eq!(TestEnum::from_slice(b"BBB"), b);
+    fn test_sentence_type_enum() {
+        // So we don't trip over the max value of u128 when shifting it with
+        // SentenceType as u32
+        assert!((SentenceType::None as u32) < 127);
     }
 
     #[test]

@@ -1,12 +1,11 @@
-use heapless::consts::*;
-use heapless::String;
+use arrayvec::ArrayString;
 use nom::character::complete::char;
 use nom::{bytes::complete::take_while, IResult};
 
 use super::utils::number;
 use crate::{parse::NmeaSentence, NmeaError};
 
-type MaxLen = U64;
+const MAX_LEN: usize = 64;
 
 /// Parse TXT message from u-blox device
 ///
@@ -30,9 +29,8 @@ pub fn parse_txt(s: NmeaSentence) -> Result<TxtData, NmeaError> {
 
     let text_str = core::str::from_utf8(ret.text).map_err(|_e| NmeaError::Utf8DecodingError)?;
 
-    let mut text: String<MaxLen> = String::new();
-    text.push_str(text_str)
-        .map_err(|_e| NmeaError::SentenceLength(text_str.len()))?;
+    let text =
+        ArrayString::from(text_str).map_err(|_e| NmeaError::SentenceLength(text_str.len()))?;
 
     Ok(TxtData {
         count: ret.count,
@@ -71,7 +69,7 @@ pub struct TxtData {
     pub count: u8,
     pub seq: u8,
     pub text_ident: u8,
-    pub text: String<MaxLen>,
+    pub text: ArrayString<[u8; MAX_LEN]>,
 }
 
 struct TxtData0<'a> {
@@ -96,7 +94,7 @@ mod tests {
                 count: 1,
                 seq: 1,
                 text_ident: 2,
-                text: String::from("u-blox AG - www.u-blox.com")
+                text: ArrayString::from("u-blox AG - www.u-blox.com").unwrap(),
             },
             txt
         );
