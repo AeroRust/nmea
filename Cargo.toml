@@ -1,7 +1,11 @@
 [package]
 name = "nmea"
 version = "0.0.9"
-authors = ["Felix Obenhuber <felix@obenhuber.de>", "Evgeniy A. Dushistov <dushistov@mail.ru>"]
+authors = [
+    "Felix Obenhuber <felix@obenhuber.de>",
+    "Evgeniy A. Dushistov <dushistov@mail.ru>",
+    "Henrik Böving <hargonix@gmail.com>"
+]
 description = "Simple NMEA 0183 parser"
 license = "Apache-2.0"
 keywords = ["NMEA", "gps", "glonass", "coordinate", "position"]

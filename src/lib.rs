@@ -23,14 +23,13 @@
 mod parse;
 mod sentences;
 
-use core::{fmt, iter::Iterator, mem};
-use std::collections::{HashMap, HashSet};
-
 pub use crate::parse::{
     parse, GgaData, GllData, GsaData, GsvData, NmeaError, ParseResult, RmcData, RmcStatusOfFix,
     TxtData, VtgData, SENTENCE_MAX_LEN,
 };
 use chrono::{NaiveDate, NaiveTime};
+use core::{fmt, iter::Iterator, mem, ops::BitOr};
+use std::collections::HashMap;
 
 /// NMEA parser
 #[derive(Default, Debug, Clone)]
@@ -50,12 +49,11 @@ pub struct Nmea {
     pub geoid_height: Option<f32>,
     pub satellites: Vec<Satellite>,
     pub fix_satellites_prns: Option<Vec<u32>>,
-
     satellites_scan: HashMap<GnssType, Vec<Vec<Satellite>>>,
-    required_sentences_for_nav: HashSet<SentenceType>,
+    required_sentences_for_nav: SentenceMask,
     last_fix_time: Option<NaiveTime>,
     last_txt: Option<TxtData>,
-    sentences_for_this_time: HashSet<SentenceType>,
+    sentences_for_this_time: SentenceMask,
 }
 
 impl<'a> Nmea {
@@ -89,22 +87,22 @@ impl<'a> Nmea {
     /// ```
     /// use nmea::{Nmea, SentenceType};
     ///
-    /// let mut nmea = Nmea::create_for_navigation([SentenceType::RMC, SentenceType::GGA]
-    ///                                                .iter()
-    ///                                                .map(|v| v.clone())
-    ///                                                .collect()).unwrap();
+    /// let mut nmea = Nmea::create_for_navigation(&[SentenceType::RMC,
+    /// SentenceType::GGA]).unwrap();
     /// let gga = "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76";
     /// nmea.parse(gga).unwrap();
     /// println!("{}", nmea);
     /// ```
     pub fn create_for_navigation(
-        required_sentences_for_nav: HashSet<SentenceType>,
+        required_sentences_for_nav: &[SentenceType],
     ) -> Result<Nmea, NmeaError<'a>> {
         if required_sentences_for_nav.is_empty() {
             return Err(NmeaError::EmptyNavConfig);
         }
         let mut n = Self::new();
-        n.required_sentences_for_nav = required_sentences_for_nav;
+        for sentence in required_sentences_for_nav.iter() {
+            n.required_sentences_for_nav.insert(*sentence);
+        }
         Ok(n)
     }
 
@@ -466,14 +464,15 @@ impl fmt::Debug for Satellite {
 
 macro_rules! define_sentence_type_enum {
     (
-	$(#[$outer:meta])*
-	enum $Name:ident { $($Variant:ident),* $(,)* }
+        $(#[$outer:meta])*
+        enum $Name:ident { $($Variant:ident),* $(,)* }
     ) => {
-	$(#[$outer])*
-        #[derive(PartialEq, Debug, Hash, Eq, Clone)]
+        $(#[$outer])*
+        #[derive(PartialEq, Debug, Hash, Eq, Clone, Copy)]
+        #[repr(C)]
         pub enum $Name {
-            None,
             $($Variant),*,
+            None
         }
 
         impl<'a> From<&'a str> for $Name {
@@ -495,6 +494,10 @@ macro_rules! define_sentence_type_enum {
                     $($Variant => $Name::$Variant,)*
                     _ => $Name::None,
                 }
+            }
+
+            fn to_mask_value(&self) -> u128 {
+                1 << *self as u32
             }
         }
     }
@@ -628,8 +631,44 @@ define_sentence_type_enum!(
     }
 );
 
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
+pub struct SentenceMask {
+    mask: u128,
+}
+
+impl SentenceMask {
+    fn contains(&self, sentence_type: &SentenceType) -> bool {
+        sentence_type.to_mask_value() & self.mask != 0
+    }
+
+    fn is_subset(&self, mask: &Self) -> bool {
+        (mask.mask | self.mask) == mask.mask
+    }
+
+    fn insert(&mut self, sentence_type: SentenceType) {
+        self.mask |= sentence_type.to_mask_value()
+    }
+}
+
+impl BitOr for SentenceType {
+    type Output = SentenceMask;
+    fn bitor(self, rhs: Self) -> Self::Output {
+        SentenceMask {
+            mask: self.to_mask_value() | rhs.to_mask_value(),
+        }
+    }
+}
+
+impl BitOr<SentenceType> for SentenceMask {
+    type Output = Self;
+    fn bitor(self, rhs: SentenceType) -> Self {
+        SentenceMask {
+            mask: self.mask | rhs.to_mask_value(),
+        }
+    }
+}
 /// Fix type
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum FixType {
     Invalid,
     Gps,
@@ -919,13 +958,8 @@ mod tests {
     #[test]
     fn test_parse_for_fix() {
         {
-            let mut nmea = Nmea::create_for_navigation(
-                [SentenceType::RMC, SentenceType::GGA]
-                    .iter()
-                    .map(|v| v.clone())
-                    .collect(),
-            )
-            .unwrap();
+            let mut nmea =
+                Nmea::create_for_navigation(&[SentenceType::RMC, SentenceType::GGA]).unwrap();
             let log = [
                 (
                     "$GPRMC,123308.2,A,5521.76474,N,03731.92553,E,000.48,071.9,090317,010.2,E,A*3B",
@@ -1027,13 +1061,8 @@ mod tests {
         }
 
         {
-            let mut nmea = Nmea::create_for_navigation(
-                [SentenceType::RMC, SentenceType::GGA]
-                    .iter()
-                    .map(|v| v.clone())
-                    .collect(),
-            )
-            .unwrap();
+            let mut nmea =
+                Nmea::create_for_navigation(&[SentenceType::RMC, SentenceType::GGA]).unwrap();
             let log = [
                 (
                     "$GPRMC,123308.2,A,5521.76474,N,03731.92553,E,000.48,071.9,090317,010.2,E,A*3B",
@@ -1074,13 +1103,8 @@ mod tests {
             "$GPGSA,A,3,02,25,29,12,31,06,23,14,,,,,2.0,1.0,1.7*3A",
             "$GPRMC,171727.000,A,6847.2474,N,03245.8353,E,0.49,42.80,250317,,*32",
         ];
-        let mut nmea = Nmea::create_for_navigation(
-            [SentenceType::RMC, SentenceType::GGA]
-                .iter()
-                .map(|v| v.clone())
-                .collect(),
-        )
-        .unwrap();
+        let mut nmea =
+            Nmea::create_for_navigation(&[SentenceType::RMC, SentenceType::GGA]).unwrap();
         println!("start test");
         let mut nfixes = 0_usize;
         for line in &lines {
@@ -1098,25 +1122,11 @@ mod tests {
         }
         assert_eq!(nfixes, 3);
     }
-
     #[test]
-    fn test_define_sentence_type_enum() {
-        define_sentence_type_enum!(
-            enum TestEnum {
-                AAA,
-                BBB,
-            }
-        );
-
-        let a = TestEnum::AAA;
-        let b = TestEnum::BBB;
-        let n = TestEnum::None;
-        assert_eq!(TestEnum::from("AAA"), a);
-        assert_eq!(TestEnum::from("BBB"), b);
-        assert_eq!(TestEnum::from("fdafa"), n);
-
-        assert_eq!(TestEnum::from_slice(b"AAA"), a);
-        assert_eq!(TestEnum::from_slice(b"BBB"), b);
+    fn test_sentence_type_enum() {
+        // So we don't trip over the max value of u128 when shifting it with
+        // SentenceType as u32
+        assert!((SentenceType::None as u32) < 127);
     }
 
     #[test]
