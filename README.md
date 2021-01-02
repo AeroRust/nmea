@@ -20,7 +20,7 @@ Put this in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nmea = "0.0.7"
+nmea = "0.0.9"
 ```
 
 And put this in your crate root:
