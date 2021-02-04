@@ -90,11 +90,12 @@ pub fn parse_gsv(sentence: NmeaSentence) -> Result<GsvData, NmeaError> {
         })
     } else {
         let gnss_type = match sentence.talker_id {
+            b"GA" => GnssType::Galileo,
             b"GP" => GnssType::Gps,
             b"GL" => GnssType::Glonass,
             _ => {
                 return Err(NmeaError::WrongSentenceHeader {
-                    expected: b"GP|GL",
+                    expected: b"GA|GP|GL",
                     found: sentence.message_id,
                 })
             }
