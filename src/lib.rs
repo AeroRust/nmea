@@ -684,6 +684,7 @@ pub enum FixType {
 /// GNSS type
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
 pub enum GnssType {
+    Beidou,
     Galileo,
     Gps,
     Glonass,
@@ -692,6 +693,7 @@ pub enum GnssType {
 impl fmt::Display for GnssType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
+            GnssType::Beidou => write!(f, "Beidou"),
             GnssType::Galileo => write!(f, "Galileo"),
             GnssType::Gps => write!(f, "GPS"),
             GnssType::Glonass => write!(f, "GLONASS"),
