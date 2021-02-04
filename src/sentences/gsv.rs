@@ -77,6 +77,7 @@ fn do_parse_gsv(i: &[u8]) -> IResult<&[u8], GsvData> {
 ///   GL (GLONASS),
 ///   GN (GLONASS, any combination GNSS),
 ///   GP (GPS, SBAS, QZSS),
+///   PQ (Beidou)
 ///   QZ (QZSS).
 ///
 /// GL may be (incorrectly) used when GSVs are mixed containing
@@ -93,9 +94,10 @@ pub fn parse_gsv(sentence: NmeaSentence) -> Result<GsvData, NmeaError> {
             b"GA" => GnssType::Galileo,
             b"GP" => GnssType::Gps,
             b"GL" => GnssType::Glonass,
+            b"PQ" => GnssType::Beidou,
             _ => {
                 return Err(NmeaError::WrongSentenceHeader {
-                    expected: b"GA|GP|GL",
+                    expected: b"GA|GP|GL|PQ",
                     found: sentence.message_id,
                 })
             }
