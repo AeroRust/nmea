@@ -1,3 +1,4 @@
+mod bwc;
 mod gga;
 mod gll;
 mod gsa;
@@ -7,6 +8,7 @@ mod txt;
 mod utils;
 mod vtg;
 
+pub use bwc::{parse_bwc, BwcData};
 pub use gga::{parse_gga, GgaData};
 pub use gll::{parse_gll, GllData};
 pub use gsa::{parse_gsa, GsaData};
