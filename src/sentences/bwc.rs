@@ -1,3 +1,4 @@
+use arrayvec::ArrayString;
 use chrono::NaiveTime;
 use nom::bytes::complete::is_not;
 use nom::character::complete::char;
@@ -9,6 +10,8 @@ use crate::parse::NmeaSentence;
 use crate::sentences::utils::{parse_hms, parse_lat_lon};
 use crate::NmeaError;
 
+const MAX_LEN: usize = 64;
+
 #[derive(Debug, PartialEq)]
 pub struct BwcData {
     pub fix_time: Option<NaiveTime>,
@@ -17,10 +20,10 @@ pub struct BwcData {
     pub true_bearing: Option<f32>,
     pub magnetic_bearing: Option<f32>,
     pub distance: Option<f32>,
-    pub waypoint_id: Option<String>,
+    pub waypoint_id: Option<ArrayString<[u8; MAX_LEN]>>,
 }
 
-fn do_parse_bwc(i: &[u8]) -> IResult<&[u8], BwcData> {
+fn do_parse_bwc(i: &[u8]) -> Result<BwcData, NmeaError> {
     /*
     BWC - Bearing & Distance to Waypoint - Great Circle
                                                             12
@@ -66,18 +69,24 @@ fn do_parse_bwc(i: &[u8]) -> IResult<&[u8], BwcData> {
 
     // 13. FAA mode indicator (NMEA 2.3 and later, optional)
 
-    Ok((
-        i,
-        BwcData {
-            fix_time,
-            latitude: lat_lon.map(|v| v.0),
-            longitude: lat_lon.map(|v| v.1),
-            true_bearing,
-            magnetic_bearing,
-            distance,
-            waypoint_id: waypoint_id.map(|s| s.to_owned()),
-        },
-    ))
+    let waypoint_id = if let Some(waypoint_id) = waypoint_id {
+        Some(
+            ArrayString::from(waypoint_id)
+                .map_err(|_e| NmeaError::SentenceLength(waypoint_id.len()))?,
+        )
+    } else {
+        None
+    };
+
+    Ok(BwcData {
+        fix_time,
+        latitude: lat_lon.map(|v| v.0),
+        longitude: lat_lon.map(|v| v.1),
+        true_bearing,
+        magnetic_bearing,
+        distance,
+        waypoint_id,
+    })
 }
 
 /// Parse BWC message
@@ -89,7 +98,7 @@ pub fn parse_bwc(sentence: NmeaSentence) -> Result<BwcData, NmeaError> {
             found: sentence.message_id,
         })
     } else {
-        Ok(do_parse_bwc(sentence.data)?.1)
+        Ok(do_parse_bwc(sentence.data)?)
     }
 }
 
@@ -118,7 +127,7 @@ mod tests {
         relative_eq!(data.true_bearing.unwrap(), 213.8);
         relative_eq!(data.magnetic_bearing.unwrap(), 218.0);
         relative_eq!(data.distance.unwrap(), 4.6);
-        assert_eq!(data.waypoint_id.unwrap(), "EGLM");
+        assert_eq!(&data.waypoint_id.unwrap(), "EGLM");
     }
 
     #[test]
