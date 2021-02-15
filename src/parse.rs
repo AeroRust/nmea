@@ -88,6 +88,7 @@ pub fn parse_nmea_sentence<'a>(
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub enum ParseResult {
     BWC(BwcData),
     GGA(GgaData),

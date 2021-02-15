@@ -6,6 +6,7 @@ use crate::parse::NmeaSentence;
 use crate::sentences::utils::number;
 use crate::{GnssType, NmeaError, Satellite};
 
+#[derive(Debug, PartialEq)]
 pub struct GsvData {
     pub gnss_type: GnssType,
     pub number_of_sentences: u16,
