@@ -89,6 +89,7 @@ pub fn parse_nmea_sentence<'a>(
 }
 
 pub enum ParseResult {
+    BWC(BwcData),
     GGA(GgaData),
     RMC(RmcData),
     GSV(GsvData),
@@ -133,6 +134,10 @@ pub fn parse(xs: &[u8]) -> Result<ParseResult, NmeaError> {
 
     if nmea_sentence.checksum == calculated_checksum {
         match SentenceType::from_slice(nmea_sentence.message_id) {
+            SentenceType::BWC => {
+                let data = parse_bwc(nmea_sentence)?;
+                Ok(ParseResult::BWC(data))
+            }
             SentenceType::GGA => {
                 let data = parse_gga(nmea_sentence)?;
                 Ok(ParseResult::GGA(data))

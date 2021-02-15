@@ -24,8 +24,8 @@ mod parse;
 mod sentences;
 
 pub use crate::parse::{
-    parse, GgaData, GllData, GsaData, GsvData, NmeaError, ParseResult, RmcData, RmcStatusOfFix,
-    TxtData, VtgData, SENTENCE_MAX_LEN,
+    parse, BwcData, GgaData, GllData, GsaData, GsvData, NmeaError, ParseResult, RmcData,
+    RmcStatusOfFix, TxtData, VtgData, SENTENCE_MAX_LEN,
 };
 use chrono::{NaiveDate, NaiveTime};
 use core::{fmt, iter::Iterator, mem, ops::BitOr};
@@ -260,6 +260,7 @@ impl<'a> Nmea {
                 self.merge_txt_data(txt);
                 Ok(SentenceType::TXT)
             }
+            ParseResult::BWC(_) => Err(NmeaError::Unsupported(SentenceType::BWC)),
             ParseResult::Unsupported(sentence_type) => Err(NmeaError::Unsupported(sentence_type)),
         }
     }
@@ -356,6 +357,7 @@ impl<'a> Nmea {
                 self.merge_txt_data(txt_data);
                 return Ok(FixType::Invalid);
             }
+            ParseResult::BWC(_) => return Ok(FixType::Invalid),
             ParseResult::Unsupported(_) => {
                 return Ok(FixType::Invalid);
             }
