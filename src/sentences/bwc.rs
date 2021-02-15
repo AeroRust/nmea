@@ -4,7 +4,6 @@ use nom::bytes::complete::is_not;
 use nom::character::complete::char;
 use nom::combinator::{map_res, opt};
 use nom::number::complete::float;
-use nom::IResult;
 
 use crate::parse::NmeaSentence;
 use crate::sentences::utils::{parse_hms, parse_lat_lon};
@@ -65,7 +64,7 @@ fn do_parse_bwc(i: &[u8]) -> Result<BwcData, NmeaError> {
     let (i, _) = char(',')(i)?;
 
     // 12. Waypoint ID
-    let (i, waypoint_id) = opt(map_res(is_not(",*"), std::str::from_utf8))(i)?;
+    let (_i, waypoint_id) = opt(map_res(is_not(",*"), std::str::from_utf8))(i)?;
 
     // 13. FAA mode indicator (NMEA 2.3 and later, optional)
 
