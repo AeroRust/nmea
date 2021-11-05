@@ -23,9 +23,7 @@ pub fn parse_txt(s: NmeaSentence) -> Result<TxtData, NmeaError> {
         });
     }
 
-    let ret = do_parse_txt(s.data)
-        .map_err(|err| NmeaError::ParsingError(err))?
-        .1;
+    let ret = do_parse_txt(s.data).map_err(NmeaError::ParsingError)?.1;
 
     let text_str = core::str::from_utf8(ret.text).map_err(|_e| NmeaError::Utf8DecodingError)?;
 
@@ -44,7 +42,7 @@ fn txt_str(s: &[u8]) -> IResult<&[u8], &[u8]> {
     take_while(|c| c != b',' && c != b'*')(s)
 }
 
-fn do_parse_txt<'a>(i: &'a [u8]) -> IResult<&'a [u8], TxtData0<'a>> {
+fn do_parse_txt(i: &[u8]) -> IResult<&[u8], TxtData0<'_>> {
     let (i, count) = number::<u8>(i)?;
     let (i, _) = char(',')(i)?;
     let (i, seq) = number::<u8>(i)?;

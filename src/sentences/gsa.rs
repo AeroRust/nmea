@@ -80,7 +80,7 @@ fn do_parse_gsa(i: &[u8]) -> IResult<&[u8], GsaData> {
                 '3' => GsaMode2::Fix3D,
                 _ => unreachable!(),
             },
-            fix_sats_prn: tail.0.drain(..).filter_map(|v| v).collect(),
+            fix_sats_prn: tail.0.drain(..).flatten().collect(),
             pdop: tail.1,
             hdop: tail.2,
             vdop: tail.3,

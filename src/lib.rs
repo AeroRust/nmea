@@ -113,7 +113,7 @@ impl<'a> Nmea {
 
     /// Returns fix type
     pub fn fix_type(&self) -> Option<FixType> {
-        self.fix_type.clone()
+        self.fix_type
     }
 
     /// Returns last fixed latitude in degress. None if not fixed.
@@ -369,7 +369,7 @@ impl<'a> Nmea {
                     .required_sentences_for_nav
                     .is_subset(&self.sentences_for_this_time) =>
             {
-                Ok(fix_type.clone())
+                Ok(*fix_type)
             }
             _ => Ok(FixType::Invalid),
         }
@@ -414,7 +414,7 @@ pub struct Satellite {
 
 impl Satellite {
     pub fn gnss_type(&self) -> GnssType {
-        self.gnss_type.clone()
+        self.gnss_type
     }
 
     pub fn prn(&self) -> u32 {

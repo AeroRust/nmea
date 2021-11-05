@@ -75,10 +75,10 @@ pub(crate) fn parse_date(i: &[u8]) -> IResult<&[u8], NaiveDate> {
         )),
         |data| -> Result<NaiveDate, &'static str> {
             let (day, month, year) = (u32::from(data.0), u32::from(data.1), i32::from(data.2));
-            if month < 1 || month > 12 {
+            if !(1..=12).contains(&month) {
                 return Err("Invalid month < 1 or > 12");
             }
-            if day < 1 || day > 31 {
+            if !(1..=31).contains(&day) {
                 return Err("Invalid day < 1 or > 31");
             }
             Ok(NaiveDate::from_ymd(year, month, day))
