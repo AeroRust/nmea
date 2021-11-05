@@ -1,11 +1,12 @@
 use core::str;
 
-use nom::bytes::complete::{take, take_until};
-use nom::character::complete::char;
-use nom::combinator::map_res;
-
-use nom::sequence::preceded;
-use nom::IResult;
+use nom::{
+    bytes::complete::{take, take_until},
+    character::complete::char,
+    combinator::map_res,
+    sequence::preceded,
+    IResult,
+};
 
 pub use crate::sentences::*;
 use crate::SentenceType;
