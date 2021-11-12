@@ -29,12 +29,13 @@ pub(crate) fn parse_hms(i: &[u8]) -> IResult<&[u8], NaiveTime> {
             if sec >= 60. {
                 return Err("Invalid time: sec >= 60");
             }
-            Ok(NaiveTime::from_hms_nano(
+            NaiveTime::from_hms_nano_opt(
                 hour,
                 minutes,
                 sec.trunc() as u32,
                 (sec.fract() * 1_000_000_000f64).round() as u32,
-            ))
+            )
+            .ok_or("Invalid time")
         },
     )(i)
 }
@@ -81,13 +82,12 @@ pub(crate) fn parse_date(i: &[u8]) -> IResult<&[u8], NaiveDate> {
             if !(1..=31).contains(&day) {
                 return Err("Invalid day < 1 or > 31");
             }
-            Ok(NaiveDate::from_ymd(year, month, day))
+            NaiveDate::from_ymd_opt(year, month, day).ok_or("Invalid date")
         },
     )(i)
 }
 
 pub(crate) fn parse_num<I: str::FromStr>(data: &[u8]) -> core::result::Result<I, &'static str> {
-    //    println!("parse num {}", unsafe { str::from_utf8_unchecked(data) });
     str::parse::<I>(unsafe { str::from_utf8_unchecked(data) }).map_err(|_| "parse of number failed")
 }
 
