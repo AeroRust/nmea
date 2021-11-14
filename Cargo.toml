@@ -1,6 +1,6 @@
 [package]
 name = "nmea"
-version = "0.0.10"
+version = "0.0.11"
 authors = [
     "Felix Obenhuber <felix@obenhuber.de>",
     "Evgeniy A. Dushistov <dushistov@mail.ru>",
