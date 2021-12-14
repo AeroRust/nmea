@@ -22,3 +22,7 @@ arrayvec = "0.5"
 [dev-dependencies]
 quickcheck = "0.9"
 approx = "0.3"
+
+[features]
+default = ["std"]
+std = []

@@ -1,4 +1,5 @@
 use core::str;
+use core::fmt;
 
 use nom::{
     bytes::complete::{take, take_until},
@@ -128,6 +129,25 @@ impl<'a> From<nom::Err<(&'a [u8], nom::error::ErrorKind)>> for NmeaError<'a> {
         Self::ParsingError(error)
     }
 }
+
+impl<'a> fmt::Display for NmeaError<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            NmeaError::Utf8DecodingError => write!(f, "The provided input was not a valid UTF-8 string"),
+            NmeaError::ChecksumMismatch { calculated, found } => write!(f, "Checksum Mismatch(calculated = {}, found = {})", calculated, found),
+            NmeaError::WrongSentenceHeader { expected, found } => write!(f, "Wrong Sentence Header (expected = {:?}, found = {:?})", expected, found),
+            NmeaError::ParsingError(e) => write!(f, "{}", e),
+            NmeaError::SentenceLength(size) => write!(f, "The sentence was too long to be parsed, current limit is {} characters", size),
+            NmeaError::InvalidGnssType => write!(f, "The type of a GSV sentence was not a valid Gnss type"),
+            NmeaError::Unsupported(sentence) => write!(f, "Unsupported NMEA sentence {:?}", sentence),
+            NmeaError::EmptyNavConfig => write!(f, "The provided navigation configuration was empty and thus invalid"),
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl<'a> std::error::Error for NmeaError<'a> {}
+
 
 /// parse nmea 0183 sentence and extract data from it
 pub fn parse(xs: &[u8]) -> Result<ParseResult, NmeaError> {
