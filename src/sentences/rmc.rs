@@ -110,7 +110,7 @@ mod tests {
             rmc_data.fix_time.unwrap(),
             NaiveTime::from_hms_milli(22, 54, 46, 330)
         );
-        assert_eq!(rmc_data.fix_date.unwrap(), NaiveDate::from_ymd(94, 11, 19));
+        assert_eq!(rmc_data.fix_date.unwrap(), NaiveDate::from_ymd(1994, 11, 19));
 
         println!("lat: {}", rmc_data.lat.unwrap());
         relative_eq!(rmc_data.lat.unwrap(), 49.0 + 16.45 / 60.);
