@@ -76,6 +76,18 @@ pub(crate) fn parse_date(i: &[u8]) -> IResult<&[u8], NaiveDate> {
         )),
         |data| -> Result<NaiveDate, &'static str> {
             let (day, month, year) = (u32::from(data.0), u32::from(data.1), i32::from(data.2));
+
+            // We only receive a 2digit year code in this message, this has the potential
+            // to be ambiguous regarding the year. We assume that anything above 83 is 1900's, and
+            // anything above 0 is 2000's.
+            //
+            // The reason for 83 is that NMEA0183 was released in 1983.
+            // Parsing dates from ZDA messages is preferred, since it includes a 4 digit year.
+            let year = match year {
+                83..=99 => year + 1900,
+                _ => year + 2000,
+            };
+
             if !(1..=12).contains(&month) {
                 return Err("Invalid month < 1 or > 12");
             }
@@ -127,5 +139,20 @@ mod tests {
         assert_eq!(time.minute(), 56);
         assert_eq!(time.second(), 19);
         assert_eq!(time.nanosecond(), 5_00_000_000);
+    }
+
+    #[test]
+    fn test_parse_date() {
+        let (_, date) = parse_date(b"180283").unwrap();
+        assert_eq!(date, NaiveDate::from_ymd(1983, 02, 18));
+
+        let (_, date) = parse_date(b"180299").unwrap();
+        assert_eq!(date, NaiveDate::from_ymd(1999, 02, 18));
+
+        let (_, date) = parse_date(b"311200").unwrap();
+        assert_eq!(date, NaiveDate::from_ymd(2000, 12, 31));
+
+        let (_, date) = parse_date(b"311282").unwrap();
+        assert_eq!(date, NaiveDate::from_ymd(2082, 12, 31));
     }
 }
