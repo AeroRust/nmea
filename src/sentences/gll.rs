@@ -2,7 +2,6 @@ use chrono::NaiveTime;
 use nom::bytes::complete::take_until;
 use nom::character::complete::{char, one_of};
 use nom::combinator::{map, opt};
-use nom::sequence::terminated;
 use nom::IResult;
 
 use crate::parse::NmeaSentence;
@@ -75,10 +74,9 @@ fn do_parse_gll(i: &[u8]) -> IResult<&[u8], GllData> {
     let (i, _) = char(',')(i)?;
     let (i, _valid) = char('A')(i)?; // A: valid, V: invalid
     let (i, _) = char(',')(i)?;
-    let (i, mode) = opt(terminated(
+    let (i, mode) = opt(
         map(one_of("ADEM"), PosSystemIndicator::from), // ignore 'N' for invalid
-        char(','),
-    ))(i)?;
+    )(i)?;
 
     Ok((
         i,
@@ -89,4 +87,27 @@ fn do_parse_gll(i: &[u8]) -> IResult<&[u8], GllData> {
             mode,
         },
     ))
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parse::parse_nmea_sentence;
+    use approx::assert_relative_eq;
+
+    #[test]
+    fn test_parse_gpgll() {
+        let s = parse_nmea_sentence(
+            b"$GPGLL,5107.0013414,N,11402.3279144,W,205412.00,A,A*73",
+        ).unwrap();
+        assert_eq!(s.checksum, s.calc_checksum());
+        assert_eq!(s.checksum, 0x73);
+
+        let gll_data = parse_gll(s).unwrap();
+        assert_relative_eq!(gll_data.latitude, 51.0 + (7.0013414 / 60.0));
+        assert_relative_eq!(gll_data.longitude, -(114.0 + (2.3279144 / 60.0)));
+        assert_eq!(gll_data.fix_time, NaiveTime::from_hms_milli(20, 54, 12, 000));
+        assert_eq!(gll_data.mode, Some(PosSystemIndicator::Autonomous));
+    }
 }
