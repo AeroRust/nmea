@@ -25,7 +25,7 @@ mod sentences;
 
 pub use crate::parse::{
     parse, BwcData, GgaData, GllData, GsaData, GsvData, NmeaError, ParseResult, RmcData,
-    RmcStatusOfFix, TxtData, VtgData, SENTENCE_MAX_LEN,
+    RmcStatusOfFix, PosSystemIndicator, TxtData, VtgData, SENTENCE_MAX_LEN,
 };
 use chrono::{NaiveDate, NaiveTime};
 use core::{fmt, iter::Iterator, mem, ops::BitOr};
