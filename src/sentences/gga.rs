@@ -90,7 +90,7 @@ pub fn parse_gga(sentence: NmeaSentence) -> Result<GgaData, NmeaError> {
 mod tests {
     use super::*;
     use crate::parse::parse_nmea_sentence;
-    use approx::relative_eq;
+    use approx::assert_relative_eq;
 
     #[test]
     fn test_parse_gga_full() {
@@ -103,12 +103,12 @@ mod tests {
         .unwrap();
         assert_eq!(data.fix_time.unwrap(), NaiveTime::from_hms(3, 37, 45));
         assert_eq!(data.fix_type.unwrap(), FixType::Gps);
-        relative_eq!(data.latitude.unwrap(), 56. + 50.82344 / 60.);
-        relative_eq!(data.longitude.unwrap(), 35. + 48.9778 / 60.);
+        assert_relative_eq!(data.latitude.unwrap(), 56. + 50.82344 / 60.);
+        assert_relative_eq!(data.longitude.unwrap(), 35. + 48.9778 / 60.);
         assert_eq!(data.fix_satellites.unwrap(), 7);
-        relative_eq!(data.hdop.unwrap(), 1.8);
-        relative_eq!(data.altitude.unwrap(), 101.2);
-        relative_eq!(data.geoid_height.unwrap(), 14.7);
+        assert_relative_eq!(data.hdop.unwrap(), 1.8);
+        assert_relative_eq!(data.altitude.unwrap(), 101.2);
+        assert_relative_eq!(data.geoid_height.unwrap(), 14.7);
 
         let s = parse_nmea_sentence(b"$GPGGA,,,,,,0,,,,,,,,*66").unwrap();
         assert_eq!(s.checksum, s.calc_checksum());

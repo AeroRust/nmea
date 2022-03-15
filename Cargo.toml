@@ -16,12 +16,12 @@ edition = "2018"
 
 [dependencies]
 nom = "5"
-chrono = "0.4"
-arrayvec = "0.5"
+chrono = { version = "0.4.19", default-features = false }
+arrayvec = { version = "0.7.2", default-features = false }
 
 [dev-dependencies]
-quickcheck = "0.9"
-approx = "0.3"
+quickcheck = "1.0.3"
+approx = "0.5.1"
 
 [features]
 default = ["std"]

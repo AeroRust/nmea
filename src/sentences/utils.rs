@@ -117,13 +117,13 @@ pub(crate) fn number<T: str::FromStr>(i: &[u8]) -> IResult<&[u8], T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use approx::relative_eq;
+    use approx::assert_relative_eq;
 
     #[test]
     fn test_do_parse_lat_lon() {
         let (_, lat_lon) = do_parse_lat_lon(b"4807.038,N,01131.324,E").unwrap();
-        relative_eq!(lat_lon.0, 48. + 7.038 / 60.);
-        relative_eq!(lat_lon.1, 11. + 31.324 / 60.);
+        assert_relative_eq!(lat_lon.0, 48. + 7.038 / 60.);
+        assert_relative_eq!(lat_lon.1, 11. + 31.324 / 60.);
     }
 
     #[test]

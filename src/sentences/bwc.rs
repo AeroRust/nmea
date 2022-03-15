@@ -19,7 +19,7 @@ pub struct BwcData {
     pub true_bearing: Option<f32>,
     pub magnetic_bearing: Option<f32>,
     pub distance: Option<f32>,
-    pub waypoint_id: Option<ArrayString<[u8; MAX_LEN]>>,
+    pub waypoint_id: Option<ArrayString<MAX_LEN>>,
 }
 
 fn do_parse_bwc(i: &[u8]) -> Result<BwcData, NmeaError> {
@@ -103,7 +103,7 @@ pub fn parse_bwc(sentence: NmeaSentence) -> Result<BwcData, NmeaError> {
 
 #[cfg(test)]
 mod tests {
-    use approx::relative_eq;
+    use approx::assert_relative_eq;
 
     use crate::parse::parse_nmea_sentence;
 
@@ -121,11 +121,11 @@ mod tests {
         let data = parse_bwc(sentence).unwrap();
 
         assert_eq!(data.fix_time.unwrap(), NaiveTime::from_hms(22, 5, 16));
-        relative_eq!(data.latitude.unwrap(), 51. + 30.02 / 60.);
-        relative_eq!(data.longitude.unwrap(), 46.34 / 60.);
-        relative_eq!(data.true_bearing.unwrap(), 213.8);
-        relative_eq!(data.magnetic_bearing.unwrap(), 218.0);
-        relative_eq!(data.distance.unwrap(), 4.6);
+        assert_relative_eq!(data.latitude.unwrap(), 51. + 30.02 / 60.);
+        assert_relative_eq!(data.longitude.unwrap(), -46.34 / 60.0);
+        assert_relative_eq!(data.true_bearing.unwrap(), 213.8);
+        assert_relative_eq!(data.magnetic_bearing.unwrap(), 218.0);
+        assert_relative_eq!(data.distance.unwrap(), 4.6);
         assert_eq!(&data.waypoint_id.unwrap(), "EGLM");
     }
 
