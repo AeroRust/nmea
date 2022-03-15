@@ -1,5 +1,4 @@
-use core::str;
-use core::fmt;
+use core::{fmt, str};
 
 use nom::{
     bytes::complete::{take, take_until},
@@ -103,7 +102,7 @@ pub enum ParseResult {
     Unsupported(SentenceType),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum NmeaError<'a> {
     /// The provided input was not a proper UTF-8 string
     Utf8DecodingError,
@@ -113,7 +112,7 @@ pub enum NmeaError<'a> {
     /// should never happen. First slice is the expected header, second is the found one
     WrongSentenceHeader { expected: &'a [u8], found: &'a [u8] },
     /// The sentence could not be parsed because its format was invalid
-    ParsingError(nom::Err<(&'a [u8], nom::error::ErrorKind)>),
+    ParsingError(nom::Err<nom::error::Error<&'a [u8]>>),
     /// The sentence was too long to be parsed, our current limit is `SENTENCE_MAX_LEN` characters
     SentenceLength(usize),
     /// The type of a GSV sentence was not a valid Gnss type
@@ -124,8 +123,8 @@ pub enum NmeaError<'a> {
     EmptyNavConfig,
 }
 
-impl<'a> From<nom::Err<(&'a [u8], nom::error::ErrorKind)>> for NmeaError<'a> {
-    fn from(error: nom::Err<(&'a [u8], nom::error::ErrorKind)>) -> Self {
+impl<'a> From<nom::Err<nom::error::Error<&'a [u8]>>> for NmeaError<'a> {
+    fn from(error: nom::Err<nom::error::Error<&'a [u8]>>) -> Self {
         Self::ParsingError(error)
     }
 }
@@ -133,21 +132,41 @@ impl<'a> From<nom::Err<(&'a [u8], nom::error::ErrorKind)>> for NmeaError<'a> {
 impl<'a> fmt::Display for NmeaError<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            NmeaError::Utf8DecodingError => write!(f, "The provided input was not a valid UTF-8 string"),
-            NmeaError::ChecksumMismatch { calculated, found } => write!(f, "Checksum Mismatch(calculated = {}, found = {})", calculated, found),
-            NmeaError::WrongSentenceHeader { expected, found } => write!(f, "Wrong Sentence Header (expected = {:?}, found = {:?})", expected, found),
-            NmeaError::ParsingError(e) => write!(f, "{}", e),
-            NmeaError::SentenceLength(size) => write!(f, "The sentence was too long to be parsed, current limit is {} characters", size),
-            NmeaError::InvalidGnssType => write!(f, "The type of a GSV sentence was not a valid Gnss type"),
-            NmeaError::Unsupported(sentence) => write!(f, "Unsupported NMEA sentence {:?}", sentence),
-            NmeaError::EmptyNavConfig => write!(f, "The provided navigation configuration was empty and thus invalid"),
+            NmeaError::Utf8DecodingError => {
+                write!(f, "The provided input was not a valid UTF-8 string")
+            }
+            NmeaError::ChecksumMismatch { calculated, found } => write!(
+                f,
+                "Checksum Mismatch(calculated = {}, found = {})",
+                calculated, found
+            ),
+            NmeaError::WrongSentenceHeader { expected, found } => write!(
+                f,
+                "Wrong Sentence Header (expected = {:?}, found = {:?})",
+                expected, found
+            ),
+            NmeaError::ParsingError(e) => write!(f, "Parse error: {}", e),
+            NmeaError::SentenceLength(size) => write!(
+                f,
+                "The sentence was too long to be parsed, current limit is {} characters",
+                size
+            ),
+            NmeaError::InvalidGnssType => {
+                write!(f, "The type of a GSV sentence was not a valid Gnss type")
+            }
+            NmeaError::Unsupported(sentence) => {
+                write!(f, "Unsupported NMEA sentence {:?}", sentence)
+            }
+            NmeaError::EmptyNavConfig => write!(
+                f,
+                "The provided navigation configuration was empty and thus invalid"
+            ),
         }
     }
 }
 
 #[cfg(feature = "std")]
 impl<'a> std::error::Error for NmeaError<'a> {}
-
 
 /// parse nmea 0183 sentence and extract data from it
 pub fn parse(xs: &[u8]) -> Result<ParseResult, NmeaError> {
