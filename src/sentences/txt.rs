@@ -67,7 +67,7 @@ pub struct TxtData {
     pub count: u8,
     pub seq: u8,
     pub text_ident: u8,
-    pub text: ArrayString<[u8; MAX_LEN]>,
+    pub text: ArrayString<MAX_LEN>,
 }
 
 struct TxtData0<'a> {

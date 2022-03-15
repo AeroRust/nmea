@@ -24,8 +24,8 @@ mod parse;
 mod sentences;
 
 pub use crate::parse::{
-    parse, BwcData, GgaData, GllData, GsaData, GsvData, NmeaError, ParseResult, RmcData,
-    RmcStatusOfFix, PosSystemIndicator, TxtData, VtgData, SENTENCE_MAX_LEN,
+    parse, BwcData, GgaData, GllData, GsaData, GsvData, NmeaError, ParseResult, PosSystemIndicator,
+    RmcData, RmcStatusOfFix, TxtData, VtgData, SENTENCE_MAX_LEN,
 };
 use chrono::{NaiveDate, NaiveTime};
 use core::{fmt, iter::Iterator, mem, ops::BitOr};
@@ -724,9 +724,17 @@ impl From<char> for FixType {
 mod tests {
     use super::parse::checksum;
     use super::*;
-    use quickcheck::QuickCheck;
+    use quickcheck::{QuickCheck, TestResult};
 
-    fn check_parsing_lat_lon_in_gga(lat: f64, lon: f64) -> bool {
+    fn check_parsing_lat_lon_in_gga(lat: f64, lon: f64) -> TestResult {
+        fn scale(val: f64, max: f64) -> f64 {
+            val % max
+        }
+        if !lat.is_finite() || !lon.is_finite() {
+            return TestResult::discard();
+        }
+        let lat = scale(lat, 90.0);
+        let lon = scale(lon, 180.0);
         let lat_min = (lat.abs() * 60.0) % 60.0;
         let lon_min = (lon.abs() * 60.0) % 60.0;
         let mut nmea = Nmea::new();
@@ -745,7 +753,9 @@ mod tests {
         nmea.parse(&s).unwrap();
         let (new_lat, new_lon) = (nmea.latitude.unwrap(), nmea.longitude.unwrap());
         const MAX_COOR_DIFF: f64 = 1e-7;
-        (new_lat - lat).abs() < MAX_COOR_DIFF && (new_lon - lon).abs() < MAX_COOR_DIFF
+        TestResult::from_bool(
+            (new_lat - lat).abs() < MAX_COOR_DIFF && (new_lon - lon).abs() < MAX_COOR_DIFF,
+        )
     }
 
     #[test]
@@ -952,11 +962,11 @@ mod tests {
     fn test_parsing_lat_lon_in_gga() {
         // regressions found by quickcheck,
         // explicit because of quickcheck use random gen
-        assert!(check_parsing_lat_lon_in_gga(0., 57.89528));
-        assert!(check_parsing_lat_lon_in_gga(0., -43.33031));
+        assert!(!check_parsing_lat_lon_in_gga(0., 57.89528).is_failure());
+        assert!(!check_parsing_lat_lon_in_gga(0., -43.33031).is_failure());
         QuickCheck::new()
             .tests(10_000_000_000)
-            .quickcheck(check_parsing_lat_lon_in_gga as fn(f64, f64) -> bool);
+            .quickcheck(check_parsing_lat_lon_in_gga as fn(f64, f64) -> TestResult);
     }
 
     #[test]

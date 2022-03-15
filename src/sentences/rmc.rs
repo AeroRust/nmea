@@ -94,7 +94,7 @@ pub fn parse_rmc(sentence: NmeaSentence) -> Result<RmcData, NmeaError> {
 mod tests {
     use super::*;
     use crate::parse::parse_nmea_sentence;
-    use approx::relative_eq;
+    use approx::assert_relative_eq;
 
     #[test]
     fn test_parse_rmc() {
@@ -110,19 +110,22 @@ mod tests {
             rmc_data.fix_time.unwrap(),
             NaiveTime::from_hms_milli(22, 54, 46, 330)
         );
-        assert_eq!(rmc_data.fix_date.unwrap(), NaiveDate::from_ymd(1994, 11, 19));
+        assert_eq!(
+            rmc_data.fix_date.unwrap(),
+            NaiveDate::from_ymd(1994, 11, 19)
+        );
 
         println!("lat: {}", rmc_data.lat.unwrap());
-        relative_eq!(rmc_data.lat.unwrap(), 49.0 + 16.45 / 60.);
+        assert_relative_eq!(rmc_data.lat.unwrap(), 49.0 + 16.45 / 60.);
         println!(
             "lon: {}, diff {}",
             rmc_data.lon.unwrap(),
             (rmc_data.lon.unwrap() + (123.0 + 11.12 / 60.)).abs()
         );
-        relative_eq!(rmc_data.lon.unwrap(), -(123.0 + 11.12 / 60.));
+        assert_relative_eq!(rmc_data.lon.unwrap(), -(123.0 + 11.12 / 60.));
 
-        relative_eq!(rmc_data.speed_over_ground.unwrap(), 0.5);
-        relative_eq!(rmc_data.true_course.unwrap(), 54.7);
+        assert_relative_eq!(rmc_data.speed_over_ground.unwrap(), 0.5);
+        assert_relative_eq!(rmc_data.true_course.unwrap(), 54.7);
 
         let s = parse_nmea_sentence(b"$GPRMC,,V,,,,,,,,,,N*53").unwrap();
         let rmc = parse_rmc(s).unwrap();
