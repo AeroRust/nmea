@@ -1,9 +1,11 @@
 use std::{
     error::Error,
-    fs::File,
+    fs::{self, File},
     io::{BufRead, BufReader},
     path::Path,
 };
+
+use nmea::{parse, Nmea};
 
 #[test]
 fn test_parse_file_log() {
@@ -23,7 +25,7 @@ fn test_parse_file_log() {
 fn test_parse_issue_2() {
     let mut input =
         BufReader::new(File::open(&Path::new("tests").join("data").join("nmea2.log")).unwrap());
-    let mut nmea = nmea::Nmea::new();
+    let mut nmea = Nmea::new();
     for _ in 0..100 {
         let mut buffer = String::new();
         let size = input.read_line(&mut buffer).unwrap();
@@ -35,6 +37,41 @@ fn test_parse_issue_2() {
             }
         } else {
             break;
+        }
+    }
+}
+
+#[test]
+fn test_parse_all_logs() {
+    for log_path in [
+        Path::new("tests")
+            .join("data")
+            .join("nmea_with_sat_info.log"),
+        Path::new("tests").join("data").join("nmea1.log"),
+        Path::new("tests").join("data").join("nmea2.log"),
+    ] {
+        println!("test parsing of {log_path:?}");
+        let full_log = fs::read_to_string(&log_path).unwrap();
+
+        let mut nmea1 = Nmea::new();
+        let mut nmea2 = Nmea::new();
+
+        for (line_no, line) in full_log.lines().enumerate() {
+            let s = line.as_bytes();
+
+            macro_rules! err_handler {
+                () => {
+                    |err| {
+                        panic!(
+                            "Parsing of {line} at {log_path:?}:{line_no} failed: {err}",
+                            line_no = line_no + 1
+                        )
+                    }
+                };
+            }
+            parse(s).unwrap_or_else(err_handler!());
+            nmea1.parse(line).unwrap_or_else(err_handler!());
+            nmea2.parse_for_fix(s).unwrap_or_else(err_handler!());
         }
     }
 }
