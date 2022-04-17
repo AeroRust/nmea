@@ -52,6 +52,7 @@ pub struct Nmea {
     pub fix_type: Option<FixType>,
     pub latitude: Option<f64>,
     pub longitude: Option<f64>,
+    /// MSL Altitude in meters
     pub altitude: Option<f32>,
     pub speed_over_ground: Option<f32>,
     pub true_course: Option<f32>,
@@ -59,7 +60,8 @@ pub struct Nmea {
     pub hdop: Option<f32>,
     pub vdop: Option<f32>,
     pub pdop: Option<f32>,
-    pub geoid_height: Option<f32>,
+    /// Geoid separation in meters
+    pub geoid_separation: Option<f32>,
     pub satellites: Vec<Satellite>,
     pub fix_satellites_prns: Option<Vec<u32>>,
     satellites_scan: HashMap<GnssType, Vec<Vec<Satellite>>>,
@@ -84,7 +86,7 @@ impl<'a> Default for Nmea {
             hdop: None,
             vdop: None,
             pdop: None,
-            geoid_height: None,
+            geoid_separation: None,
             satellites: Vec::new(),
             fix_satellites_prns: None,
             satellites_scan: HashMap::with_capacity(4),
@@ -152,7 +154,7 @@ impl<'a> Nmea {
         self.longitude
     }
 
-    /// Returns latitude from last fix. None if not available.
+    /// Returns altitude above WGS-84 ellipsoid, meters.
     pub fn altitude(&self) -> Option<f32> {
         self.altitude
     }
@@ -167,9 +169,12 @@ impl<'a> Nmea {
         self.hdop
     }
 
-    /// Returns the height of geoid above WGS84
-    pub fn geoid_height(&self) -> Option<f32> {
-        self.geoid_height
+    /// Returns the altitude above MSL (geoid), meters.
+    pub fn geoid_altitude(&self) -> Option<f32> {
+        match (self.altitude, self.geoid_separation) {
+            (Some(alt), Some(geoid_diff)) => Some(alt + geoid_diff),
+            _ => None,
+        }
     }
 
     /// Returns the height of geoid above WGS84
@@ -185,7 +190,7 @@ impl<'a> Nmea {
         self.num_of_fix_satellites = gga_data.fix_satellites;
         self.hdop = gga_data.hdop;
         self.altitude = gga_data.altitude;
-        self.geoid_height = gga_data.geoid_height;
+        self.geoid_separation = gga_data.geoid_separation;
     }
 
     fn merge_gsv_data(&mut self, data: GsvData) -> Result<(), NmeaError<'a>> {
@@ -750,6 +755,7 @@ impl From<char> for FixType {
 mod tests {
     use super::parse::checksum;
     use super::*;
+    use approx::assert_relative_eq;
     use quickcheck::{QuickCheck, TestResult};
 
     fn check_parsing_lat_lon_in_gga(lat: f64, lon: f64) -> TestResult {
@@ -833,7 +839,7 @@ mod tests {
         assert_eq!(nmea.fix_type().unwrap(), FixType::Gps);
         assert_eq!(nmea.fix_satellites().unwrap(), 8);
         assert_eq!(nmea.hdop().unwrap(), 1.03);
-        assert_eq!(nmea.geoid_height().unwrap(), 55.2);
+        assert_relative_eq!(nmea.geoid_altitude().unwrap(), (61.7 + 55.2));
     }
 
     #[test]
@@ -886,7 +892,7 @@ mod tests {
         assert_eq!(8, nmea.num_of_fix_satellites.unwrap());
         assert_eq!(1.03, nmea.hdop.unwrap());
         assert_eq!(61.7, nmea.altitude.unwrap());
-        assert_eq!(55.2, nmea.geoid_height.unwrap());
+        assert_eq!(55.2, nmea.geoid_separation.unwrap());
     }
 
     #[test]

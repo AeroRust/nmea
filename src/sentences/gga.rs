@@ -21,7 +21,7 @@ pub struct GgaData {
     pub fix_satellites: Option<u32>,
     pub hdop: Option<f32>,
     pub altitude: Option<f32>,
-    pub geoid_height: Option<f32>,
+    pub geoid_separation: Option<f32>,
 }
 
 fn do_parse_gga(i: &[u8]) -> IResult<&[u8], GgaData> {
@@ -53,7 +53,7 @@ fn do_parse_gga(i: &[u8]) -> IResult<&[u8], GgaData> {
             fix_satellites,
             hdop,
             altitude,
-            geoid_height,
+            geoid_separation: geoid_height,
         },
     ))
 }
@@ -108,7 +108,7 @@ mod tests {
         assert_eq!(data.fix_satellites.unwrap(), 7);
         assert_relative_eq!(data.hdop.unwrap(), 1.8);
         assert_relative_eq!(data.altitude.unwrap(), 101.2);
-        assert_relative_eq!(data.geoid_height.unwrap(), 14.7);
+        assert_relative_eq!(data.geoid_separation.unwrap(), 14.7);
 
         let s = parse_nmea_sentence(b"$GPGGA,,,,,,0,,,,,,,,*66").unwrap();
         assert_eq!(s.checksum, s.calc_checksum());
@@ -122,7 +122,7 @@ mod tests {
                 fix_satellites: None,
                 hdop: None,
                 altitude: None,
-                geoid_height: None,
+                geoid_separation: None,
             },
             data
         );
