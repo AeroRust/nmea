@@ -32,7 +32,20 @@ use core::{fmt, iter::Iterator, mem, ops::BitOr};
 use std::collections::HashMap;
 
 /// NMEA parser
-#[derive(Default, Debug, Clone)]
+/// This struct parses NMEA sentences, including checksum checks and sentence
+/// validation.
+///
+/// # Examples
+///
+/// ```
+/// use nmea::Nmea;
+///
+/// let mut nmea= Nmea::default();
+/// let gga = "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76";
+/// nmea.parse(gga).unwrap();
+/// println!("{}", nmea);
+/// ```
+#[derive(Debug, Clone)]
 pub struct Nmea {
     pub fix_time: Option<NaiveTime>,
     pub fix_date: Option<NaiveDate>,
@@ -56,30 +69,43 @@ pub struct Nmea {
     sentences_for_this_time: SentenceMask,
 }
 
-impl<'a> Nmea {
-    /// Constructs a new `Nmea`.
-    /// This struct parses NMEA sentences, including checksum checks and sentence
-    /// validation.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use nmea::Nmea;
-    ///
-    /// let mut nmea= Nmea::new();
-    /// let gga = "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76";
-    /// nmea.parse(gga).unwrap();
-    /// println!("{}", nmea);
-    /// ```
-    pub fn new() -> Nmea {
-        // TODO: This looks ugly.
-        let mut n = Nmea::default();
-        n.satellites_scan.insert(GnssType::Galileo, vec![]);
-        n.satellites_scan.insert(GnssType::Gps, vec![]);
-        n.satellites_scan.insert(GnssType::Glonass, vec![]);
+impl<'a> Default for Nmea {
+    fn default() -> Self {
+        let mut n = Self {
+            fix_time: None,
+            fix_date: None,
+            fix_type: None,
+            latitude: None,
+            longitude: None,
+            altitude: None,
+            speed_over_ground: None,
+            true_course: None,
+            num_of_fix_satellites: None,
+            hdop: None,
+            vdop: None,
+            pdop: None,
+            geoid_height: None,
+            satellites: Vec::new(),
+            fix_satellites_prns: None,
+            satellites_scan: HashMap::with_capacity(4),
+            required_sentences_for_nav: SentenceMask::default(),
+            last_fix_time: None,
+            last_txt: None,
+            sentences_for_this_time: SentenceMask::default(),
+        };
+        for gnss_type in [
+            GnssType::Galileo,
+            GnssType::Gps,
+            GnssType::Glonass,
+            GnssType::Beidou,
+        ] {
+            n.satellites_scan.insert(gnss_type, vec![]);
+        }
         n
     }
+}
 
+impl<'a> Nmea {
     /// Constructs a new `Nmea` for navigation purposes.
     ///
     /// # Examples
@@ -99,7 +125,7 @@ impl<'a> Nmea {
         if required_sentences_for_nav.is_empty() {
             return Err(NmeaError::EmptyNavConfig);
         }
-        let mut n = Self::new();
+        let mut n = Self::default();
         for sentence in required_sentences_for_nav.iter() {
             n.required_sentences_for_nav.insert(*sentence);
         }
@@ -737,7 +763,7 @@ mod tests {
         let lon = scale(lon, 180.0);
         let lat_min = (lat.abs() * 60.0) % 60.0;
         let lon_min = (lon.abs() * 60.0) % 60.0;
-        let mut nmea = Nmea::new();
+        let mut nmea = Nmea::default();
         let mut s = format!(
             "$GPGGA,092750.000,{lat_deg:02}{lat_min:09.6},{lat_dir},\
              {lon_deg:03}{lon_min:09.6},{lon_dir},1,8,1.03,61.7,M,55.2,M,,*",
@@ -796,7 +822,7 @@ mod tests {
     #[test]
     fn test_gga_north_west() {
         use chrono::Timelike;
-        let mut nmea = Nmea::new();
+        let mut nmea = Nmea::default();
         nmea.parse("$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76")
             .unwrap();
         assert_eq!(nmea.fix_timestamp().unwrap().second(), 50);
@@ -812,7 +838,7 @@ mod tests {
 
     #[test]
     fn test_gga_north_east() {
-        let mut nmea = Nmea::new();
+        let mut nmea = Nmea::default();
         nmea.parse("$GPGGA,092750.000,5321.6802,N,00630.3372,E,1,8,1.03,61.7,M,55.2,M,,*64")
             .unwrap();
         assert_eq!(nmea.latitude().unwrap(), 53. + 21.6802 / 60.);
@@ -821,7 +847,7 @@ mod tests {
 
     #[test]
     fn test_gga_south_west() {
-        let mut nmea = Nmea::new();
+        let mut nmea = Nmea::default();
         nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*6B")
             .unwrap();
         assert_eq!(nmea.latitude().unwrap(), -(53. + 21.6802 / 60.));
@@ -830,7 +856,7 @@ mod tests {
 
     #[test]
     fn test_gga_south_east() {
-        let mut nmea = Nmea::new();
+        let mut nmea = Nmea::default();
         nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,E,1,8,1.03,61.7,M,55.2,M,,*79")
             .unwrap();
         assert_eq!(nmea.latitude().unwrap(), -(53. + 21.6802 / 60.));
@@ -839,7 +865,7 @@ mod tests {
 
     #[test]
     fn test_gga_invalid() {
-        let mut nmea = Nmea::new();
+        let mut nmea = Nmea::default();
         nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,E,0,8,1.03,61.7,M,55.2,M,,*7B")
             .unwrap_err();
         assert_eq!(nmea.fix_type(), None);
@@ -848,7 +874,7 @@ mod tests {
     #[test]
     fn test_gga_gps() {
         use chrono::Timelike;
-        let mut nmea = Nmea::new();
+        let mut nmea = Nmea::default();
         nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,E,1,8,1.03,61.7,M,55.2,M,,*79")
             .unwrap();
         assert_eq!(nmea.fix_timestamp().unwrap().second(), 50);
@@ -865,7 +891,7 @@ mod tests {
 
     #[test]
     fn test_gsv() {
-        let mut nmea = Nmea::new();
+        let mut nmea = Nmea::default();
         //                        10           07           05           08
         nmea.parse("$GPGSV,3,1,11,10,63,137,17,07,61,098,15,05,59,290,20,08,54,157,30*70")
             .unwrap();
@@ -887,7 +913,7 @@ mod tests {
 
     #[test]
     fn test_gsv_real_data() {
-        let mut nmea = Nmea::new();
+        let mut nmea = Nmea::default();
         let real_data = [
             "$GPGSV,3,1,12,01,49,196,41,03,71,278,32,06,02,323,27,11,21,196,39*72",
             "$GPGSV,3,2,12,14,39,063,33,17,21,292,30,19,20,310,31,22,82,181,36*73",
@@ -904,7 +930,7 @@ mod tests {
 
     #[test]
     fn test_gsv_order() {
-        let mut nmea = Nmea::new();
+        let mut nmea = Nmea::default();
         //                         2           13           26         04
         nmea.parse("$GPGSV,3,2,11,02,39,223,19,13,28,070,17,26,23,252,,04,14,186,14*79")
             .unwrap();
@@ -926,7 +952,7 @@ mod tests {
 
     #[test]
     fn test_gsv_two_of_three() {
-        let mut nmea = Nmea::new();
+        let mut nmea = Nmea::default();
         //                         2           13           26          4
         nmea.parse("$GPGSV,3,2,11,02,39,223,19,13,28,070,17,26,23,252,,04,14,186,14*79")
             .unwrap();
@@ -947,7 +973,7 @@ mod tests {
             "$GPRMC,092750.000,A,5321.6802,N,00630.3372,W,0.02,31.66,280511,,,A*43",
         ];
 
-        let mut nmea = Nmea::new();
+        let mut nmea = Nmea::default();
         for s in &sentences {
             let res = nmea.parse(s).unwrap();
             println!("test_parse res {:?}", res);
@@ -1146,7 +1172,7 @@ mod tests {
     #[test]
     fn test_gll() {
         use chrono::Timelike;
-        let mut nmea = Nmea::new();
+        let mut nmea = Nmea::default();
 
         // Example from https://docs.novatel.com/OEM7/Content/Logs/GPGLL.htm
         nmea.parse("$GPGLL,5107.0013414,N,11402.3279144,W,205412.00,A,A*73")
