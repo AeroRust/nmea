@@ -31,9 +31,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .collect::<Vec<ParseResult>>();
 
-    info!("Successfully parsed {sentences_parsed_len} sentences out of {all_lines_count} total lines:\n", sentences_parsed_len = sentences_parsed.len());
+    info!("Successfully parsed {sentences_parsed_len} sentences out of {all_lines_count} total lines", sentences_parsed_len = sentences_parsed.len());
 
-    info!("{:#?}", sentences_parsed);
+    let only_unsupported = sentences_parsed
+        .iter()
+        .filter_map(|result| match result {
+            ParseResult::Unsupported(unsupported_type) => Some(unsupported_type),
+            _ => None
+        });
+
+    for unsupported in only_unsupported {
+        info!("Unsupported: {unsupported:#?}");
+    }
 
     assert_eq!(
         518,
