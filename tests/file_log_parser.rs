@@ -57,8 +57,7 @@ fn test_parse_all_logs() {
         let mut nmea2 = Nmea::default();
 
         for (line_no, line) in full_log.lines().enumerate() {
-            if line.starts_with("$GNGNS")
-                || line.starts_with("$GNGRS")
+            if line.starts_with("$GNGRS")
                 || line.starts_with("$GNGST")
                 || line.starts_with("$GNZDA")
                 || line.starts_with("$GNGBS")
