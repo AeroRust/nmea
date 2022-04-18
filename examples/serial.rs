@@ -20,7 +20,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 
 fn main() {
-    let mut nmea = nmea::Nmea::new();
+    let mut nmea = nmea::Nmea::default();
 
     let file = env::args().nth(1).unwrap();
     let mut input = BufReader::new(File::open(file).unwrap());

@@ -24,21 +24,35 @@ mod parse;
 mod sentences;
 
 pub use crate::parse::{
-    parse, BwcData, GgaData, GllData, GsaData, GsvData, NmeaError, ParseResult, PosSystemIndicator,
-    RmcData, RmcStatusOfFix, TxtData, VtgData, SENTENCE_MAX_LEN,
+    parse, BwcData, GgaData, GllData, GsaData, GsvData, NmeaError, ParseResult, RmcData,
+    RmcStatusOfFix, TxtData, VtgData, SENTENCE_MAX_LEN,
 };
 use chrono::{NaiveDate, NaiveTime};
-use core::{fmt, iter::Iterator, mem, ops::BitOr};
-use std::collections::HashMap;
+use core::{fmt, mem, ops::BitOr};
+use std::{collections::VecDeque, convert::TryInto};
 
 /// NMEA parser
-#[derive(Default, Debug, Clone)]
+/// This struct parses NMEA sentences, including checksum checks and sentence
+/// validation.
+///
+/// # Examples
+///
+/// ```
+/// use nmea::Nmea;
+///
+/// let mut nmea= Nmea::default();
+/// let gga = "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76";
+/// nmea.parse(gga).unwrap();
+/// println!("{}", nmea);
+/// ```
+#[derive(Debug, Clone, Default)]
 pub struct Nmea {
     pub fix_time: Option<NaiveTime>,
     pub fix_date: Option<NaiveDate>,
     pub fix_type: Option<FixType>,
     pub latitude: Option<f64>,
     pub longitude: Option<f64>,
+    /// MSL Altitude in meters
     pub altitude: Option<f32>,
     pub speed_over_ground: Option<f32>,
     pub true_course: Option<f32>,
@@ -46,40 +60,23 @@ pub struct Nmea {
     pub hdop: Option<f32>,
     pub vdop: Option<f32>,
     pub pdop: Option<f32>,
-    pub geoid_height: Option<f32>,
-    pub satellites: Vec<Satellite>,
+    /// Geoid separation in meters
+    pub geoid_separation: Option<f32>,
     pub fix_satellites_prns: Option<Vec<u32>>,
-    satellites_scan: HashMap<GnssType, Vec<Vec<Satellite>>>,
+    satellites_scan: [SatsPack; GnssType::COUNT],
     required_sentences_for_nav: SentenceMask,
     last_fix_time: Option<NaiveTime>,
     last_txt: Option<TxtData>,
     sentences_for_this_time: SentenceMask,
 }
 
-impl<'a> Nmea {
-    /// Constructs a new `Nmea`.
-    /// This struct parses NMEA sentences, including checksum checks and sentence
-    /// validation.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use nmea::Nmea;
-    ///
-    /// let mut nmea= Nmea::new();
-    /// let gga = "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76";
-    /// nmea.parse(gga).unwrap();
-    /// println!("{}", nmea);
-    /// ```
-    pub fn new() -> Nmea {
-        // TODO: This looks ugly.
-        let mut n = Nmea::default();
-        n.satellites_scan.insert(GnssType::Galileo, vec![]);
-        n.satellites_scan.insert(GnssType::Gps, vec![]);
-        n.satellites_scan.insert(GnssType::Glonass, vec![]);
-        n
-    }
+#[derive(Debug, Clone, Default)]
+struct SatsPack {
+    data: VecDeque<[Option<Satellite>; 4]>,
+    max_len: usize,
+}
 
+impl<'a> Nmea {
     /// Constructs a new `Nmea` for navigation purposes.
     ///
     /// # Examples
@@ -99,7 +96,7 @@ impl<'a> Nmea {
         if required_sentences_for_nav.is_empty() {
             return Err(NmeaError::EmptyNavConfig);
         }
-        let mut n = Self::new();
+        let mut n = Self::default();
         for sentence in required_sentences_for_nav.iter() {
             n.required_sentences_for_nav.insert(*sentence);
         }
@@ -126,7 +123,7 @@ impl<'a> Nmea {
         self.longitude
     }
 
-    /// Returns latitude from last fix. None if not available.
+    /// Returns altitude above WGS-84 ellipsoid, meters.
     pub fn altitude(&self) -> Option<f32> {
         self.altitude
     }
@@ -141,14 +138,29 @@ impl<'a> Nmea {
         self.hdop
     }
 
-    /// Returns the height of geoid above WGS84
-    pub fn geoid_height(&self) -> Option<f32> {
-        self.geoid_height
+    /// Returns the altitude above MSL (geoid), meters.
+    pub fn geoid_altitude(&self) -> Option<f32> {
+        match (self.altitude, self.geoid_separation) {
+            (Some(alt), Some(geoid_diff)) => Some(alt + geoid_diff),
+            _ => None,
+        }
     }
 
-    /// Returns the height of geoid above WGS84
+    /// Returns used sattelites
     pub fn satellites(&self) -> Vec<Satellite> {
-        self.satellites.clone()
+        let mut ret = Vec::with_capacity(20);
+        let sat_key = |sat: &Satellite| (sat.gnss_type() as u8, sat.prn());
+        for sns in &self.satellites_scan {
+            for sat_pack in sns.data.iter().rev() {
+                for sat in sat_pack.iter().flatten() {
+                    match ret.binary_search_by_key(&sat_key(sat), sat_key) {
+                        Ok(_pos) => {} //already setted
+                        Err(pos) => ret.insert(pos, sat.clone()),
+                    }
+                }
+            }
+        }
+        ret
     }
 
     fn merge_gga_data(&mut self, gga_data: GgaData) {
@@ -159,33 +171,21 @@ impl<'a> Nmea {
         self.num_of_fix_satellites = gga_data.fix_satellites;
         self.hdop = gga_data.hdop;
         self.altitude = gga_data.altitude;
-        self.geoid_height = gga_data.geoid_height;
+        self.geoid_separation = gga_data.geoid_separation;
     }
 
     fn merge_gsv_data(&mut self, data: GsvData) -> Result<(), NmeaError<'a>> {
         {
-            let d = self
-                .satellites_scan
-                .get_mut(&data.gnss_type)
-                .ok_or(NmeaError::InvalidGnssType)?;
-            // Adjust size to this scan
-            d.resize(data.number_of_sentences as usize, vec![]);
-            // Replace data at index with new scan data
-            d.push(
-                data.sats_info
-                    .iter()
-                    .filter(|v| v.is_some())
-                    .map(|v| v.clone().unwrap())
-                    .collect(),
-            );
-            d.swap_remove(data.sentence_num as usize - 1);
-        }
-        self.satellites.clear();
-        for v in self.satellites_scan.values() {
-            for v1 in v {
-                for v2 in v1 {
-                    self.satellites.push(v2.clone());
-                }
+            let d = &mut self.satellites_scan[data.gnss_type as usize];
+            let full_pack_size: usize = data
+                .sentence_num
+                .try_into()
+                .map_err(|_| NmeaError::InvalidGsvSentenceNum)?;
+            d.max_len = full_pack_size.max(d.max_len);
+
+            d.data.push_back(data.sats_info);
+            if d.data.len() > d.max_len {
+                d.data.pop_front();
             }
         }
 
@@ -195,7 +195,7 @@ impl<'a> Nmea {
     fn merge_rmc_data(&mut self, rmc_data: RmcData) {
         self.fix_time = rmc_data.fix_time;
         self.fix_date = rmc_data.fix_date;
-        self.fix_type = rmc_data.status_of_fix.map(|v| match v {
+        self.fix_type = Some(match rmc_data.status_of_fix {
             RmcStatusOfFix::Autonomous => FixType::Gps,
             RmcStatusOfFix::Differential => FixType::DGps,
             RmcStatusOfFix::Invalid => FixType::Invalid,
@@ -204,6 +204,16 @@ impl<'a> Nmea {
         self.longitude = rmc_data.lon;
         self.speed_over_ground = rmc_data.speed_over_ground;
         self.true_course = rmc_data.true_course;
+    }
+
+    fn merge_gns_data(&mut self, gns_data: parse::GnsData) {
+        self.fix_time = gns_data.fix_time;
+        self.fix_type = Some(gns_data.faa_modes.into());
+        self.latitude = gns_data.lat;
+        self.longitude = gns_data.lon;
+        self.altitude = gns_data.alt;
+        self.hdop = gns_data.hdop;
+        self.geoid_separation = gns_data.geoid_separation;
     }
 
     fn merge_gsa_data(&mut self, gsa: GsaData) {
@@ -219,9 +229,18 @@ impl<'a> Nmea {
     }
 
     fn merge_gll_data(&mut self, gll: GllData) {
-        self.latitude = Some(gll.latitude);
-        self.longitude = Some(gll.longitude);
+        self.latitude = gll.latitude;
+        self.longitude = gll.longitude;
         self.fix_time = Some(gll.fix_time);
+        if let Some(faa_mode) = gll.faa_mode {
+            self.fix_type = Some(faa_mode.into());
+        } else {
+            self.fix_type = Some(if gll.valid {
+                FixType::Gps
+            } else {
+                FixType::Invalid
+            });
+        }
     }
 
     fn merge_txt_data(&mut self, txt: TxtData) {
@@ -248,6 +267,10 @@ impl<'a> Nmea {
                 self.merge_rmc_data(rmc);
                 Ok(SentenceType::RMC)
             }
+            ParseResult::GNS(gns) => {
+                self.merge_gns_data(gns);
+                Ok(SentenceType::GNS)
+            }
             ParseResult::GSA(gsa) => {
                 self.merge_gsa_data(gsa);
                 Ok(SentenceType::GSA)
@@ -268,7 +291,6 @@ impl<'a> Nmea {
     fn new_tick(&mut self) {
         let old = mem::take(self);
         self.satellites_scan = old.satellites_scan;
-        self.satellites = old.satellites;
         self.required_sentences_for_nav = old.required_sentences_for_nav;
         self.last_fix_time = old.last_fix_time;
     }
@@ -302,28 +324,27 @@ impl<'a> Nmea {
                 }
             }
             ParseResult::RMC(rmc_data) => {
-                match rmc_data.status_of_fix {
-                    Some(RmcStatusOfFix::Invalid) | None => {
-                        self.clear_position_info();
-                        return Ok(FixType::Invalid);
-                    }
-                    _ => { /*nothing*/ }
+                if rmc_data.status_of_fix == RmcStatusOfFix::Invalid {
+                    self.clear_position_info();
+                    return Ok(FixType::Invalid);
                 }
-                match (self.last_fix_time, rmc_data.fix_time) {
-                    (Some(ref last_fix_time), Some(ref rmc_fix_time)) => {
-                        if *last_fix_time != *rmc_fix_time {
-                            self.new_tick();
-                            self.last_fix_time = Some(*rmc_fix_time);
-                        }
-                    }
-                    (None, Some(ref rmc_fix_time)) => self.last_fix_time = Some(*rmc_fix_time),
-                    (Some(_), None) | (None, None) => {
-                        self.clear_position_info();
-                        return Ok(FixType::Invalid);
-                    }
+                if !self.update_fix_time(rmc_data.fix_time) {
+                    return Ok(FixType::Invalid);
                 }
                 self.merge_rmc_data(rmc_data);
                 self.sentences_for_this_time.insert(SentenceType::RMC);
+            }
+            ParseResult::GNS(gns_data) => {
+                let fix_type: FixType = gns_data.faa_modes.into();
+                if !fix_type.is_valid() {
+                    self.clear_position_info();
+                    return Ok(FixType::Invalid);
+                }
+                if !self.update_fix_time(gns_data.fix_time) {
+                    return Ok(FixType::Invalid);
+                }
+                self.merge_gns_data(gns_data);
+                self.sentences_for_this_time.insert(SentenceType::GNS);
             }
             ParseResult::GGA(gga_data) => {
                 match gga_data.fix_type {
@@ -333,23 +354,16 @@ impl<'a> Nmea {
                     }
                     _ => { /*nothing*/ }
                 }
-                match (self.last_fix_time, gga_data.fix_time) {
-                    (Some(ref last_fix_time), Some(ref gga_fix_time)) => {
-                        if last_fix_time != gga_fix_time {
-                            self.new_tick();
-                            self.last_fix_time = Some(*gga_fix_time);
-                        }
-                    }
-                    (None, Some(ref gga_fix_time)) => self.last_fix_time = Some(*gga_fix_time),
-                    (Some(_), None) | (None, None) => {
-                        self.clear_position_info();
-                        return Ok(FixType::Invalid);
-                    }
+                if !self.update_fix_time(gga_data.fix_time) {
+                    return Ok(FixType::Invalid);
                 }
                 self.merge_gga_data(gga_data);
                 self.sentences_for_this_time.insert(SentenceType::GGA);
             }
             ParseResult::GLL(gll_data) => {
+                if !self.update_fix_time(Some(gll_data.fix_time)) {
+                    return Ok(FixType::Invalid);
+                }
                 self.merge_gll_data(gll_data);
                 return Ok(FixType::Invalid);
             }
@@ -377,6 +391,23 @@ impl<'a> Nmea {
 
     pub fn last_txt(&self) -> Option<&TxtData> {
         self.last_txt.as_ref()
+    }
+
+    fn update_fix_time(&mut self, fix_time: Option<NaiveTime>) -> bool {
+        match (self.last_fix_time, fix_time) {
+            (Some(ref last_fix_time), Some(ref new_fix_time)) => {
+                if *last_fix_time != *new_fix_time {
+                    self.new_tick();
+                    self.last_fix_time = Some(*new_fix_time);
+                }
+            }
+            (None, Some(ref new_fix_time)) => self.last_fix_time = Some(*new_fix_time),
+            (Some(_), None) | (None, None) => {
+                self.clear_position_info();
+                return false;
+            }
+        }
+        true
     }
 }
 
@@ -413,22 +444,23 @@ pub struct Satellite {
 }
 
 impl Satellite {
+    #[inline]
     pub fn gnss_type(&self) -> GnssType {
         self.gnss_type
     }
-
+    #[inline]
     pub fn prn(&self) -> u32 {
         self.prn
     }
-
+    #[inline]
     pub fn elevation(&self) -> Option<f32> {
         self.elevation
     }
-
+    #[inline]
     pub fn azimuth(&self) -> Option<f32> {
         self.azimuth
     }
-
+    #[inline]
     pub fn snr(&self) -> Option<f32> {
         self.snr
     }
@@ -669,12 +701,14 @@ impl BitOr<SentenceType> for SentenceMask {
         }
     }
 }
+
 /// Fix type
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum FixType {
     Invalid,
     Gps,
     DGps,
+    /// Precise Position Service
     Pps,
     Rtk,
     FloatRtk,
@@ -683,14 +717,48 @@ pub enum FixType {
     Simulation,
 }
 
-/// GNSS type
-#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
-pub enum GnssType {
-    Beidou,
-    Galileo,
-    Gps,
-    Glonass,
+impl FixType {
+    #[inline]
+    pub fn is_valid(self) -> bool {
+        match self {
+            FixType::Simulation | FixType::Manual | FixType::Estimated | FixType::Invalid => false,
+            FixType::DGps | FixType::Gps | FixType::Rtk | FixType::FloatRtk | FixType::Pps => true,
+        }
+    }
 }
+
+macro_rules! count_tts {
+    () => {0usize};
+    ($_head:tt , $($tail:tt)*) => {1usize + count_tts!($($tail)*)};
+    ($item:tt) => {1usize};
+}
+
+macro_rules! define_enum_with_count {
+    (
+        $(#[$outer:meta])*
+        enum $Name:ident { $($Variant:ident),* $(,)* }
+    ) => {
+        $(#[$outer])*
+        #[derive(PartialEq, Debug, Hash, Eq, Clone, Copy)]
+        #[repr(u8)]
+        pub enum $Name {
+            $($Variant),*
+        }
+        impl $Name {
+            const COUNT: usize = count_tts!($($Variant),*);
+        }
+    };
+}
+
+define_enum_with_count!(
+    /// GNSS type
+    enum GnssType {
+        Beidou,
+        Galileo,
+        Gps,
+        Glonass,
+    }
+);
 
 impl fmt::Display for GnssType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -737,7 +805,7 @@ mod tests {
         let lon = scale(lon, 180.0);
         let lat_min = (lat.abs() * 60.0) % 60.0;
         let lon_min = (lon.abs() * 60.0) % 60.0;
-        let mut nmea = Nmea::new();
+        let mut nmea = Nmea::default();
         let mut s = format!(
             "$GPGGA,092750.000,{lat_deg:02}{lat_min:09.6},{lat_dir},\
              {lon_deg:03}{lon_min:09.6},{lon_dir},1,8,1.03,61.7,M,55.2,M,,*",
@@ -794,171 +862,6 @@ mod tests {
     }
 
     #[test]
-    fn test_gga_north_west() {
-        use chrono::Timelike;
-        let mut nmea = Nmea::new();
-        nmea.parse("$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76")
-            .unwrap();
-        assert_eq!(nmea.fix_timestamp().unwrap().second(), 50);
-        assert_eq!(nmea.fix_timestamp().unwrap().minute(), 27);
-        assert_eq!(nmea.fix_timestamp().unwrap().hour(), 9);
-        assert_eq!(nmea.latitude().unwrap(), 53. + 21.6802 / 60.);
-        assert_eq!(nmea.longitude().unwrap(), -(6. + 30.3372 / 60.));
-        assert_eq!(nmea.fix_type().unwrap(), FixType::Gps);
-        assert_eq!(nmea.fix_satellites().unwrap(), 8);
-        assert_eq!(nmea.hdop().unwrap(), 1.03);
-        assert_eq!(nmea.geoid_height().unwrap(), 55.2);
-    }
-
-    #[test]
-    fn test_gga_north_east() {
-        let mut nmea = Nmea::new();
-        nmea.parse("$GPGGA,092750.000,5321.6802,N,00630.3372,E,1,8,1.03,61.7,M,55.2,M,,*64")
-            .unwrap();
-        assert_eq!(nmea.latitude().unwrap(), 53. + 21.6802 / 60.);
-        assert_eq!(nmea.longitude().unwrap(), 6. + 30.3372 / 60.);
-    }
-
-    #[test]
-    fn test_gga_south_west() {
-        let mut nmea = Nmea::new();
-        nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*6B")
-            .unwrap();
-        assert_eq!(nmea.latitude().unwrap(), -(53. + 21.6802 / 60.));
-        assert_eq!(nmea.longitude().unwrap(), -(6. + 30.3372 / 60.));
-    }
-
-    #[test]
-    fn test_gga_south_east() {
-        let mut nmea = Nmea::new();
-        nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,E,1,8,1.03,61.7,M,55.2,M,,*79")
-            .unwrap();
-        assert_eq!(nmea.latitude().unwrap(), -(53. + 21.6802 / 60.));
-        assert_eq!(nmea.longitude().unwrap(), 6. + 30.3372 / 60.);
-    }
-
-    #[test]
-    fn test_gga_invalid() {
-        let mut nmea = Nmea::new();
-        nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,E,0,8,1.03,61.7,M,55.2,M,,*7B")
-            .unwrap_err();
-        assert_eq!(nmea.fix_type(), None);
-    }
-
-    #[test]
-    fn test_gga_gps() {
-        use chrono::Timelike;
-        let mut nmea = Nmea::new();
-        nmea.parse("$GPGGA,092750.000,5321.6802,S,00630.3372,E,1,8,1.03,61.7,M,55.2,M,,*79")
-            .unwrap();
-        assert_eq!(nmea.fix_timestamp().unwrap().second(), 50);
-        assert_eq!(nmea.fix_timestamp().unwrap().minute(), 27);
-        assert_eq!(nmea.fix_timestamp().unwrap().hour(), 9);
-        assert_eq!(-(53. + 21.6802 / 60.), nmea.latitude.unwrap());
-        assert_eq!(6. + 30.3372 / 60., nmea.longitude.unwrap());
-        assert_eq!(nmea.fix_type(), Some(FixType::Gps));
-        assert_eq!(8, nmea.num_of_fix_satellites.unwrap());
-        assert_eq!(1.03, nmea.hdop.unwrap());
-        assert_eq!(61.7, nmea.altitude.unwrap());
-        assert_eq!(55.2, nmea.geoid_height.unwrap());
-    }
-
-    #[test]
-    fn test_gsv() {
-        let mut nmea = Nmea::new();
-        //                        10           07           05           08
-        nmea.parse("$GPGSV,3,1,11,10,63,137,17,07,61,098,15,05,59,290,20,08,54,157,30*70")
-            .unwrap();
-        //                        02           13           26         04
-        nmea.parse("$GPGSV,3,2,11,02,39,223,19,13,28,070,17,26,23,252,,04,14,186,14*79")
-            .unwrap();
-        //                        29           16         36
-        nmea.parse("$GPGSV,3,3,11,29,09,301,24,16,09,020,,36,,,*76")
-            .unwrap();
-        assert_eq!(nmea.satellites().len(), 11);
-
-        let sat: &Satellite = &(nmea.satellites()[0]);
-        assert_eq!(sat.gnss_type, GnssType::Gps);
-        assert_eq!(sat.prn, 10);
-        assert_eq!(sat.elevation, Some(63.0));
-        assert_eq!(sat.azimuth, Some(137.0));
-        assert_eq!(sat.snr, Some(17.0));
-    }
-
-    #[test]
-    fn test_gsv_real_data() {
-        let mut nmea = Nmea::new();
-        let real_data = [
-            "$GPGSV,3,1,12,01,49,196,41,03,71,278,32,06,02,323,27,11,21,196,39*72",
-            "$GPGSV,3,2,12,14,39,063,33,17,21,292,30,19,20,310,31,22,82,181,36*73",
-            "$GPGSV,3,3,12,23,34,232,42,25,11,045,33,31,45,092,38,32,14,061,39*75",
-            "$GLGSV,3,1,10,74,40,078,43,66,23,275,31,82,10,347,36,73,15,015,38*6B",
-            "$GLGSV,3,2,10,75,19,135,36,65,76,333,31,88,32,233,33,81,40,302,38*6A",
-            "$GLGSV,3,3,10,72,40,075,43,87,00,000,*6F",
-            "$GPGSV,4,4,15,26,02,112,,31,45,071,,32,01,066,*4C",
-        ];
-        for line in &real_data {
-            assert_eq!(nmea.parse(line).unwrap(), SentenceType::GSV);
-        }
-    }
-
-    #[test]
-    fn test_gsv_order() {
-        let mut nmea = Nmea::new();
-        //                         2           13           26         04
-        nmea.parse("$GPGSV,3,2,11,02,39,223,19,13,28,070,17,26,23,252,,04,14,186,14*79")
-            .unwrap();
-        //                        29           16         36
-        nmea.parse("$GPGSV,3,3,11,29,09,301,24,16,09,020,,36,,,*76")
-            .unwrap();
-        //                        10           07           05           08
-        nmea.parse("$GPGSV,3,1,11,10,63,137,17,07,61,098,15,05,59,290,20,08,54,157,30*70")
-            .unwrap();
-        assert_eq!(nmea.satellites().len(), 11);
-
-        let sat: &Satellite = &(nmea.satellites()[0]);
-        assert_eq!(sat.gnss_type, GnssType::Gps);
-        assert_eq!(sat.prn, 10);
-        assert_eq!(sat.elevation, Some(63.0));
-        assert_eq!(sat.azimuth, Some(137.0));
-        assert_eq!(sat.snr, Some(17.0));
-    }
-
-    #[test]
-    fn test_gsv_two_of_three() {
-        let mut nmea = Nmea::new();
-        //                         2           13           26          4
-        nmea.parse("$GPGSV,3,2,11,02,39,223,19,13,28,070,17,26,23,252,,04,14,186,14*79")
-            .unwrap();
-        //                        29           16         36
-        nmea.parse("$GPGSV,3,3,11,29,09,301,24,16,09,020,,36,,,*76")
-            .unwrap();
-        assert_eq!(nmea.satellites().len(), 7);
-    }
-
-    #[test]
-    fn test_parse() {
-        let sentences = [
-            "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76",
-            "$GPGSA,A,3,10,07,05,02,29,04,08,13,,,,,1.72,1.03,1.38*0A",
-            "$GPGSV,3,1,11,10,63,137,17,07,61,098,15,05,59,290,20,08,54,157,30*70",
-            "$GPGSV,3,2,11,02,39,223,19,13,28,070,17,26,23,252,,04,14,186,14*79",
-            "$GPGSV,3,3,11,29,09,301,24,16,09,020,,36,,,*76",
-            "$GPRMC,092750.000,A,5321.6802,N,00630.3372,W,0.02,31.66,280511,,,A*43",
-        ];
-
-        let mut nmea = Nmea::new();
-        for s in &sentences {
-            let res = nmea.parse(s).unwrap();
-            println!("test_parse res {:?}", res);
-        }
-
-        assert_eq!(nmea.latitude().unwrap(), 53. + 21.6802 / 60.);
-        assert_eq!(nmea.longitude().unwrap(), -(6. + 30.3372 / 60.));
-        assert_eq!(nmea.altitude().unwrap(), 61.7);
-    }
-
-    #[test]
     fn test_parsing_lat_lon_in_gga() {
         // regressions found by quickcheck,
         // explicit because of quickcheck use random gen
@@ -970,200 +873,9 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_for_fix() {
-        {
-            let mut nmea =
-                Nmea::create_for_navigation(&[SentenceType::RMC, SentenceType::GGA]).unwrap();
-            let log = [
-                (
-                    "$GPRMC,123308.2,A,5521.76474,N,03731.92553,E,000.48,071.9,090317,010.2,E,A*3B",
-                    FixType::Invalid,
-                    Some(NaiveTime::from_hms_milli(12, 33, 8, 200)),
-                ),
-                (
-                    "$GPGGA,123308.2,5521.76474,N,03731.92553,E,1,08,2.2,211.5,M,13.1,M,,*52",
-                    FixType::Gps,
-                    Some(NaiveTime::from_hms_milli(12, 33, 8, 200)),
-                ),
-                (
-                    "$GPVTG,071.9,T,061.7,M,000.48,N,0000.88,K,A*10",
-                    FixType::Invalid,
-                    Some(NaiveTime::from_hms_milli(12, 33, 8, 200)),
-                ),
-                (
-                    "$GPRMC,123308.3,A,5521.76474,N,03731.92553,E,000.51,071.9,090317,010.2,E,A*32",
-                    FixType::Invalid,
-                    Some(NaiveTime::from_hms_milli(12, 33, 8, 300)),
-                ),
-                (
-                    "$GPGGA,123308.3,5521.76474,N,03731.92553,E,1,08,2.2,211.5,M,13.1,M,,*53",
-                    FixType::Gps,
-                    Some(NaiveTime::from_hms_milli(12, 33, 8, 300)),
-                ),
-                (
-                    "$GPVTG,071.9,T,061.7,M,000.51,N,0000.94,K,A*15",
-                    FixType::Invalid,
-                    Some(NaiveTime::from_hms_milli(12, 33, 8, 300)),
-                ),
-                (
-                    "$GPRMC,123308.4,A,5521.76474,N,03731.92553,E,000.54,071.9,090317,010.2,E,A*30",
-                    FixType::Invalid,
-                    Some(NaiveTime::from_hms_milli(12, 33, 8, 400)),
-                ),
-                (
-                    "$GPGGA,123308.4,5521.76474,N,03731.92553,E,1,08,2.2,211.5,M,13.1,M,,*54",
-                    FixType::Gps,
-                    Some(NaiveTime::from_hms_milli(12, 33, 8, 400)),
-                ),
-                (
-                    "$GPVTG,071.9,T,061.7,M,000.54,N,0001.00,K,A*1C",
-                    FixType::Invalid,
-                    Some(NaiveTime::from_hms_milli(12, 33, 8, 400)),
-                ),
-                (
-                    "$GPRMC,123308.5,A,5521.76474,N,03731.92553,E,000.57,071.9,090317,010.2,E,A*32",
-                    FixType::Invalid,
-                    Some(NaiveTime::from_hms_milli(12, 33, 8, 500)),
-                ),
-                (
-                    "$GPGGA,123308.5,5521.76474,N,03731.92553,E,1,08,2.2,211.5,M,13.1,M,,*55",
-                    FixType::Gps,
-                    Some(NaiveTime::from_hms_milli(12, 33, 8, 500)),
-                ),
-                (
-                    "$GPVTG,071.9,T,061.7,M,000.57,N,0001.05,K,A*1A",
-                    FixType::Invalid,
-                    Some(NaiveTime::from_hms_milli(12, 33, 8, 500)),
-                ),
-                (
-                    "$GPRMC,123308.6,A,5521.76474,N,03731.92553,E,000.58,071.9,090317,010.2,E,A*3E",
-                    FixType::Invalid,
-                    Some(NaiveTime::from_hms_milli(12, 33, 8, 600)),
-                ),
-                (
-                    "$GPGGA,123308.6,5521.76474,N,03731.92553,E,1,08,2.2,211.5,M,13.1,M,,*56",
-                    FixType::Gps,
-                    Some(NaiveTime::from_hms_milli(12, 33, 8, 600)),
-                ),
-                (
-                    "$GPVTG,071.9,T,061.7,M,000.58,N,0001.08,K,A*18",
-                    FixType::Invalid,
-                    Some(NaiveTime::from_hms_milli(12, 33, 8, 600)),
-                ),
-                (
-                    "$GPRMC,123308.7,A,5521.76474,N,03731.92553,E,000.59,071.9,090317,010.2,E,A*3E",
-                    FixType::Invalid,
-                    Some(NaiveTime::from_hms_milli(12, 33, 8, 700)),
-                ),
-                (
-                    "$GPGGA,123308.7,5521.76474,N,03731.92553,E,1,08,2.2,211.5,M,13.1,M,,*57",
-                    FixType::Gps,
-                    Some(NaiveTime::from_hms_milli(12, 33, 8, 700)),
-                ),
-                (
-                    "$GPVTG,071.9,T,061.7,M,000.59,N,0001.09,K,A*18",
-                    FixType::Invalid,
-                    Some(NaiveTime::from_hms_milli(12, 33, 8, 700)),
-                ),
-            ];
-
-            for (i, item) in log.iter().enumerate() {
-                let res = nmea.parse_for_fix(item.0.as_bytes()).unwrap();
-                println!("parse result({}): {:?}, {:?}", i, res, nmea.fix_time);
-                assert_eq!((&res, &nmea.fix_time), (&item.1, &item.2));
-            }
-        }
-
-        {
-            let mut nmea =
-                Nmea::create_for_navigation(&[SentenceType::RMC, SentenceType::GGA]).unwrap();
-            let log = [
-                (
-                    "$GPRMC,123308.2,A,5521.76474,N,03731.92553,E,000.48,071.9,090317,010.2,E,A*3B",
-                    FixType::Invalid,
-                    Some(NaiveTime::from_hms_milli(12, 33, 8, 200)),
-                ),
-                (
-                    "$GPRMC,123308.3,A,5521.76474,N,03731.92553,E,000.51,071.9,090317,010.2,E,A*32",
-                    FixType::Invalid,
-                    Some(NaiveTime::from_hms_milli(12, 33, 8, 300)),
-                ),
-                (
-                    "$GPGGA,123308.3,5521.76474,N,03731.92553,E,1,08,2.2,211.5,M,13.1,M,,*53",
-                    FixType::Gps,
-                    Some(NaiveTime::from_hms_milli(12, 33, 8, 300)),
-                ),
-            ];
-
-            for (i, item) in log.iter().enumerate() {
-                let res = nmea.parse_for_fix(item.0.as_bytes()).unwrap();
-                println!("parse result({}): {:?}, {:?}", i, res, nmea.fix_time);
-                assert_eq!((&res, &nmea.fix_time), (&item.1, &item.2));
-            }
-        }
-    }
-
-    #[test]
-    fn test_some_reciever() {
-        let lines = [
-            "$GPRMC,171724.000,A,6847.2474,N,03245.8351,E,0.26,140.74,250317,,*02",
-            "$GPGGA,171725.000,6847.2473,N,03245.8351,E,1,08,1.0,87.7,M,18.5,M,,0000*66",
-            "$GPGSA,A,3,02,25,29,12,31,06,23,14,,,,,2.0,1.0,1.7*3A",
-            "$GPRMC,171725.000,A,6847.2473,N,03245.8351,E,0.15,136.12,250317,,*05",
-            "$GPGGA,171726.000,6847.2473,N,03245.8352,E,1,08,1.0,87.8,M,18.5,M,,0000*69",
-            "$GPGSA,A,3,02,25,29,12,31,06,23,14,,,,,2.0,1.0,1.7*3A",
-            "$GPRMC,171726.000,A,6847.2473,N,03245.8352,E,0.16,103.49,250317,,*0E",
-            "$GPGGA,171727.000,6847.2474,N,03245.8353,E,1,08,1.0,87.9,M,18.5,M,,0000*6F",
-            "$GPGSA,A,3,02,25,29,12,31,06,23,14,,,,,2.0,1.0,1.7*3A",
-            "$GPRMC,171727.000,A,6847.2474,N,03245.8353,E,0.49,42.80,250317,,*32",
-        ];
-        let mut nmea =
-            Nmea::create_for_navigation(&[SentenceType::RMC, SentenceType::GGA]).unwrap();
-        println!("start test");
-        let mut nfixes = 0_usize;
-        for line in &lines {
-            match nmea.parse_for_fix(line.as_bytes()) {
-                Ok(FixType::Invalid) => {
-                    println!("invalid");
-                    continue;
-                }
-                Err(msg) => {
-                    println!("update_gnss_info_nmea: parse_for_fix failed: {:?}", msg);
-                    continue;
-                }
-                Ok(_) => nfixes += 1,
-            }
-        }
-        assert_eq!(nfixes, 3);
-    }
-    #[test]
     fn test_sentence_type_enum() {
         // So we don't trip over the max value of u128 when shifting it with
         // SentenceType as u32
         assert!((SentenceType::None as u32) < 127);
-    }
-
-    #[test]
-    fn test_gll() {
-        use chrono::Timelike;
-        let mut nmea = Nmea::new();
-
-        // Example from https://docs.novatel.com/OEM7/Content/Logs/GPGLL.htm
-        nmea.parse("$GPGLL,5107.0013414,N,11402.3279144,W,205412.00,A,A*73")
-            .unwrap();
-        assert_eq!(51. + 7.0013414 / 60., nmea.latitude().unwrap());
-        assert_eq!(-(114. + 2.3279144 / 60.), nmea.longitude().unwrap());
-        assert_eq!(20, nmea.fix_timestamp().unwrap().hour());
-        assert_eq!(54, nmea.fix_timestamp().unwrap().minute());
-        assert_eq!(12, nmea.fix_timestamp().unwrap().second());
-
-        // Example from https://www.gpsinformation.org/dale/nmea.htm#GLL
-        nmea.parse("$GPGLL,4916.45,N,12311.12,W,225444,A,*1D")
-            .unwrap();
-        assert_eq!(49. + 16.45 / 60., nmea.latitude().unwrap());
-        assert_eq!(-(123. + 11.12 / 60.), nmea.longitude().unwrap());
-        assert_eq!(22, nmea.fix_timestamp().unwrap().hour());
-        assert_eq!(54, nmea.fix_timestamp().unwrap().minute());
-        assert_eq!(44, nmea.fix_timestamp().unwrap().second());
     }
 }

@@ -99,6 +99,7 @@ pub enum ParseResult {
     VTG(VtgData),
     GLL(GllData),
     TXT(TxtData),
+    GNS(GnsData),
     Unsupported(SentenceType),
 }
 
@@ -115,12 +116,12 @@ pub enum NmeaError<'a> {
     ParsingError(nom::Err<nom::error::Error<&'a [u8]>>),
     /// The sentence was too long to be parsed, our current limit is `SENTENCE_MAX_LEN` characters
     SentenceLength(usize),
-    /// The type of a GSV sentence was not a valid Gnss type
-    InvalidGnssType,
     /// The sentence has and maybe will never be implemented
     Unsupported(SentenceType),
     /// The provided navigation configuration was empty and thus invalid
     EmptyNavConfig,
+    /// invalid senetence number field in nmea sentence of type GSV
+    InvalidGsvSentenceNum,
 }
 
 impl<'a> From<nom::Err<nom::error::Error<&'a [u8]>>> for NmeaError<'a> {
@@ -151,15 +152,16 @@ impl<'a> fmt::Display for NmeaError<'a> {
                 "The sentence was too long to be parsed, current limit is {} characters",
                 size
             ),
-            NmeaError::InvalidGnssType => {
-                write!(f, "The type of a GSV sentence was not a valid Gnss type")
-            }
             NmeaError::Unsupported(sentence) => {
                 write!(f, "Unsupported NMEA sentence {:?}", sentence)
             }
             NmeaError::EmptyNavConfig => write!(
                 f,
                 "The provided navigation configuration was empty and thus invalid"
+            ),
+            NmeaError::InvalidGsvSentenceNum => write!(
+                f,
+                "Invalid senetence number field in nmea sentence of type GSV"
             ),
         }
     }
@@ -195,6 +197,7 @@ pub fn parse(xs: &[u8]) -> Result<ParseResult, NmeaError> {
             SentenceType::VTG => Ok(ParseResult::VTG(parse_vtg(nmea_sentence)?)),
             SentenceType::GLL => Ok(ParseResult::GLL(parse_gll(nmea_sentence)?)),
             SentenceType::TXT => Ok(ParseResult::TXT(parse_txt(nmea_sentence)?)),
+            SentenceType::GNS => Ok(ParseResult::GNS(parse_gns(nmea_sentence)?)),
             msg_id => Ok(ParseResult::Unsupported(msg_id)),
         }
     } else {

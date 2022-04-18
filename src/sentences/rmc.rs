@@ -22,7 +22,7 @@ pub enum RmcStatusOfFix {
 pub struct RmcData {
     pub fix_time: Option<NaiveTime>,
     pub fix_date: Option<NaiveDate>,
-    pub status_of_fix: Option<RmcStatusOfFix>,
+    pub status_of_fix: RmcStatusOfFix,
     pub lat: Option<f64>,
     pub lon: Option<f64>,
     pub speed_over_ground: Option<f32>,
@@ -33,6 +33,12 @@ fn do_parse_rmc(i: &[u8]) -> IResult<&[u8], RmcData> {
     let (i, fix_time) = opt(parse_hms)(i)?;
     let (i, _) = char(',')(i)?;
     let (i, status_of_fix) = one_of("ADV")(i)?;
+    let status_of_fix = match status_of_fix {
+        'A' => RmcStatusOfFix::Autonomous,
+        'D' => RmcStatusOfFix::Differential,
+        'V' => RmcStatusOfFix::Invalid,
+        _ => unreachable!(),
+    };
     let (i, _) = char(',')(i)?;
     let (i, lat_lon) = parse_lat_lon(i)?;
     let (i, _) = char(',')(i)?;
@@ -47,12 +53,7 @@ fn do_parse_rmc(i: &[u8]) -> IResult<&[u8], RmcData> {
         RmcData {
             fix_time,
             fix_date,
-            status_of_fix: Some(match status_of_fix {
-                'A' => RmcStatusOfFix::Autonomous,
-                'D' => RmcStatusOfFix::Differential,
-                'V' => RmcStatusOfFix::Invalid,
-                _ => unreachable!(),
-            }),
+            status_of_fix,
             lat: lat_lon.map(|v| v.0),
             lon: lat_lon.map(|v| v.1),
             speed_over_ground,
@@ -133,7 +134,7 @@ mod tests {
             RmcData {
                 fix_time: None,
                 fix_date: None,
-                status_of_fix: Some(RmcStatusOfFix::Invalid),
+                status_of_fix: RmcStatusOfFix::Invalid,
                 lat: None,
                 lon: None,
                 speed_over_ground: None,
