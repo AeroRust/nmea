@@ -116,8 +116,6 @@ pub enum NmeaError<'a> {
     ParsingError(nom::Err<nom::error::Error<&'a [u8]>>),
     /// The sentence was too long to be parsed, our current limit is `SENTENCE_MAX_LEN` characters
     SentenceLength(usize),
-    /// The type of a GSV sentence was not a valid Gnss type
-    InvalidGnssType,
     /// The sentence has and maybe will never be implemented
     Unsupported(SentenceType),
     /// The provided navigation configuration was empty and thus invalid
@@ -154,9 +152,6 @@ impl<'a> fmt::Display for NmeaError<'a> {
                 "The sentence was too long to be parsed, current limit is {} characters",
                 size
             ),
-            NmeaError::InvalidGnssType => {
-                write!(f, "The type of a GSV sentence was not a valid Gnss type")
-            }
             NmeaError::Unsupported(sentence) => {
                 write!(f, "Unsupported NMEA sentence {:?}", sentence)
             }

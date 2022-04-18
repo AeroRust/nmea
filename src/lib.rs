@@ -29,10 +29,7 @@ pub use crate::parse::{
 };
 use chrono::{NaiveDate, NaiveTime};
 use core::{fmt, mem, ops::BitOr};
-use std::{
-    collections::{HashMap, VecDeque},
-    convert::TryInto,
-};
+use std::{collections::VecDeque, convert::TryInto};
 
 /// NMEA parser
 /// This struct parses NMEA sentences, including checksum checks and sentence
@@ -48,7 +45,7 @@ use std::{
 /// nmea.parse(gga).unwrap();
 /// println!("{}", nmea);
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Nmea {
     pub fix_time: Option<NaiveTime>,
     pub fix_date: Option<NaiveDate>,
@@ -66,7 +63,7 @@ pub struct Nmea {
     /// Geoid separation in meters
     pub geoid_separation: Option<f32>,
     pub fix_satellites_prns: Option<Vec<u32>>,
-    satellites_scan: HashMap<GnssType, SatsPack>,
+    satellites_scan: [SatsPack; GnssType::COUNT],
     required_sentences_for_nav: SentenceMask,
     last_fix_time: Option<NaiveTime>,
     last_txt: Option<TxtData>,
@@ -77,41 +74,6 @@ pub struct Nmea {
 struct SatsPack {
     data: VecDeque<[Option<Satellite>; 4]>,
     max_len: usize,
-}
-
-impl<'a> Default for Nmea {
-    fn default() -> Self {
-        let mut n = Self {
-            fix_time: None,
-            fix_date: None,
-            fix_type: None,
-            latitude: None,
-            longitude: None,
-            altitude: None,
-            speed_over_ground: None,
-            true_course: None,
-            num_of_fix_satellites: None,
-            hdop: None,
-            vdop: None,
-            pdop: None,
-            geoid_separation: None,
-            fix_satellites_prns: None,
-            satellites_scan: HashMap::with_capacity(4),
-            required_sentences_for_nav: SentenceMask::default(),
-            last_fix_time: None,
-            last_txt: None,
-            sentences_for_this_time: SentenceMask::default(),
-        };
-        for gnss_type in [
-            GnssType::Galileo,
-            GnssType::Gps,
-            GnssType::Glonass,
-            GnssType::Beidou,
-        ] {
-            n.satellites_scan.insert(gnss_type, Default::default());
-        }
-        n
-    }
 }
 
 impl<'a> Nmea {
@@ -188,7 +150,7 @@ impl<'a> Nmea {
     pub fn satellites(&self) -> Vec<Satellite> {
         let mut ret = Vec::with_capacity(20);
         let sat_key = |sat: &Satellite| (sat.gnss_type() as u8, sat.prn());
-        for sns in self.satellites_scan.values() {
+        for sns in &self.satellites_scan {
             for sat_pack in sns.data.iter().rev() {
                 for sat in sat_pack {
                     if let Some(sat) = sat {
@@ -216,10 +178,7 @@ impl<'a> Nmea {
 
     fn merge_gsv_data(&mut self, data: GsvData) -> Result<(), NmeaError<'a>> {
         {
-            let d = self
-                .satellites_scan
-                .get_mut(&data.gnss_type)
-                .ok_or(NmeaError::InvalidGnssType)?;
+            let d = &mut self.satellites_scan[data.gnss_type as usize];
             let full_pack_size: usize = data
                 .sentence_num
                 .try_into()
@@ -770,15 +729,38 @@ impl FixType {
     }
 }
 
-/// GNSS type
-#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
-#[repr(u8)]
-pub enum GnssType {
-    Beidou,
-    Galileo,
-    Gps,
-    Glonass,
+macro_rules! count_tts {
+    () => {0usize};
+    ($_head:tt , $($tail:tt)*) => {1usize + count_tts!($($tail)*)};
+    ($item:tt) => {1usize};
 }
+
+macro_rules! define_enum_with_count {
+    (
+        $(#[$outer:meta])*
+        enum $Name:ident { $($Variant:ident),* $(,)* }
+    ) => {
+        $(#[$outer])*
+        #[derive(PartialEq, Debug, Hash, Eq, Clone, Copy)]
+        #[repr(u8)]
+        pub enum $Name {
+            $($Variant),*
+        }
+        impl $Name {
+            const COUNT: usize = count_tts!($($Variant),*);
+        }
+    };
+}
+
+define_enum_with_count!(
+    /// GNSS type
+    enum GnssType {
+        Beidou,
+        Galileo,
+        Gps,
+        Glonass,
+    }
+);
 
 impl fmt::Display for GnssType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
