@@ -28,8 +28,11 @@ pub use crate::parse::{
     RmcStatusOfFix, TxtData, VtgData, SENTENCE_MAX_LEN,
 };
 use chrono::{NaiveDate, NaiveTime};
-use core::{fmt, iter::Iterator, mem, ops::BitOr};
-use std::collections::HashMap;
+use core::{fmt, mem, ops::BitOr};
+use std::{
+    collections::{HashMap, VecDeque},
+    convert::TryInto,
+};
 
 /// NMEA parser
 /// This struct parses NMEA sentences, including checksum checks and sentence
@@ -62,13 +65,18 @@ pub struct Nmea {
     pub pdop: Option<f32>,
     /// Geoid separation in meters
     pub geoid_separation: Option<f32>,
-    pub satellites: Vec<Satellite>,
     pub fix_satellites_prns: Option<Vec<u32>>,
-    satellites_scan: HashMap<GnssType, Vec<Vec<Satellite>>>,
+    satellites_scan: HashMap<GnssType, SatsPack>,
     required_sentences_for_nav: SentenceMask,
     last_fix_time: Option<NaiveTime>,
     last_txt: Option<TxtData>,
     sentences_for_this_time: SentenceMask,
+}
+
+#[derive(Debug, Clone, Default)]
+struct SatsPack {
+    data: VecDeque<[Option<Satellite>; 4]>,
+    max_len: usize,
 }
 
 impl<'a> Default for Nmea {
@@ -87,7 +95,6 @@ impl<'a> Default for Nmea {
             vdop: None,
             pdop: None,
             geoid_separation: None,
-            satellites: Vec::new(),
             fix_satellites_prns: None,
             satellites_scan: HashMap::with_capacity(4),
             required_sentences_for_nav: SentenceMask::default(),
@@ -101,7 +108,7 @@ impl<'a> Default for Nmea {
             GnssType::Glonass,
             GnssType::Beidou,
         ] {
-            n.satellites_scan.insert(gnss_type, vec![]);
+            n.satellites_scan.insert(gnss_type, Default::default());
         }
         n
     }
@@ -177,9 +184,23 @@ impl<'a> Nmea {
         }
     }
 
-    /// Returns the height of geoid above WGS84
+    /// Returns used sattelites
     pub fn satellites(&self) -> Vec<Satellite> {
-        self.satellites.clone()
+        let mut ret = Vec::with_capacity(20);
+        let sat_key = |sat: &Satellite| (sat.gnss_type() as u8, sat.prn());
+        for sns in self.satellites_scan.values() {
+            for sat_pack in sns.data.iter().rev() {
+                for sat in sat_pack {
+                    if let Some(sat) = sat {
+                        match ret.binary_search_by_key(&sat_key(sat), sat_key) {
+                            Ok(_pos) => {} //already setted
+                            Err(pos) => ret.insert(pos, sat.clone()),
+                        }
+                    }
+                }
+            }
+        }
+        ret
     }
 
     fn merge_gga_data(&mut self, gga_data: GgaData) {
@@ -199,24 +220,15 @@ impl<'a> Nmea {
                 .satellites_scan
                 .get_mut(&data.gnss_type)
                 .ok_or(NmeaError::InvalidGnssType)?;
-            // Adjust size to this scan
-            d.resize(data.number_of_sentences as usize, vec![]);
-            // Replace data at index with new scan data
-            d.push(
-                data.sats_info
-                    .iter()
-                    .filter(|v| v.is_some())
-                    .map(|v| v.clone().unwrap())
-                    .collect(),
-            );
-            d.swap_remove(data.sentence_num as usize - 1);
-        }
-        self.satellites.clear();
-        for v in self.satellites_scan.values() {
-            for v1 in v {
-                for v2 in v1 {
-                    self.satellites.push(v2.clone());
-                }
+            let full_pack_size: usize = data
+                .sentence_num
+                .try_into()
+                .map_err(|_| NmeaError::InvalidGsvSentenceNum)?;
+            d.max_len = full_pack_size.max(d.max_len);
+
+            d.data.push_back(data.sats_info);
+            if d.data.len() > d.max_len {
+                d.data.pop_front();
             }
         }
 
@@ -322,7 +334,6 @@ impl<'a> Nmea {
     fn new_tick(&mut self) {
         let old = mem::take(self);
         self.satellites_scan = old.satellites_scan;
-        self.satellites = old.satellites;
         self.required_sentences_for_nav = old.required_sentences_for_nav;
         self.last_fix_time = old.last_fix_time;
     }
@@ -476,22 +487,23 @@ pub struct Satellite {
 }
 
 impl Satellite {
+    #[inline]
     pub fn gnss_type(&self) -> GnssType {
         self.gnss_type
     }
-
+    #[inline]
     pub fn prn(&self) -> u32 {
         self.prn
     }
-
+    #[inline]
     pub fn elevation(&self) -> Option<f32> {
         self.elevation
     }
-
+    #[inline]
     pub fn azimuth(&self) -> Option<f32> {
         self.azimuth
     }
-
+    #[inline]
     pub fn snr(&self) -> Option<f32> {
         self.snr
     }
@@ -760,6 +772,7 @@ impl FixType {
 
 /// GNSS type
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
+#[repr(u8)]
 pub enum GnssType {
     Beidou,
     Galileo,

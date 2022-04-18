@@ -122,6 +122,8 @@ pub enum NmeaError<'a> {
     Unsupported(SentenceType),
     /// The provided navigation configuration was empty and thus invalid
     EmptyNavConfig,
+    /// invalid senetence number field in nmea sentence of type GSV
+    InvalidGsvSentenceNum,
 }
 
 impl<'a> From<nom::Err<nom::error::Error<&'a [u8]>>> for NmeaError<'a> {
@@ -161,6 +163,10 @@ impl<'a> fmt::Display for NmeaError<'a> {
             NmeaError::EmptyNavConfig => write!(
                 f,
                 "The provided navigation configuration was empty and thus invalid"
+            ),
+            NmeaError::InvalidGsvSentenceNum => write!(
+                f,
+                "Invalid senetence number field in nmea sentence of type GSV"
             ),
         }
     }
