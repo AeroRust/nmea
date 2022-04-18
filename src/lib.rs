@@ -245,8 +245,8 @@ impl<'a> Nmea {
     }
 
     fn merge_gll_data(&mut self, gll: GllData) {
-        self.latitude = Some(gll.latitude);
-        self.longitude = Some(gll.longitude);
+        self.latitude = gll.latitude;
+        self.longitude = gll.longitude;
         self.fix_time = Some(gll.fix_time);
     }
 
