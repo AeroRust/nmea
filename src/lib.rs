@@ -24,8 +24,8 @@ mod parse;
 mod sentences;
 
 pub use crate::parse::{
-    parse, BwcData, GgaData, GllData, GsaData, GsvData, NmeaError, ParseResult, PosSystemIndicator,
-    RmcData, RmcStatusOfFix, TxtData, VtgData, SENTENCE_MAX_LEN,
+    parse, BwcData, GgaData, GllData, GsaData, GsvData, NmeaError, ParseResult, RmcData,
+    RmcStatusOfFix, TxtData, VtgData, SENTENCE_MAX_LEN,
 };
 use chrono::{NaiveDate, NaiveTime};
 use core::{fmt, iter::Iterator, mem, ops::BitOr};
@@ -263,6 +263,15 @@ impl<'a> Nmea {
         self.latitude = gll.latitude;
         self.longitude = gll.longitude;
         self.fix_time = Some(gll.fix_time);
+        if let Some(faa_mode) = gll.faa_mode {
+            self.fix_type = Some(faa_mode.into());
+        } else {
+            self.fix_type = Some(if gll.valid {
+                FixType::Gps
+            } else {
+                FixType::Invalid
+            });
+        }
     }
 
     fn merge_txt_data(&mut self, txt: TxtData) {
