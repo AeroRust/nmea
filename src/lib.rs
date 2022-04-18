@@ -226,7 +226,7 @@ impl<'a> Nmea {
     fn merge_rmc_data(&mut self, rmc_data: RmcData) {
         self.fix_time = rmc_data.fix_time;
         self.fix_date = rmc_data.fix_date;
-        self.fix_type = rmc_data.status_of_fix.map(|v| match v {
+        self.fix_type = Some(match rmc_data.status_of_fix {
             RmcStatusOfFix::Autonomous => FixType::Gps,
             RmcStatusOfFix::Differential => FixType::DGps,
             RmcStatusOfFix::Invalid => FixType::Invalid,
@@ -347,12 +347,9 @@ impl<'a> Nmea {
                 }
             }
             ParseResult::RMC(rmc_data) => {
-                match rmc_data.status_of_fix {
-                    Some(RmcStatusOfFix::Invalid) | None => {
-                        self.clear_position_info();
-                        return Ok(FixType::Invalid);
-                    }
-                    _ => { /*nothing*/ }
+                if rmc_data.status_of_fix == RmcStatusOfFix::Invalid {
+                    self.clear_position_info();
+                    return Ok(FixType::Invalid);
                 }
                 match (self.last_fix_time, rmc_data.fix_time) {
                     (Some(ref last_fix_time), Some(ref rmc_fix_time)) => {
