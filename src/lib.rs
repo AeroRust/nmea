@@ -360,18 +360,8 @@ impl<'a> Nmea {
                     self.clear_position_info();
                     return Ok(FixType::Invalid);
                 }
-                match (self.last_fix_time, rmc_data.fix_time) {
-                    (Some(ref last_fix_time), Some(ref rmc_fix_time)) => {
-                        if *last_fix_time != *rmc_fix_time {
-                            self.new_tick();
-                            self.last_fix_time = Some(*rmc_fix_time);
-                        }
-                    }
-                    (None, Some(ref rmc_fix_time)) => self.last_fix_time = Some(*rmc_fix_time),
-                    (Some(_), None) | (None, None) => {
-                        self.clear_position_info();
-                        return Ok(FixType::Invalid);
-                    }
+                if !self.update_fix_time(rmc_data.fix_time) {
+                    return Ok(FixType::Invalid);
                 }
                 self.merge_rmc_data(rmc_data);
                 self.sentences_for_this_time.insert(SentenceType::RMC);
@@ -382,18 +372,8 @@ impl<'a> Nmea {
                     self.clear_position_info();
                     return Ok(FixType::Invalid);
                 }
-                match (self.last_fix_time, gns_data.fix_time) {
-                    (Some(ref last_fix_time), Some(ref gns_fix_time)) => {
-                        if *last_fix_time != *gns_fix_time {
-                            self.new_tick();
-                            self.last_fix_time = Some(*gns_fix_time);
-                        }
-                    }
-                    (None, Some(ref gns_fix_time)) => self.last_fix_time = Some(*gns_fix_time),
-                    (Some(_), None) | (None, None) => {
-                        self.clear_position_info();
-                        return Ok(FixType::Invalid);
-                    }
+                if !self.update_fix_time(gns_data.fix_time) {
+                    return Ok(FixType::Invalid);
                 }
                 self.merge_gns_data(gns_data);
                 self.sentences_for_this_time.insert(SentenceType::GNS);
@@ -406,23 +386,16 @@ impl<'a> Nmea {
                     }
                     _ => { /*nothing*/ }
                 }
-                match (self.last_fix_time, gga_data.fix_time) {
-                    (Some(ref last_fix_time), Some(ref gga_fix_time)) => {
-                        if last_fix_time != gga_fix_time {
-                            self.new_tick();
-                            self.last_fix_time = Some(*gga_fix_time);
-                        }
-                    }
-                    (None, Some(ref gga_fix_time)) => self.last_fix_time = Some(*gga_fix_time),
-                    (Some(_), None) | (None, None) => {
-                        self.clear_position_info();
-                        return Ok(FixType::Invalid);
-                    }
+                if !self.update_fix_time(gga_data.fix_time) {
+                    return Ok(FixType::Invalid);
                 }
                 self.merge_gga_data(gga_data);
                 self.sentences_for_this_time.insert(SentenceType::GGA);
             }
             ParseResult::GLL(gll_data) => {
+                if !self.update_fix_time(Some(gll_data.fix_time)) {
+                    return Ok(FixType::Invalid);
+                }
                 self.merge_gll_data(gll_data);
                 return Ok(FixType::Invalid);
             }
@@ -450,6 +423,23 @@ impl<'a> Nmea {
 
     pub fn last_txt(&self) -> Option<&TxtData> {
         self.last_txt.as_ref()
+    }
+
+    fn update_fix_time(&mut self, fix_time: Option<NaiveTime>) -> bool {
+        match (self.last_fix_time, fix_time) {
+            (Some(ref last_fix_time), Some(ref new_fix_time)) => {
+                if *last_fix_time != *new_fix_time {
+                    self.new_tick();
+                    self.last_fix_time = Some(*new_fix_time);
+                }
+            }
+            (None, Some(ref new_fix_time)) => self.last_fix_time = Some(*new_fix_time),
+            (Some(_), None) | (None, None) => {
+                self.clear_position_info();
+                return false;
+            }
+        }
+        true
     }
 }
 
