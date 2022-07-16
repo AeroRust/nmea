@@ -2,10 +2,16 @@ use nom::branch::alt;
 use nom::bytes::complete::take_while1;
 use nom::character::complete::{char, one_of};
 use nom::combinator::{all_consuming, opt, value};
-use nom::multi::many0;
+// use nom::multi::many0;
 use nom::number::complete::float;
 use nom::sequence::terminated;
 use nom::IResult;
+use nom::Err;
+use nom::Parser;
+use nom::error::ParseError;
+use nom::InputLength;
+use nom::error::ErrorKind;
+use heapless::Vec;
 
 use crate::parse::NmeaSentence;
 use crate::{sentences::utils::number, NmeaError};
@@ -27,17 +33,46 @@ pub enum GsaMode2 {
 pub struct GsaData {
     pub mode1: GsaMode1,
     pub mode2: GsaMode2,
-    pub fix_sats_prn: Vec<u32>,
+    pub fix_sats_prn: Vec<u32,12>,
     pub pdop: Option<f32>,
     pub hdop: Option<f32>,
     pub vdop: Option<f32>,
 }
 
-fn gsa_prn_fields_parse(i: &[u8]) -> IResult<&[u8], Vec<Option<u32>>> {
+fn many0<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O,12>, E>
+where
+  I: Clone + InputLength,
+  F: Parser<I, O, E>,
+  E: ParseError<I>,
+  O: core::fmt::Debug,
+{
+  move |mut i: I| {
+    // let mut acc = crate::lib::std::vec::Vec::with_capacity(4);
+    let mut acc = Vec::<_,12>::new();
+    loop {
+      let len = i.input_len();
+      match f.parse(i.clone()) {
+        Err(Err::Error(_)) => return Ok((i, acc)),
+        Err(e) => return Err(e),
+        Ok((i1, o)) => {
+          // infinite loop check: the parser must always consume
+          if i1.input_len() == len {
+            return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many0)));
+          }
+
+          i = i1;
+          acc.push(o).unwrap();
+        }
+      }
+    }
+  }
+}
+
+fn gsa_prn_fields_parse(i: &[u8]) -> IResult<&[u8], Vec<Option<u32>,12>> {
     many0(terminated(opt(number::<u32>), char(',')))(i)
 }
 
-type GsaTail = (Vec<Option<u32>>, Option<f32>, Option<f32>, Option<f32>);
+type GsaTail = (Vec<Option<u32>,12>, Option<f32>, Option<f32>, Option<f32>);
 
 fn do_parse_gsa_tail(i: &[u8]) -> IResult<&[u8], GsaTail> {
     let (i, prns) = gsa_prn_fields_parse(i)?;
@@ -65,7 +100,7 @@ fn do_parse_gsa(i: &[u8]) -> IResult<&[u8], GsaData> {
     let (i, _) = char(',')(i)?;
     let (i, mode2) = one_of("123")(i)?;
     let (i, _) = char(',')(i)?;
-    let (i, mut tail) = alt((do_parse_empty_gsa_tail, do_parse_gsa_tail))(i)?;
+    let (i, tail) = alt((do_parse_empty_gsa_tail, do_parse_gsa_tail))(i)?;
     Ok((
         i,
         GsaData {
@@ -80,7 +115,16 @@ fn do_parse_gsa(i: &[u8]) -> IResult<&[u8], GsaData> {
                 '3' => GsaMode2::Fix3D,
                 _ => unreachable!(),
             },
-            fix_sats_prn: tail.0.drain(..).flatten().collect(),
+            fix_sats_prn: {
+                let mut fix_sats_prn = Vec::<u32,12>::new();
+                for sat in tail.0.iter() {
+                    match sat {
+                        Some(s) => fix_sats_prn.push(*s).unwrap(),
+                        None => break,
+                    };
+                }
+                fix_sats_prn
+            },
             pdop: tail.1,
             hdop: tail.2,
             vdop: tail.3,
