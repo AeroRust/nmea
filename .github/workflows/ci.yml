@@ -27,7 +27,7 @@ jobs:
       CARGO_NET_RETRY: 10
     steps:
 
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
 
       # We need to disable the existing toolchain to avoid updating rust-docs
       # which takes a long time. The fastest way to do this is to rename the
@@ -66,7 +66,7 @@ jobs:
     name: Docs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -84,7 +84,7 @@ jobs:
     name: Generate code coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
