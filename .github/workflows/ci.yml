@@ -12,6 +12,37 @@ on:
 env:
   RUST_BACKTRACE: 1
 jobs:
+  lints:
+    name: Rustfmt & Clippy lints
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    env:
+      RUSTUP_MAX_RETRIES: 10
+      CARGO_NET_RETRY: 10
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Rust nightly toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: default
+          override: true
+          components: rustfmt, clippy
+
+      - name: Rust format
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --check
+
+      - name: Clippy lints
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: -- -D warnings
   test:
     name: Test
 
@@ -26,7 +57,6 @@ jobs:
       RUSTUP_MAX_RETRIES: 10
       CARGO_NET_RETRY: 10
     steps:
-
       - uses: actions/checkout@v3
 
       # We need to disable the existing toolchain to avoid updating rust-docs
@@ -43,19 +73,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           profile: minimal
           override: true
-          components: rustfmt, rust-src, clippy
-
-      - name: Rust format
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --check
-
-      - name: Clippy lints
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
+          components: rust-src
 
       - name: Build
         uses: actions-rs/cargo@v1
