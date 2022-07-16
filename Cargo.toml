@@ -8,7 +8,7 @@ authors = [
 ]
 description = "Simple NMEA 0183 parser"
 license = "Apache-2.0"
-keywords = ["NMEA", "gps", "glonass", "coordinate", "position"]
+keywords = ["NMEA", "gps", "glonass", "coordinate", "position", "galileo", "gnss"]
 repository = "https://github.com/AeroRust/nmea"
 documentation = "https://docs.rs/nmea/"
 readme = "README.md"
@@ -26,6 +26,7 @@ arrayvec = { version = "0.7.2", default-features = false }
 [dev-dependencies]
 quickcheck = { version = "1.0.3", default-features = false }
 approx = "0.5.1"
+doc-comment = "0.3"
 
 [features]
 default = ["std"]

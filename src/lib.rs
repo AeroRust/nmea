@@ -38,6 +38,10 @@ pub use parse::{
     RmcStatusOfFix, TxtData, VtgData, SENTENCE_MAX_LEN,
 };
 
+#[cfg(doctest)]
+// Test the README examples
+doc_comment::doctest!("../README.md");
+
 /// NMEA parser
 ///
 /// This struct parses NMEA sentences, including checksum checks and sentence
@@ -48,7 +52,7 @@ pub use parse::{
 /// ```
 /// use nmea::Nmea;
 ///
-/// let mut nmea = Nmea::new();
+/// let mut nmea = Nmea::default();
 /// let gga = "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76";
 ///
 /// nmea.parse(gga).unwrap();
