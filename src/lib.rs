@@ -20,7 +20,7 @@
 // limitations under the License.
 //
 
-// #![no_std]
+#![cfg_attr(not(any(feature = "std", test)), no_std)]
 
 mod parse;
 mod sentences;
