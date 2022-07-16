@@ -28,7 +28,7 @@ pub struct GnsData {
     pub nav_status: Option<NavigationStatus>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum NavigationStatus {
     Safe,
     Caution,

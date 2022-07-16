@@ -854,7 +854,7 @@ define_sentence_type_enum!(
     }
 );
 
-#[derive(Copy, Clone, PartialEq, Debug, Default)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
 pub struct SentenceMask {
     mask: u128,
 }
@@ -892,7 +892,7 @@ impl BitOr<SentenceType> for SentenceMask {
 }
 
 /// Fix type
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum FixType {
     Invalid,
     Gps,
@@ -1034,12 +1034,9 @@ mod tests {
         use crate::parse::checksum;
         let valid = "$GNGSA,A,1,,,,,,,,,,,,,99.99,99.99,99.99*2E";
         let invalid = "$GNZDA,165118.00,13,05,2016,00,00*71";
-        assert_eq!(
-            checksum((&valid[1..valid.len() - 3]).as_bytes().iter()),
-            0x2E
-        );
+        assert_eq!(checksum(valid[1..valid.len() - 3].as_bytes().iter()), 0x2E);
         assert_ne!(
-            checksum((&invalid[1..invalid.len() - 3]).as_bytes().iter()),
+            checksum(invalid[1..invalid.len() - 3].as_bytes().iter()),
             0x71
         );
     }
