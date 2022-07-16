@@ -20,6 +20,10 @@
 // limitations under the License.
 //
 
+
+// nom::multi::many0
+extern crate alloc;
+
 mod parse;
 mod sentences;
 
