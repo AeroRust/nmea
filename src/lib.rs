@@ -1,10 +1,5 @@
 //! NMEA 0183 parser
 //!
-//! [![Version](https://img.shields.io/crates/v/nmea.svg)](https://crates.io/crates/nmea)
-//! [![Build Status](https://github.com/AeroRust/nmea/workflows/CI/badge.svg)](https://github.com/AeroRust/nmea/actions?query=workflow%3ACI+branch%3Amaster)
-//! [![codecov](https://codecov.io/gh/AeroRust/nmea/branch/master/graph/badge.svg)](https://codecov.io/gh/AeroRust/nmea)
-//! [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/AeroRust/nmea/blob/master/LICENSE.txt)
-//!
 //! Use [`Nmea::parse()`](Nmea::parse) and [`Nmea::parse_for_fix()`](Nmea::parse_for_fix)
 //! to preserve state between receiving new NMEA sentence,
 //! and [`parse()`] to parse sentences without state
