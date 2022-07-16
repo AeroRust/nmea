@@ -530,8 +530,8 @@ macro_rules! define_sentence_type_enum {
                 }
             }
 
-            fn to_mask_value(&self) -> u128 {
-                1 << *self as u32
+            fn to_mask_value(self) -> u128 {
+                1 << self as u32
             }
         }
     }
