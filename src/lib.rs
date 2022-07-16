@@ -32,7 +32,7 @@ pub use crate::parse::{
 use chrono::{NaiveDate, NaiveTime};
 use core::{fmt, mem, ops::BitOr};
 use core::convert::TryInto;
-use heapless::Vec;
+use heapless::{Vec, Deque};
 
 /// NMEA parser
 /// This struct parses NMEA sentences, including checksum checks and sentence
@@ -80,8 +80,9 @@ struct SatsPack {
     // GLONASS: 12
     // BeiDou: 12 + 3 IGSO + 3 GEO
     // Galileo: 12
+    // Maximum satellites = 16 + 12 + 3 + 3 + 12 = 46
     // This number will never be reached, so Vec can be resized?
-    data: Vec<Option<Satellite>,18>,
+    data: Deque<Vec<Option<Satellite>, 4>, 18>,
     max_len: usize,
 }
 
@@ -155,16 +156,17 @@ impl<'a> Nmea {
         }
     }
 
-    /// Returns used sattelites
-    pub fn satellites(&self) -> Vec<Satellite,18> {
-        let mut ret = Vec::<Satellite, 18>::new();
+    /// Returns used satellites
+    pub fn satellites(&self) -> Vec<Satellite, 46> {
+        let mut ret = Vec::<Satellite, 46>::new();
         let sat_key = |sat: &Satellite| (sat.gnss_type() as u8, sat.prn());
         for sns in &self.satellites_scan {
             // for sat_pack in sns.data.iter().rev() {
-            for sat_pack in sns.data.iter() {
+            for sat_pack in sns.data.iter().flatten() {
                 for sat in sat_pack.iter() {
                     match ret.binary_search_by_key(&sat_key(sat), sat_key) {
-                        Ok(_pos) => {}, //already setted
+                        //already set
+                        Ok(_pos) => {},
                         Err(pos) => {ret.insert(pos, sat.clone()).unwrap()},
                     }
                 }
@@ -192,14 +194,10 @@ impl<'a> Nmea {
                 .try_into()
                 .map_err(|_| NmeaError::InvalidGsvSentenceNum)?;
             d.max_len = full_pack_size.max(d.max_len);
-            // d.data.resize_default(d.max_len);
-            for i in 0..d.max_len {
-                d.data.push(data.sats_info[i].clone()).unwrap();
+            d.data.push_back(data.sats_info).expect("Should not get the more than expected number of satellites");
+            if d.data.len() > d.max_len {
+                d.data.pop_front();
             }
-            // d.data.push_back(data.sats_info);
-            // if d.data.len() > d.max_len {
-            //     d.data.pop_front();
-            // }
         }
 
         Ok(())

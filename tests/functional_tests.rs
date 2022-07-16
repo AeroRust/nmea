@@ -2,6 +2,7 @@ mod file_log_parser;
 
 use approx::assert_relative_eq;
 use chrono::NaiveTime;
+use heapless::Vec;
 use nmea::*;
 
 #[test]
@@ -89,17 +90,17 @@ fn test_gsv() {
     //                        10           07           05           08
     nmea.parse("$GPGSV,3,1,11,10,63,137,17,07,61,098,15,05,59,290,20,08,54,157,30*70")
         .unwrap();
-    assert_eq!(
+    pretty_assertions::assert_eq!(
         "{Gps 5 Some(59.0) Some(290.0) Some(20.0)}, \
          {Gps 7 Some(61.0) Some(98.0) Some(15.0)}, \
                     {Gps 8 Some(54.0) Some(157.0) Some(30.0)}, \
                     {Gps 10 Some(63.0) Some(137.0) Some(17.0)}",
-        dump_sattelites(nmea.satellites())
+        dump_satellites(nmea.satellites())
     );
     //                        02           13           26         04
     nmea.parse("$GPGSV,3,2,11,02,39,223,19,13,28,070,17,26,23,252,,04,14,186,14*79")
         .unwrap();
-    assert_eq!(
+    pretty_assertions:: assert_eq!(
         "{Gps 2 Some(39.0) Some(223.0) Some(19.0)}, \
 {Gps 4 Some(14.0) Some(186.0) Some(14.0)}, \
 {Gps 5 Some(59.0) Some(290.0) Some(20.0)}, \
@@ -108,7 +109,7 @@ fn test_gsv() {
 {Gps 10 Some(63.0) Some(137.0) Some(17.0)}, \
 {Gps 13 Some(28.0) Some(70.0) Some(17.0)}, \
 {Gps 26 Some(23.0) Some(252.0) None}",
-        dump_sattelites(nmea.satellites())
+        dump_satellites(nmea.satellites())
     );
     //                        29           16         36
     nmea.parse("$GPGSV,3,3,11,29,09,301,24,16,09,020,,36,,,*76")
@@ -125,7 +126,7 @@ fn test_gsv() {
 {Gps 26 Some(23.0) Some(252.0) None}, \
 {Gps 29 Some(9.0) Some(301.0) Some(24.0)}, \
 {Gps 36 None None None}",
-        dump_sattelites(nmea.satellites())
+        dump_satellites(nmea.satellites())
     );
 }
 
@@ -143,9 +144,9 @@ fn test_gsv_real_data() {
         "$GPGSV,4,4,15,26,02,112,,31,45,071,,32,01,066,*4C",
     ];
     for line in &real_data {
-        assert_eq!(nmea.parse(line).unwrap(), SentenceType::GSV);
+        pretty_assertions::assert_eq!(nmea.parse(line).unwrap(), SentenceType::GSV);
     }
-    assert_eq!(
+    pretty_assertions::assert_eq!(
         "{Gps 1 Some(49.0) Some(196.0) Some(41.0)}, \
          {Gps 3 Some(71.0) Some(278.0) Some(32.0)}, \
          {Gps 6 Some(2.0) Some(323.0) Some(27.0)}, \
@@ -169,7 +170,7 @@ fn test_gsv_real_data() {
          {Glonass 82 Some(10.0) Some(347.0) Some(36.0)}, \
          {Glonass 87 Some(0.0) Some(0.0) None}, \
          {Glonass 88 Some(32.0) Some(233.0) Some(33.0)}",
-        dump_sattelites(nmea.satellites())
+        dump_satellites(nmea.satellites())
     );
 }
 
@@ -197,7 +198,7 @@ fn test_gsv_order() {
          {Gps 26 Some(23.0) Some(252.0) None}, \
          {Gps 29 Some(9.0) Some(301.0) Some(24.0)}, \
          {Gps 36 None None None}",
-        dump_sattelites(nmea.satellites())
+        dump_satellites(nmea.satellites())
     );
 }
 
@@ -218,7 +219,7 @@ fn test_gsv_two_of_three() {
          {Gps 26 Some(23.0) Some(252.0) None}, \
          {Gps 29 Some(9.0) Some(301.0) Some(24.0)}, \
          {Gps 36 None None None}",
-        dump_sattelites(nmea.satellites())
+        dump_satellites(nmea.satellites())
     );
 }
 
@@ -254,7 +255,7 @@ fn test_parse() {
          {Gps 26 Some(23.0) Some(252.0) None}, \
          {Gps 29 Some(9.0) Some(301.0) Some(24.0)}, \
          {Gps 36 None None None}",
-        dump_sattelites(nmea.satellites())
+        dump_satellites(nmea.satellites())
     );
 }
 
@@ -450,26 +451,23 @@ fn test_gll() {
 }
 
 // ensure right order before dump to string
-fn dump_sattelites(mut sats: Vec<Satellite>) -> String {
-    use std::fmt::Write;
-
+fn dump_satellites(mut sats: Vec<Satellite, 46>) -> String {
     sats.sort_by_key(|s| (s.gnss_type() as u8, s.prn()));
-    // to not depend on Debug impl for `Sattelite` stability
-    let mut ret = String::new();
-    for s in &sats {
-        if !ret.is_empty() {
-            ret.push_str(", ");
-        }
-        write!(
-            ret,
-            "{{{gnss_type:?} {prn} {elevation:?} {azimuth:?} {snr:?}}}",
-            gnss_type = s.gnss_type(),
-            prn = s.prn(),
-            elevation = s.elevation(),
-            azimuth = s.azimuth(),
-            snr = s.snr(),
-        )
-        .unwrap();
-    }
-    ret
+    // to not depend on Debug impl for `Satellite` stability
+
+    let satellites_strings = sats
+        .iter()
+        .map(|s| {
+            format!(
+                "{{{gnss_type:?} {prn} {elevation:?} {azimuth:?} {snr:?}}}",
+                gnss_type = s.gnss_type(),
+                prn = s.prn(),
+                elevation = s.elevation(),
+                azimuth = s.azimuth(),
+                snr = s.snr(),
+            )
+        })
+        .collect::<std::vec::Vec<String>>();
+
+    satellites_strings.join(", ")
 }
