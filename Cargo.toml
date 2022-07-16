@@ -4,8 +4,7 @@ version = "0.2.0"
 authors = [
     "Felix Obenhuber <felix@obenhuber.de>",
     "Evgeniy A. Dushistov <dushistov@mail.ru>",
-    "Henrik Böving <hargonix@gmail.com>",
-    "Patrick Oppel <patrick.oppel94@gmail.com>"
+    "Henrik Böving <hargonix@gmail.com>"
 ]
 description = "Simple NMEA 0183 parser"
 license = "Apache-2.0"
