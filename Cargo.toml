@@ -23,6 +23,7 @@ heapless = "0.7.15"
 [dev-dependencies]
 quickcheck = { version = "1.0.3", default-features = false }
 approx = "0.5.1"
+pretty_assertions = "1"
 
 [features]
 default = ["std"]

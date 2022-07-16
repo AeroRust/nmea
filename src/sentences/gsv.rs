@@ -14,7 +14,7 @@ pub struct GsvData {
     pub sentence_num: u16,
     pub _sats_in_view: u16,
     // see SatPack in lib.rs
-    pub sats_info: Vec<Option<Satellite>,4>,
+    pub sats_info: Vec<Option<Satellite>, 4>,
 }
 
 fn parse_gsv_sat_info(i: &[u8]) -> IResult<&[u8], Satellite> {
@@ -45,11 +45,17 @@ fn do_parse_gsv(i: &[u8]) -> IResult<&[u8], GsvData> {
     let (i, _) = char(',')(i)?;
     let (i, _sats_in_view) = number::<u16>(i)?;
     let (i, _) = char(',')(i)?;
-    let mut sats = Vec::<Option<Satellite>,4>::new();
-    for iter in 0..sats.len() {
-        let (_i, sat) = opt(parse_gsv_sat_info)(i)?;
-        sats.insert(iter,sat).unwrap();
-    }
+    let sats = Vec::<Option<Satellite>, 4>::new();
+
+    // We loop through the indices and parse the satellite data
+    let (i, sats) = (0..4).try_fold((i, sats), |(i, mut sats), sat_index| {
+        let (i, sat) = opt(parse_gsv_sat_info)(i)?;
+
+        sats.insert(sat_index, sat).unwrap();
+
+        Ok((i, sats))
+    })?;
+    
     Ok((
         i,
         GsvData {

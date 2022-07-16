@@ -7,7 +7,7 @@ use std::{
 
 use nmea::{parse, Nmea};
 
-use crate::dump_sattelites;
+use crate::dump_satellites;
 
 #[test]
 fn test_parse_file_log() {
@@ -180,8 +180,8 @@ fn test_parse_all_logs() {
             }
             _ => panic!("You need to add sat state for new log here"),
         };
-        assert_eq!(sat_state, dump_sattelites(nmea1.satellites()));
-        assert_eq!(sat_state, dump_sattelites(nmea2.satellites()));
+        assert_eq!(sat_state, dump_satellites(nmea1.satellites()));
+        assert_eq!(sat_state, dump_satellites(nmea2.satellites()));
     }
 }
 

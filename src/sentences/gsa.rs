@@ -100,7 +100,7 @@ fn do_parse_gsa(i: &[u8]) -> IResult<&[u8], GsaData> {
     let (i, _) = char(',')(i)?;
     let (i, mode2) = one_of("123")(i)?;
     let (i, _) = char(',')(i)?;
-    let (i, tail) = alt((do_parse_empty_gsa_tail, do_parse_gsa_tail))(i)?;
+    let (i, mut tail) = alt((do_parse_empty_gsa_tail, do_parse_gsa_tail))(i)?;
     Ok((
         i,
         GsaData {
@@ -116,13 +116,15 @@ fn do_parse_gsa(i: &[u8]) -> IResult<&[u8], GsaData> {
                 _ => unreachable!(),
             },
             fix_sats_prn: {
-                let mut fix_sats_prn = Vec::<u32,12>::new();
+                let mut fix_sats_prn = Vec::<u32, 12>::new();
                 for sat in tail.0.iter() {
-                    match sat {
-                        Some(s) => fix_sats_prn.push(*s).unwrap(),
-                        None => break,
-                    };
+                    if let Some(sat) = sat {
+                        fix_sats_prn.push(*sat).unwrap()
+                    }
                 }
+                // now that we don't have `drain()` from `std::Vec`,
+                // we clear the `heapless::Vec`'s tail manually
+                tail.0.clear();
                 fix_sats_prn
             },
             pdop: tail.1,
@@ -192,12 +194,13 @@ mod tests {
     #[test]
     fn test_gsa_prn_fields_parse() {
         let (_, ret) = gsa_prn_fields_parse(b"5,").unwrap();
-        assert_eq!(vec![Some(5)], ret);
+        assert_eq!(vec![Some(5_u32)].into_iter().collect::<Vec<Option<u32>, 12>>(), ret);
+
         let (_, ret) = gsa_prn_fields_parse(b",").unwrap();
-        assert_eq!(vec![None], ret);
+        assert_eq!(vec![None].into_iter().collect::<Vec<Option<u32>, 12>>(), ret);
 
         let (_, ret) = gsa_prn_fields_parse(b",,5,6,").unwrap();
-        assert_eq!(vec![None, None, Some(5), Some(6)], ret);
+        assert_eq!(vec![None, None, Some(5_u32), Some(6_u32)].into_iter().collect::<Vec<Option<u32>, 12>>(), ret);
     }
 
     #[test]
@@ -208,7 +211,7 @@ mod tests {
             GsaData {
                 mode1: GsaMode1::Automatic,
                 mode2: GsaMode2::Fix3D,
-                fix_sats_prn: vec![16, 18, 22, 24],
+                fix_sats_prn: Vec::<_, 12>::from_slice(&[16, 18, 22, 24]).unwrap(),
                 pdop: Some(3.6),
                 hdop: Some(2.1),
                 vdop: Some(2.2),
