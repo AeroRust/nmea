@@ -168,9 +168,10 @@ impl<'a> fmt::Display for NmeaError<'a> {
 }
 
 #[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl<'a> std::error::Error for NmeaError<'a> {}
 
-/// parse nmea 0183 sentence and extract data from it
+/// Parse NMEA 0183 sentence and extract data from it
 pub fn parse(xs: &[u8]) -> Result<ParseResult, NmeaError> {
     let nmea_sentence = parse_nmea_sentence(xs)?;
     let calculated_checksum = nmea_sentence.calc_checksum();

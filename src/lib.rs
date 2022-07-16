@@ -1,10 +1,15 @@
 //! NMEA 0183 parser
 //!
-//! Use nmea::Nmea::parse and nmea::Nmea::parse_for_fix to preserve
-//! state between recieving new nmea sentence, and nmea::parse
-//! to parse sentences without state
+//! [![Version](https://img.shields.io/crates/v/nmea.svg)](https://crates.io/crates/nmea)
+//! [![Build Status](https://github.com/AeroRust/nmea/workflows/CI/badge.svg)](https://github.com/AeroRust/nmea/actions?query=workflow%3ACI+branch%3Amaster)
+//! [![codecov](https://codecov.io/gh/AeroRust/nmea/branch/master/graph/badge.svg)](https://codecov.io/gh/AeroRust/nmea)
+//! [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/AeroRust/nmea/blob/master/LICENSE.txt)
 //!
-//! Units that used every where: degrees, knots, meters for altitude
+//! Use [`Nmea::parse()`](Nmea::parse) and [`Nmea::parse_for_fix()`](Nmea::parse_for_fix)
+//! to preserve state between receiving new NMEA sentence,
+//! and [`parse()`] to parse sentences without state
+//!
+//! Units used: **degrees**, **knots**, **meters** for altitude
 // Copyright (C) 2016 Felix Obenhuber
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,18 +25,21 @@
 // limitations under the License.
 //
 
-mod parse;
-mod sentences;
-
-pub use crate::parse::{
-    parse, BwcData, GgaData, GllData, GsaData, GsvData, NmeaError, ParseResult, RmcData,
-    RmcStatusOfFix, TxtData, VtgData, SENTENCE_MAX_LEN,
-};
 use chrono::{NaiveDate, NaiveTime};
 use core::{fmt, mem, ops::BitOr};
 use std::{collections::VecDeque, convert::TryInto};
 
+mod parse;
+mod sentences;
+
+#[doc(inline)]
+pub use parse::{
+    parse, BwcData, GgaData, GllData, GsaData, GsvData, NmeaError, ParseResult, RmcData,
+    RmcStatusOfFix, TxtData, VtgData, SENTENCE_MAX_LEN,
+};
+
 /// NMEA parser
+///
 /// This struct parses NMEA sentences, including checksum checks and sentence
 /// validation.
 ///
@@ -40,8 +48,9 @@ use std::{collections::VecDeque, convert::TryInto};
 /// ```
 /// use nmea::Nmea;
 ///
-/// let mut nmea= Nmea::default();
+/// let mut nmea = Nmea::new();
 /// let gga = "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76";
+///
 /// nmea.parse(gga).unwrap();
 /// println!("{}", nmea);
 /// ```
@@ -84,8 +93,7 @@ impl<'a> Nmea {
     /// ```
     /// use nmea::{Nmea, SentenceType};
     ///
-    /// let mut nmea = Nmea::create_for_navigation(&[SentenceType::RMC,
-    /// SentenceType::GGA]).unwrap();
+    /// let mut nmea = Nmea::create_for_navigation(&[SentenceType::RMC, SentenceType::GGA]).unwrap();
     /// let gga = "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76";
     /// nmea.parse(gga).unwrap();
     /// println!("{}", nmea);
@@ -499,13 +507,20 @@ impl fmt::Debug for Satellite {
 macro_rules! define_sentence_type_enum {
     (
         $(#[$outer:meta])*
-        enum $Name:ident { $($Variant:ident),* $(,)* }
+        enum $Name:ident {
+            $(
+            $(#[$variant:meta])*
+            $Variant:ident
+            ),* $(,)* }
     ) => {
         $(#[$outer])*
         #[derive(PartialEq, Debug, Hash, Eq, Clone, Copy)]
         #[repr(C)]
         pub enum $Name {
-            $($Variant),*,
+            $(
+                $(#[$variant])*
+                $Variant
+            ),*,
             None
         }
 
@@ -539,77 +554,217 @@ macro_rules! define_sentence_type_enum {
 
 define_sentence_type_enum!(
     /// NMEA sentence type
-    /// General: OSD |
-    /// Autopilot: APA | APB | ASD |
-    /// Decca: DCN |
-    /// D-GPS: MSK
-    /// Echo: DBK | DBS | DBT |
-    /// Radio: FSI | SFI | TLL
-    /// Speed: VBW | VHW | VLW |
-    /// GPS: ALM | GBS | GGA | GNS | GSA | GSV |
-    /// Course: DPT | HDG | HDM | HDT | HSC | ROT | VDR |
-    /// Loran-C: GLC | LCD |
-    /// Machine: RPM |
-    /// Navigation: RMA | RMB | RMC |
-    /// Omega: OLN |
-    /// Position: GLL | DTM
-    /// Radar: RSD | TLL | TTM |
-    /// Rudder: RSA |
-    /// Temperature: MTW |
-    /// Transit: GXA | RTF |
-    /// Waypoints and tacks: AAM | BEC | BOD | BWC | BWR | BWW | ROO | RTE |
-    ///                      VTG | WCV | WNC | WPL | XDR | XTE | XTR |
-    /// Wind: MWV | VPW | VWR |
-    /// Date and Time: GDT | ZDA | ZFO | ZTG |
+    ///
+    /// ## Types
+    ///
+    /// ### General
+    ///
+    /// - [`SentenceType::OSD`]
+    ///
+    /// ### Autopilot:
+    ///
+    /// - [`SentenceType::APA`]
+    /// - [`SentenceType::APB`]
+    /// - [`SentenceType::ASD`]
+    ///
+    /// ### Decca
+    ///
+    /// - [`SentenceType::DCN`]
+    ///
+    /// ### D-GPS
+    ///
+    /// - [`SentenceType::MSK`]
+    ///
+    /// ### Echo
+    /// - [`SentenceType::DBK`]
+    /// - [`SentenceType::DBS`]
+    /// - [`SentenceType::DBT`]
+    ///
+    /// ### Radio
+    ///
+    /// - [`SentenceType::FSI`]
+    /// - [`SentenceType::SFI`]
+    /// - [`SentenceType::TLL`]
+    ///
+    /// ### Speed
+    ///
+    /// - [`SentenceType::VBW`]
+    /// - [`SentenceType::VHW`]
+    /// - [`SentenceType::VLW`]
+    ///
+    /// ### GPS
+    ///
+    /// - [`SentenceType::ALM`]
+    /// - [`SentenceType::GBS`]
+    /// - [`SentenceType::GGA`]
+    /// - [`SentenceType::GNS`]
+    /// - [`SentenceType::GSA`]
+    /// - [`SentenceType::GSV`]
+    ///
+    /// ### Course
+    ///
+    /// - [`SentenceType::DPT`]
+    /// - [`SentenceType::HDG`]
+    /// - [`SentenceType::HDM`]
+    /// - [`SentenceType::HDT`]
+    /// - [`SentenceType::HSC`]
+    /// - [`SentenceType::ROT`]
+    /// - [`SentenceType::VDR`]
+    ///
+    /// ### Loran-C
+    ///
+    /// - [`SentenceType::GLC`]
+    /// - [`SentenceType::LCD`]
+    ///
+    /// ### Machine
+    ///
+    /// - [`SentenceType::RPM`]
+    ///
+    /// ### Navigation
+    ///
+    /// - [`SentenceType::RMA`]
+    /// - [`SentenceType::RMB`]
+    /// - [`SentenceType::RMC`]
+    ///
+    /// ### Omega
+    ///
+    /// - [`SentenceType::OLN`]
+    ///
+    /// ### Position
+    ///
+    /// - [`SentenceType::GLL`]
+    /// - [`SentenceType::DTM`]
+    ///
+    /// ### Radar
+    ///
+    /// - [`SentenceType::RSD`]
+    /// - [`SentenceType::TLL`]
+    /// - [`SentenceType::TTM`]
+    ///
+    /// ### Rudder
+    ///
+    /// - [`SentenceType::RSA`]
+    ///
+    /// ### Temperature
+    ///
+    /// - [`SentenceType::MTW`]
+    ///
+    /// ### Transit
+    ///
+    /// - [`SentenceType::GXA`]
+    /// - `SentenceType::RTF` (missing?!)
+    ///
+    /// ### Waypoints and tacks
+    ///
+    /// - [`SentenceType::AAM`]
+    /// - [`SentenceType::BEC`]
+    /// - [`SentenceType::BOD`]
+    /// - [`SentenceType::BWC`]
+    /// - [`SentenceType::BWR`]
+    /// - [`SentenceType::BWW`]
+    /// - [`SentenceType::ROO`]
+    /// - [`SentenceType::RTE`]
+    /// - [`SentenceType::VTG`]
+    /// - [`SentenceType::WCV`]
+    /// - [`SentenceType::WNC`]
+    /// - [`SentenceType::WPL`]
+    /// - [`SentenceType::XDR`]
+    /// - [`SentenceType::XTE`]
+    /// - [`SentenceType::XTR`]
+    ///
+    /// ### Wind
+    ///
+    /// - [`SentenceType::MWV`]
+    /// - [`SentenceType::VPW`]
+    /// - [`SentenceType::VWR`]
+    ///
+    /// ### Date and Time
+    ///
+    /// - [`SentenceType::GTD`]
+    /// - [`SentenceType::ZDA`]
+    /// - [`SentenceType::ZFO`]
+    /// - [`SentenceType::ZTG`]
     enum SentenceType {
+        /// Type: `Waypoints and tacks`
         AAM,
         ABK,
         ACA,
         ACK,
         ACS,
         AIR,
+        /// Type: `GPS`
         ALM,
         ALR,
+        /// Type: `Autopilot`
         APA,
+        /// Type: `Autopilot`
         APB,
+        /// Type: `Autopilot`
         ASD,
+        /// Type: `Waypoints and tacks`
         BEC,
+        /// Type: `Waypoints and tacks`
         BOD,
+        /// Type: `Waypoints and tacks`
         BWC,
+        /// Type: `Waypoints and tacks`
         BWR,
+        /// Type: `Waypoints and tacks`
         BWW,
         CUR,
+        /// Type: `Echo`
         DBK,
+        /// Type: `Echo`
         DBS,
+        /// Type: `Echo`
         DBT,
+        /// Type: `Decca`
         DCN,
+        /// Type: `Course`
         DPT,
         DSC,
         DSE,
         DSI,
+        /// Type: `Radar`
         DSR,
+        /// Type: `Position`
         DTM,
+        /// Type: `Radio`
         FSI,
+        /// Type: `GPS`
         GBS,
+        /// Type: `GPS`
         GGA,
+        /// Type: `Loran-C`
         GLC,
+        /// Type: `Position`
         GLL,
         GMP,
+        /// Type: `GPS`
         GNS,
         GRS,
+        /// Type: `GPS`
         GSA,
         GST,
+        /// Type: `GPS`
         GSV,
+        /// Type: `Date and Time`
         GTD,
+        /// Type: `Transit`
         GXA,
+        /// Type: `Course`
         HDG,
+        /// Type: `Course`
         HDM,
+        /// Type: `Course`
         HDT,
         HMR,
         HMS,
+        /// Type: `Course`
         HSC,
         HTC,
         HTD,
+        /// Type: `Loran-C`
         LCD,
         LRF,
         LRI,
@@ -617,50 +772,83 @@ define_sentence_type_enum!(
         LR2,
         LR3,
         MLA,
+        /// Type: `D-GPS`
         MSK,
         MSS,
         MWD,
+        /// Type: `Temperature`
         MTW,
+        /// Type: `Wind`
         MWV,
+        /// Type: `Omega`
         OLN,
+        /// Type: `General`
         OSD,
+        /// Type: `Waypoints and tacks`
         ROO,
+        /// Type: `Navigation`
         RMA,
+        /// Type: `Navigation`
         RMB,
+        /// Type: `Navigation`
         RMC,
+        /// Type: `Course`
         ROT,
+        /// Type: `Machine`
         RPM,
+        /// Type: `Rudder`
         RSA,
+        /// Type: `Radar`
         RSD,
+        /// Type: `Waypoints and tacks`
         RTE,
+        /// Type: `Radio`
         SFI,
         SSD,
         STN,
         TLB,
+        /// Type: `Radio`
         TLL,
         TRF,
+        /// Type: `Radar`
         TTM,
         TUT,
         TXT,
+        /// Type: `Speed`
         VBW,
         VDM,
         VDO,
+        /// Type: `Course`
         VDR,
+        /// Type: `Speed`
         VHW,
+        /// Type: `Speed`
         VLW,
+        /// Type: `Wind`
         VPW,
         VSD,
+        /// Type: `Waypoints and tacks`
         VTG,
+        /// Type: `Wind`
         VWR,
+        /// Type: `Waypoints and tacks`
         WCV,
+        /// Type: `Waypoints and tacks`
         WNC,
+        /// Type: `Waypoints and tacks`
         WPL,
+        /// Type: `Waypoints and tacks`
         XDR,
+        /// Type: `Waypoints and tacks`
         XTE,
+        /// Type: `Waypoints and tacks`
         XTR,
+        /// Type: `Date and Time`
         ZDA,
         ZDL,
+        /// Type: `Date and Time`
         ZFO,
+        /// Type: `Date and Time`
         ZTG,
     }
 );
