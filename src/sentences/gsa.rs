@@ -119,10 +119,8 @@ fn do_parse_gsa(i: &[u8]) -> IResult<&[u8], GsaData> {
             },
             fix_sats_prn: {
                 let mut fix_sats_prn = Vec::<u32, 12>::new();
-                for sat in tail.0.iter() {
-                    if let Some(sat) = sat {
-                        fix_sats_prn.push(*sat).unwrap()
-                    }
+                for sat in tail.0.iter().flatten() {
+                    fix_sats_prn.push(*sat).unwrap()
                 }
                 // now that we don't have `drain()` from `std::Vec`,
                 // we clear the `heapless::Vec`'s tail manually
@@ -196,26 +194,13 @@ mod tests {
     #[test]
     fn test_gsa_prn_fields_parse() {
         let (_, ret) = gsa_prn_fields_parse(b"5,").unwrap();
-        assert_eq!(
-            vec![Some(5_u32)]
-                .into_iter()
-                .collect::<Vec<Option<u32>, 12>>(),
-            ret
-        );
+        assert_eq!(ret, &[Some(5)]);
 
         let (_, ret) = gsa_prn_fields_parse(b",").unwrap();
-        assert_eq!(
-            vec![None].into_iter().collect::<Vec<Option<u32>, 12>>(),
-            ret
-        );
+        assert_eq!(ret, &[None]);
 
         let (_, ret) = gsa_prn_fields_parse(b",,5,6,").unwrap();
-        assert_eq!(
-            vec![None, None, Some(5_u32), Some(6_u32)]
-                .into_iter()
-                .collect::<Vec<Option<u32>, 12>>(),
-            ret
-        );
+        assert_eq!(ret, &[None, None, Some(5), Some(6)],);
     }
 
     #[test]
