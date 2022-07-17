@@ -161,7 +161,7 @@ impl<'a> Nmea {
         let sat_key = |sat: &Satellite| (sat.gnss_type() as u8, sat.prn());
         for sns in &self.satellites_scan {
             // for sat_pack in sns.data.iter().rev() {
-            for sat_pack in sns.data.iter().flatten() {
+            for sat_pack in sns.data.iter().rev().flatten() {
                 for sat in sat_pack.iter() {
                     match ret.binary_search_by_key(&sat_key(sat), sat_key) {
                         //already set
