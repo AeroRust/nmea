@@ -24,7 +24,7 @@ use nom::IResult;
 use crate::FixType;
 
 /// for now let's handle only two GPS and GLONASS
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct FaaModes {
     sys_state0: FaaMode,
     sys_state1: Option<FaaMode>,
@@ -45,7 +45,7 @@ impl From<FaaModes> for FixType {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FaaMode {
     Autonomous,
     /// Quectel unique

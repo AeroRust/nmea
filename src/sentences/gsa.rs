@@ -16,13 +16,13 @@ use heapless::Vec;
 use crate::parse::NmeaSentence;
 use crate::{sentences::utils::number, NmeaError};
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum GsaMode1 {
     Manual,
     Automatic,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum GsaMode2 {
     NoFix,
     Fix2D,
