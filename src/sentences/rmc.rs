@@ -11,7 +11,7 @@ use crate::{
     sentences::utils::{parse_date, parse_hms, parse_lat_lon},
     NmeaError,
 };
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum RmcStatusOfFix {
     Autonomous,
     Differential,

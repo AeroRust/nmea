@@ -62,7 +62,7 @@ fn do_parse_txt(i: &[u8]) -> IResult<&[u8], TxtData0<'_>> {
     ))
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TxtData {
     pub count: u8,
     pub seq: u8,

@@ -1,7 +1,7 @@
+use heapless::Vec;
 use nom::character::complete::char;
 use nom::combinator::{cond, opt, rest_len};
 use nom::IResult;
-use heapless::Vec;
 
 use crate::parse::NmeaSentence;
 use crate::sentences::utils::number;
@@ -55,7 +55,7 @@ fn do_parse_gsv(i: &[u8]) -> IResult<&[u8], GsvData> {
 
         Ok((i, sats))
     })?;
-    
+
     Ok((
         i,
         GsvData {
@@ -143,7 +143,7 @@ mod tests {
         assert_eq!(
             data.sats_info[0].clone().unwrap(),
             Satellite {
-                gnss_type: data.gnss_type.clone(),
+                gnss_type: data.gnss_type,
                 prn: 1,
                 elevation: None,
                 azimuth: Some(83.),
@@ -153,7 +153,7 @@ mod tests {
         assert_eq!(
             data.sats_info[1].clone().unwrap(),
             Satellite {
-                gnss_type: data.gnss_type.clone(),
+                gnss_type: data.gnss_type,
                 prn: 2,
                 elevation: Some(17.),
                 azimuth: Some(308.),
@@ -163,7 +163,7 @@ mod tests {
         assert_eq!(
             data.sats_info[2].clone().unwrap(),
             Satellite {
-                gnss_type: data.gnss_type.clone(),
+                gnss_type: data.gnss_type,
                 prn: 12,
                 elevation: Some(7.),
                 azimuth: Some(344.),
@@ -173,7 +173,7 @@ mod tests {
         assert_eq!(
             data.sats_info[3].clone().unwrap(),
             Satellite {
-                gnss_type: data.gnss_type.clone(),
+                gnss_type: data.gnss_type,
                 prn: 14,
                 elevation: Some(22.),
                 azimuth: Some(228.),
