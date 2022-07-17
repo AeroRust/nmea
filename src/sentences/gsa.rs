@@ -1,17 +1,16 @@
+use heapless::Vec;
 use nom::branch::alt;
 use nom::bytes::complete::take_while1;
 use nom::character::complete::{char, one_of};
 use nom::combinator::{all_consuming, opt, value};
-// use nom::multi::many0;
+use nom::error::ErrorKind;
+use nom::error::ParseError;
 use nom::number::complete::float;
 use nom::sequence::terminated;
-use nom::IResult;
 use nom::Err;
-use nom::Parser;
-use nom::error::ParseError;
+use nom::IResult;
 use nom::InputLength;
-use nom::error::ErrorKind;
-use heapless::Vec;
+use nom::Parser;
 
 use crate::parse::NmeaSentence;
 use crate::{sentences::utils::number, NmeaError};
@@ -33,46 +32,49 @@ pub enum GsaMode2 {
 pub struct GsaData {
     pub mode1: GsaMode1,
     pub mode2: GsaMode2,
-    pub fix_sats_prn: Vec<u32,12>,
+    pub fix_sats_prn: Vec<u32, 12>,
     pub pdop: Option<f32>,
     pub hdop: Option<f32>,
     pub vdop: Option<f32>,
 }
 
-fn many0<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O,12>, E>
+/// This function is take from `nom`, see `nom::multi::many0`
+/// with one difference - we use a [`heapless::Vec`]
+/// because we want `no_std` & no `alloc`
+fn many0<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O, 12>, E>
 where
-  I: Clone + InputLength,
-  F: Parser<I, O, E>,
-  E: ParseError<I>,
-  O: core::fmt::Debug,
+    I: Clone + InputLength,
+    F: Parser<I, O, E>,
+    E: ParseError<I>,
+    O: core::fmt::Debug,
 {
-  move |mut i: I| {
-    // let mut acc = crate::lib::std::vec::Vec::with_capacity(4);
-    let mut acc = Vec::<_,12>::new();
-    loop {
-      let len = i.input_len();
-      match f.parse(i.clone()) {
-        Err(Err::Error(_)) => return Ok((i, acc)),
-        Err(e) => return Err(e),
-        Ok((i1, o)) => {
-          // infinite loop check: the parser must always consume
-          if i1.input_len() == len {
-            return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many0)));
-          }
+    move |mut i: I| {
+        // let mut acc = crate::lib::std::vec::Vec::with_capacity(4);
+        let mut acc = Vec::<_, 12>::new();
+        loop {
+            let len = i.input_len();
+            match f.parse(i.clone()) {
+                Err(Err::Error(_)) => return Ok((i, acc)),
+                Err(e) => return Err(e),
+                Ok((i1, o)) => {
+                    // infinite loop check: the parser must always consume
+                    if i1.input_len() == len {
+                        return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many0)));
+                    }
 
-          i = i1;
-          acc.push(o).unwrap();
+                    i = i1;
+                    acc.push(o).unwrap();
+                }
+            }
         }
-      }
     }
-  }
 }
 
-fn gsa_prn_fields_parse(i: &[u8]) -> IResult<&[u8], Vec<Option<u32>,12>> {
+fn gsa_prn_fields_parse(i: &[u8]) -> IResult<&[u8], Vec<Option<u32>, 12>> {
     many0(terminated(opt(number::<u32>), char(',')))(i)
 }
 
-type GsaTail = (Vec<Option<u32>,12>, Option<f32>, Option<f32>, Option<f32>);
+type GsaTail = (Vec<Option<u32>, 12>, Option<f32>, Option<f32>, Option<f32>);
 
 fn do_parse_gsa_tail(i: &[u8]) -> IResult<&[u8], GsaTail> {
     let (i, prns) = gsa_prn_fields_parse(i)?;
@@ -194,13 +196,26 @@ mod tests {
     #[test]
     fn test_gsa_prn_fields_parse() {
         let (_, ret) = gsa_prn_fields_parse(b"5,").unwrap();
-        assert_eq!(vec![Some(5_u32)].into_iter().collect::<Vec<Option<u32>, 12>>(), ret);
+        assert_eq!(
+            vec![Some(5_u32)]
+                .into_iter()
+                .collect::<Vec<Option<u32>, 12>>(),
+            ret
+        );
 
         let (_, ret) = gsa_prn_fields_parse(b",").unwrap();
-        assert_eq!(vec![None].into_iter().collect::<Vec<Option<u32>, 12>>(), ret);
+        assert_eq!(
+            vec![None].into_iter().collect::<Vec<Option<u32>, 12>>(),
+            ret
+        );
 
         let (_, ret) = gsa_prn_fields_parse(b",,5,6,").unwrap();
-        assert_eq!(vec![None, None, Some(5_u32), Some(6_u32)].into_iter().collect::<Vec<Option<u32>, 12>>(), ret);
+        assert_eq!(
+            vec![None, None, Some(5_u32), Some(6_u32)]
+                .into_iter()
+                .collect::<Vec<Option<u32>, 12>>(),
+            ret
+        );
     }
 
     #[test]

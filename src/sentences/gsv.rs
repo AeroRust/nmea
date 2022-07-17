@@ -1,7 +1,7 @@
+use heapless::Vec;
 use nom::character::complete::char;
 use nom::combinator::{cond, opt, rest_len};
 use nom::IResult;
-use heapless::Vec;
 
 use crate::parse::NmeaSentence;
 use crate::sentences::utils::number;
@@ -55,7 +55,7 @@ fn do_parse_gsv(i: &[u8]) -> IResult<&[u8], GsvData> {
 
         Ok((i, sats))
     })?;
-    
+
     Ok((
         i,
         GsvData {
