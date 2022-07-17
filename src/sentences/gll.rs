@@ -106,7 +106,7 @@ mod tests {
 
         let s = parse(b"$GNGLL,,,,,181604.00,V,N*5E", 0x5e);
         let gll_data = parse_gll(s).unwrap();
-        assert_eq!(NaiveTime::from_hms_milli(18, 16, 04, 0), gll_data.fix_time);
+        assert_eq!(NaiveTime::from_hms_milli(18, 16, 4, 0), gll_data.fix_time);
         assert!(!gll_data.valid);
     }
 }

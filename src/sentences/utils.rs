@@ -138,16 +138,16 @@ mod tests {
         assert_eq!(time.hour(), 12);
         assert_eq!(time.minute(), 56);
         assert_eq!(time.second(), 19);
-        assert_eq!(time.nanosecond(), 5_00_000_000);
+        assert_eq!(time.nanosecond(), 500_000_000);
     }
 
     #[test]
     fn test_parse_date() {
         let (_, date) = parse_date(b"180283").unwrap();
-        assert_eq!(date, NaiveDate::from_ymd(1983, 02, 18));
+        assert_eq!(date, NaiveDate::from_ymd(1983, 2, 18));
 
         let (_, date) = parse_date(b"180299").unwrap();
-        assert_eq!(date, NaiveDate::from_ymd(1999, 02, 18));
+        assert_eq!(date, NaiveDate::from_ymd(1999, 2, 18));
 
         let (_, date) = parse_date(b"311200").unwrap();
         assert_eq!(date, NaiveDate::from_ymd(2000, 12, 31));

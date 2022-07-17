@@ -20,7 +20,7 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-nom = { version = "7.1.1", default-features = false }
+nom = { version = "7.1.1", default-features = false, features = ["alloc"] }
 chrono = { version = "0.4.19", default-features = false }
 arrayvec = { version = "0.7.2", default-features = false }
 
