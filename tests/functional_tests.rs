@@ -171,8 +171,8 @@ fn test_gsv_real_data() {
             "{Gps 23 Some(34.0) Some(232.0) Some(42.0)}",
             "{Gps 25 Some(11.0) Some(45.0) Some(33.0)}",
             "{Gps 26 Some(2.0) Some(112.0) None}",
-            "{Gps 31 Some(45.0) Some(71.0) None}",
-            "{Gps 32 Some(1.0) Some(66.0) None}",
+            "{Gps 31 Some(45.0) Some(92.0) Some(38.0)}",
+            "{Gps 32 Some(14.0) Some(61.0) Some(39.0)}",
             "{Glonass 65 Some(76.0) Some(333.0) Some(31.0)}",
             "{Glonass 66 Some(23.0) Some(275.0) Some(31.0)}",
             "{Glonass 72 Some(40.0) Some(75.0) Some(43.0)}",
@@ -471,7 +471,7 @@ fn test_gll() {
 }
 
 /// ensure right order before dump to string
-fn format_satellites(mut sats: Vec<Satellite, 46>) -> std::vec::Vec<String> {
+fn format_satellites(mut sats: Vec<Satellite, 58>) -> std::vec::Vec<String> {
     sats.sort_by_key(|s| (s.gnss_type() as u8, s.prn()));
     // to not depend on Debug impl for `Satellite` stability
 

@@ -80,9 +80,8 @@ struct SatsPack {
     // GLONASS: 12
     // BeiDou: 12 + 3 IGSO + 3 GEO
     // Galileo: 12
-    // Maximum satellites = 16 + 12 + 3 + 3 + 12 = 46
-    // This number will never be reached, so Vec can be resized?
-    data: Deque<Vec<Option<Satellite>, 4>, 18>,
+    // => 58 total Satellites => max 15 rows of data
+    data: Deque<Vec<Option<Satellite>, 4>, 15>,
     max_len: usize,
 }
 
@@ -157,8 +156,8 @@ impl<'a> Nmea {
     }
 
     /// Returns used satellites
-    pub fn satellites(&self) -> Vec<Satellite, 46> {
-        let mut ret = Vec::<Satellite, 46>::new();
+    pub fn satellites(&self) -> Vec<Satellite, 58> {
+        let mut ret = Vec::<Satellite, 58>::new();
         let sat_key = |sat: &Satellite| (sat.gnss_type() as u8, sat.prn());
         for sns in &self.satellites_scan {
             // for sat_pack in sns.data.iter().rev() {
