@@ -4,16 +4,19 @@ version = "0.2.0"
 authors = [
     "Felix Obenhuber <felix@obenhuber.de>",
     "Evgeniy A. Dushistov <dushistov@mail.ru>",
-    "Henrik Böving <hargonix@gmail.com>"
+    "Henrik Böving <hargonix@gmail.com>",
+    "AeroRust <aerospace.rust@gmail.com>"
 ]
 description = "Simple NMEA 0183 parser"
 license = "Apache-2.0"
 keywords = ["NMEA", "gps", "glonass", "coordinate", "position"]
 categories = ["parser-implementations", "no_std", "embedded"]
 repository = "https://github.com/AeroRust/nmea"
-documentation = "https://docs.rs/nmea/"
+documentation = "https://docs.rs/nmea"
 readme = "README.md"
-edition = "2018"
+
+edition = "2021"
+rust-version = "1.56"
 
 [package.metadata.docs.rs]
 all-features = true
