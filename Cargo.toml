@@ -9,7 +9,7 @@ authors = [
 description = "Simple NMEA 0183 parser"
 license = "Apache-2.0"
 keywords = ["NMEA", "gps", "glonass", "coordinate", "position"]
-categories = ["parser-implementations"]
+categories = ["parser-implementations", "no_std", "embedded"]
 repository = "https://github.com/AeroRust/nmea"
 documentation = "https://docs.rs/nmea/"
 readme = "README.md"
@@ -20,13 +20,15 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-nom = { version = "7.1.1", default-features = false, features = ["alloc"] }
+nom = { version = "7.1.1", default-features = false }
 chrono = { version = "0.4.19", default-features = false }
 arrayvec = { version = "0.7.2", default-features = false }
+heapless = "0.7.15"
 
 [dev-dependencies]
 quickcheck = { version = "1.0.3", default-features = false }
 approx = "0.5.1"
+pretty_assertions = "1"
 doc-comment = "0.3"
 
 [features]

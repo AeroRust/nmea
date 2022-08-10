@@ -19,12 +19,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+#![cfg_attr(not(any(feature = "std", test)), no_std)]
 
-// nom::multi::many0
-extern crate alloc;
 use chrono::{NaiveDate, NaiveTime};
+use core::convert::TryInto;
 use core::{fmt, mem, ops::BitOr};
-use std::{collections::VecDeque, convert::TryInto};
+use heapless::{Deque, Vec};
 
 mod parse;
 mod sentences;
@@ -72,7 +72,7 @@ pub struct Nmea {
     pub pdop: Option<f32>,
     /// Geoid separation in meters
     pub geoid_separation: Option<f32>,
-    pub fix_satellites_prns: Option<Vec<u32>>,
+    pub fix_satellites_prns: Option<Vec<u32, 12>>,
     satellites_scan: [SatsPack; GnssType::COUNT],
     required_sentences_for_nav: SentenceMask,
     last_fix_time: Option<NaiveTime>,
@@ -82,7 +82,13 @@ pub struct Nmea {
 
 #[derive(Debug, Clone, Default)]
 struct SatsPack {
-    data: VecDeque<[Option<Satellite>; 4]>,
+    /// max number of visible GNSS satellites per hemisphere, assuming global coverage
+    /// GPS: 16
+    /// GLONASS: 12
+    /// BeiDou: 12 + 3 IGSO + 3 GEO
+    /// Galileo: 12
+    /// => 58 total Satellites => max 15 rows of data
+    data: Deque<Vec<Option<Satellite>, 4>, 15>,
     max_len: usize,
 }
 
@@ -155,16 +161,18 @@ impl<'a> Nmea {
         }
     }
 
-    /// Returns used sattelites
-    pub fn satellites(&self) -> Vec<Satellite> {
-        let mut ret = Vec::with_capacity(20);
+    /// Returns used satellites
+    pub fn satellites(&self) -> Vec<Satellite, 58> {
+        let mut ret = Vec::<Satellite, 58>::new();
         let sat_key = |sat: &Satellite| (sat.gnss_type() as u8, sat.prn());
         for sns in &self.satellites_scan {
-            for sat_pack in sns.data.iter().rev() {
-                for sat in sat_pack.iter().flatten() {
+            // for sat_pack in sns.data.iter().rev() {
+            for sat_pack in sns.data.iter().rev().flatten() {
+                for sat in sat_pack.iter() {
                     match ret.binary_search_by_key(&sat_key(sat), sat_key) {
-                        Ok(_pos) => {} //already setted
-                        Err(pos) => ret.insert(pos, sat.clone()),
+                        //already set
+                        Ok(_pos) => {}
+                        Err(pos) => ret.insert(pos, sat.clone()).unwrap(),
                     }
                 }
             }
@@ -191,8 +199,9 @@ impl<'a> Nmea {
                 .try_into()
                 .map_err(|_| NmeaError::InvalidGsvSentenceNum)?;
             d.max_len = full_pack_size.max(d.max_len);
-
-            d.data.push_back(data.sats_info);
+            d.data
+                .push_back(data.sats_info)
+                .expect("Should not get the more than expected number of satellites");
             if d.data.len() > d.max_len {
                 d.data.pop_front();
             }
@@ -425,18 +434,10 @@ impl fmt::Display for Nmea {
         write!(
             f,
             "{}: lat: {} lon: {} alt: {} {:?}",
-            self.fix_time
-                .map(|l| format!("{:?}", l))
-                .unwrap_or_else(|| "None".to_owned()),
-            self.latitude
-                .map(|l| format!("{:3.8}", l))
-                .unwrap_or_else(|| "None".to_owned()),
-            self.longitude
-                .map(|l| format!("{:3.8}", l))
-                .unwrap_or_else(|| "None".to_owned()),
-            self.altitude
-                .map(|l| format!("{:.3}", l))
-                .unwrap_or_else(|| "None".to_owned()),
+            format_args!("{:?}", self.fix_time),
+            format_args!("{:?}", self.latitude),
+            format_args!("{:?}", self.longitude),
+            format_args!("{:?}", self.altitude),
             self.satellites()
         )
     }
@@ -482,15 +483,9 @@ impl fmt::Display for Satellite {
             "{}: {} elv: {} ath: {} snr: {}",
             self.gnss_type,
             self.prn,
-            self.elevation
-                .map(|e| format!("{}", e))
-                .unwrap_or_else(|| "--".to_owned()),
-            self.azimuth
-                .map(|e| format!("{}", e))
-                .unwrap_or_else(|| "--".to_owned()),
-            self.snr
-                .map(|e| format!("{}", e))
-                .unwrap_or_else(|| "--".to_owned())
+            format_args!("{:?}", self.elevation),
+            format_args!("{:?}", self.azimuth),
+            format_args!("{:?}", self.snr),
         )
     }
 }

@@ -64,7 +64,7 @@ fn do_parse_bwc(i: &[u8]) -> Result<BwcData, NmeaError> {
     let (i, _) = char(',')(i)?;
 
     // 12. Waypoint ID
-    let (_i, waypoint_id) = opt(map_res(is_not(",*"), std::str::from_utf8))(i)?;
+    let (_i, waypoint_id) = opt(map_res(is_not(",*"), core::str::from_utf8))(i)?;
 
     // 13. FAA mode indicator (NMEA 2.3 and later, optional)
 

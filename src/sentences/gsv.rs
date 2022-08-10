@@ -1,3 +1,4 @@
+use heapless::Vec;
 use nom::character::complete::char;
 use nom::combinator::{cond, opt, rest_len};
 use nom::IResult;
@@ -12,7 +13,8 @@ pub struct GsvData {
     pub number_of_sentences: u16,
     pub sentence_num: u16,
     pub _sats_in_view: u16,
-    pub sats_info: [Option<Satellite>; 4],
+    // see SatPack in lib.rs
+    pub sats_info: Vec<Option<Satellite>, 4>,
 }
 
 fn parse_gsv_sat_info(i: &[u8]) -> IResult<&[u8], Satellite> {
@@ -43,10 +45,17 @@ fn do_parse_gsv(i: &[u8]) -> IResult<&[u8], GsvData> {
     let (i, _) = char(',')(i)?;
     let (i, _sats_in_view) = number::<u16>(i)?;
     let (i, _) = char(',')(i)?;
-    let (i, sat0) = opt(parse_gsv_sat_info)(i)?;
-    let (i, sat1) = opt(parse_gsv_sat_info)(i)?;
-    let (i, sat2) = opt(parse_gsv_sat_info)(i)?;
-    let (i, sat3) = opt(parse_gsv_sat_info)(i)?;
+    let sats = Vec::<Option<Satellite>, 4>::new();
+
+    // We loop through the indices and parse the satellite data
+    let (i, sats) = (0..4).try_fold((i, sats), |(i, mut sats), sat_index| {
+        let (i, sat) = opt(parse_gsv_sat_info)(i)?;
+
+        sats.insert(sat_index, sat).unwrap();
+
+        Ok((i, sats))
+    })?;
+
     Ok((
         i,
         GsvData {
@@ -54,7 +63,7 @@ fn do_parse_gsv(i: &[u8]) -> IResult<&[u8], GsvData> {
             number_of_sentences,
             sentence_num,
             _sats_in_view,
-            sats_info: [sat0, sat1, sat2, sat3],
+            sats_info: sats,
         },
     ))
 }

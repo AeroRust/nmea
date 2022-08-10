@@ -2,6 +2,7 @@ mod file_log_parser;
 
 use approx::assert_relative_eq;
 use chrono::NaiveTime;
+use heapless::Vec;
 use nmea::*;
 
 #[test]
@@ -89,43 +90,49 @@ fn test_gsv() {
     //                        10           07           05           08
     nmea.parse("$GPGSV,3,1,11,10,63,137,17,07,61,098,15,05,59,290,20,08,54,157,30*70")
         .unwrap();
-    assert_eq!(
-        "{Gps 5 Some(59.0) Some(290.0) Some(20.0)}, \
-         {Gps 7 Some(61.0) Some(98.0) Some(15.0)}, \
-                    {Gps 8 Some(54.0) Some(157.0) Some(30.0)}, \
-                    {Gps 10 Some(63.0) Some(137.0) Some(17.0)}",
-        dump_sattelites(nmea.satellites())
+    pretty_assertions::assert_eq!(
+        vec![
+            "{Gps 5 Some(59.0) Some(290.0) Some(20.0)}",
+            "{Gps 7 Some(61.0) Some(98.0) Some(15.0)}",
+            "{Gps 8 Some(54.0) Some(157.0) Some(30.0)}",
+            "{Gps 10 Some(63.0) Some(137.0) Some(17.0)}",
+        ],
+        format_satellites(nmea.satellites())
     );
     //                        02           13           26         04
     nmea.parse("$GPGSV,3,2,11,02,39,223,19,13,28,070,17,26,23,252,,04,14,186,14*79")
         .unwrap();
-    assert_eq!(
-        "{Gps 2 Some(39.0) Some(223.0) Some(19.0)}, \
-{Gps 4 Some(14.0) Some(186.0) Some(14.0)}, \
-{Gps 5 Some(59.0) Some(290.0) Some(20.0)}, \
-{Gps 7 Some(61.0) Some(98.0) Some(15.0)}, \
-{Gps 8 Some(54.0) Some(157.0) Some(30.0)}, \
-{Gps 10 Some(63.0) Some(137.0) Some(17.0)}, \
-{Gps 13 Some(28.0) Some(70.0) Some(17.0)}, \
-{Gps 26 Some(23.0) Some(252.0) None}",
-        dump_sattelites(nmea.satellites())
+    pretty_assertions::assert_eq!(
+        vec![
+            "{Gps 2 Some(39.0) Some(223.0) Some(19.0)}",
+            "{Gps 4 Some(14.0) Some(186.0) Some(14.0)}",
+            "{Gps 5 Some(59.0) Some(290.0) Some(20.0)}",
+            "{Gps 7 Some(61.0) Some(98.0) Some(15.0)}",
+            "{Gps 8 Some(54.0) Some(157.0) Some(30.0)}",
+            "{Gps 10 Some(63.0) Some(137.0) Some(17.0)}",
+            "{Gps 13 Some(28.0) Some(70.0) Some(17.0)}",
+            "{Gps 26 Some(23.0) Some(252.0) None}",
+        ],
+        format_satellites(nmea.satellites())
     );
     //                        29           16         36
     nmea.parse("$GPGSV,3,3,11,29,09,301,24,16,09,020,,36,,,*76")
         .unwrap();
-    assert_eq!(
-        "{Gps 2 Some(39.0) Some(223.0) Some(19.0)}, \
-{Gps 4 Some(14.0) Some(186.0) Some(14.0)}, \
-{Gps 5 Some(59.0) Some(290.0) Some(20.0)}, \
-{Gps 7 Some(61.0) Some(98.0) Some(15.0)}, \
-{Gps 8 Some(54.0) Some(157.0) Some(30.0)}, \
-{Gps 10 Some(63.0) Some(137.0) Some(17.0)}, \
-{Gps 13 Some(28.0) Some(70.0) Some(17.0)}, \
-{Gps 16 Some(9.0) Some(20.0) None}, \
-{Gps 26 Some(23.0) Some(252.0) None}, \
-{Gps 29 Some(9.0) Some(301.0) Some(24.0)}, \
-{Gps 36 None None None}",
-        dump_sattelites(nmea.satellites())
+    pretty_assertions::assert_eq!(
+        vec![
+            "{Gps 2 Some(39.0) Some(223.0) Some(19.0)}",
+            "{Gps 4 Some(14.0) Some(186.0) Some(14.0)}",
+            "{Gps 5 Some(59.0) Some(290.0) Some(20.0)}",
+            "{Gps 7 Some(61.0) Some(98.0) Some(15.0)}",
+            "{Gps 8 Some(54.0) Some(157.0) Some(30.0)}",
+            "{Gps 10 Some(63.0) Some(137.0) Some(17.0)}",
+            "{Gps 13 Some(28.0) Some(70.0) Some(17.0)}",
+            "{Gps 16 Some(9.0) Some(20.0) None}",
+            "{Gps 26 Some(23.0) Some(252.0) None}",
+            "{Gps 29 Some(9.0) Some(301.0) Some(24.0)}",
+            "{Gps 36 None None None}"
+        ],
+        format_satellites(nmea.satellites())
     );
 }
 
@@ -133,43 +140,51 @@ fn test_gsv() {
 fn test_gsv_real_data() {
     let mut nmea = Nmea::default();
     let real_data = [
+        // GPS
         //             1             3            6           11
         "$GPGSV,3,1,12,01,49,196,41,03,71,278,32,06,02,323,27,11,21,196,39*72",
+        // GPS
+        //             14           17           19           22
         "$GPGSV,3,2,12,14,39,063,33,17,21,292,30,19,20,310,31,22,82,181,36*73",
+        // GPS
+        //             23           25           31           32
         "$GPGSV,3,3,12,23,34,232,42,25,11,045,33,31,45,092,38,32,14,061,39*75",
         "$GLGSV,3,1,10,74,40,078,43,66,23,275,31,82,10,347,36,73,15,015,38*6B",
         "$GLGSV,3,2,10,75,19,135,36,65,76,333,31,88,32,233,33,81,40,302,38*6A",
         "$GLGSV,3,3,10,72,40,075,43,87,00,000,*6F",
+        //             26         31         32
         "$GPGSV,4,4,15,26,02,112,,31,45,071,,32,01,066,*4C",
     ];
     for line in &real_data {
-        assert_eq!(nmea.parse(line).unwrap(), SentenceType::GSV);
+        pretty_assertions::assert_eq!(nmea.parse(line).unwrap(), SentenceType::GSV);
     }
-    assert_eq!(
-        "{Gps 1 Some(49.0) Some(196.0) Some(41.0)}, \
-         {Gps 3 Some(71.0) Some(278.0) Some(32.0)}, \
-         {Gps 6 Some(2.0) Some(323.0) Some(27.0)}, \
-         {Gps 11 Some(21.0) Some(196.0) Some(39.0)}, \
-         {Gps 14 Some(39.0) Some(63.0) Some(33.0)}, \
-         {Gps 17 Some(21.0) Some(292.0) Some(30.0)}, \
-         {Gps 19 Some(20.0) Some(310.0) Some(31.0)}, \
-         {Gps 22 Some(82.0) Some(181.0) Some(36.0)}, \
-         {Gps 23 Some(34.0) Some(232.0) Some(42.0)}, \
-         {Gps 25 Some(11.0) Some(45.0) Some(33.0)}, \
-         {Gps 26 Some(2.0) Some(112.0) None}, \
-         {Gps 31 Some(45.0) Some(71.0) None}, \
-         {Gps 32 Some(1.0) Some(66.0) None}, \
-         {Glonass 65 Some(76.0) Some(333.0) Some(31.0)}, \
-         {Glonass 66 Some(23.0) Some(275.0) Some(31.0)}, \
-         {Glonass 72 Some(40.0) Some(75.0) Some(43.0)}, \
-         {Glonass 73 Some(15.0) Some(15.0) Some(38.0)}, \
-         {Glonass 74 Some(40.0) Some(78.0) Some(43.0)}, \
-         {Glonass 75 Some(19.0) Some(135.0) Some(36.0)}, \
-         {Glonass 81 Some(40.0) Some(302.0) Some(38.0)}, \
-         {Glonass 82 Some(10.0) Some(347.0) Some(36.0)}, \
-         {Glonass 87 Some(0.0) Some(0.0) None}, \
-         {Glonass 88 Some(32.0) Some(233.0) Some(33.0)}",
-        dump_sattelites(nmea.satellites())
+    pretty_assertions::assert_eq!(
+        vec![
+            "{Gps 1 Some(49.0) Some(196.0) Some(41.0)}",
+            "{Gps 3 Some(71.0) Some(278.0) Some(32.0)}",
+            "{Gps 6 Some(2.0) Some(323.0) Some(27.0)}",
+            "{Gps 11 Some(21.0) Some(196.0) Some(39.0)}",
+            "{Gps 14 Some(39.0) Some(63.0) Some(33.0)}",
+            "{Gps 17 Some(21.0) Some(292.0) Some(30.0)}",
+            "{Gps 19 Some(20.0) Some(310.0) Some(31.0)}",
+            "{Gps 22 Some(82.0) Some(181.0) Some(36.0)}",
+            "{Gps 23 Some(34.0) Some(232.0) Some(42.0)}",
+            "{Gps 25 Some(11.0) Some(45.0) Some(33.0)}",
+            "{Gps 26 Some(2.0) Some(112.0) None}",
+            "{Gps 31 Some(45.0) Some(71.0) None}",
+            "{Gps 32 Some(1.0) Some(66.0) None}",
+            "{Glonass 65 Some(76.0) Some(333.0) Some(31.0)}",
+            "{Glonass 66 Some(23.0) Some(275.0) Some(31.0)}",
+            "{Glonass 72 Some(40.0) Some(75.0) Some(43.0)}",
+            "{Glonass 73 Some(15.0) Some(15.0) Some(38.0)}",
+            "{Glonass 74 Some(40.0) Some(78.0) Some(43.0)}",
+            "{Glonass 75 Some(19.0) Some(135.0) Some(36.0)}",
+            "{Glonass 81 Some(40.0) Some(302.0) Some(38.0)}",
+            "{Glonass 82 Some(10.0) Some(347.0) Some(36.0)}",
+            "{Glonass 87 Some(0.0) Some(0.0) None}",
+            "{Glonass 88 Some(32.0) Some(233.0) Some(33.0)}",
+        ],
+        format_satellites(nmea.satellites())
     );
 }
 
@@ -186,18 +201,20 @@ fn test_gsv_order() {
     nmea.parse("$GPGSV,3,1,11,10,63,137,17,07,61,098,15,05,59,290,20,08,54,157,30*70")
         .unwrap();
     assert_eq!(
-        "{Gps 2 Some(39.0) Some(223.0) Some(19.0)}, \
-         {Gps 4 Some(14.0) Some(186.0) Some(14.0)}, \
-         {Gps 5 Some(59.0) Some(290.0) Some(20.0)}, \
-         {Gps 7 Some(61.0) Some(98.0) Some(15.0)}, \
-         {Gps 8 Some(54.0) Some(157.0) Some(30.0)}, \
-         {Gps 10 Some(63.0) Some(137.0) Some(17.0)}, \
-         {Gps 13 Some(28.0) Some(70.0) Some(17.0)}, \
-         {Gps 16 Some(9.0) Some(20.0) None}, \
-         {Gps 26 Some(23.0) Some(252.0) None}, \
-         {Gps 29 Some(9.0) Some(301.0) Some(24.0)}, \
-         {Gps 36 None None None}",
-        dump_sattelites(nmea.satellites())
+        vec![
+            "{Gps 2 Some(39.0) Some(223.0) Some(19.0)}",
+            "{Gps 4 Some(14.0) Some(186.0) Some(14.0)}",
+            "{Gps 5 Some(59.0) Some(290.0) Some(20.0)}",
+            "{Gps 7 Some(61.0) Some(98.0) Some(15.0)}",
+            "{Gps 8 Some(54.0) Some(157.0) Some(30.0)}",
+            "{Gps 10 Some(63.0) Some(137.0) Some(17.0)}",
+            "{Gps 13 Some(28.0) Some(70.0) Some(17.0)}",
+            "{Gps 16 Some(9.0) Some(20.0) None}",
+            "{Gps 26 Some(23.0) Some(252.0) None}",
+            "{Gps 29 Some(9.0) Some(301.0) Some(24.0)}",
+            "{Gps 36 None None None}",
+        ],
+        format_satellites(nmea.satellites())
     );
 }
 
@@ -211,14 +228,16 @@ fn test_gsv_two_of_three() {
     nmea.parse("$GPGSV,3,3,11,29,09,301,24,16,09,020,,36,,,*76")
         .unwrap();
     assert_eq!(
-        "{Gps 2 Some(39.0) Some(223.0) Some(19.0)}, \
-         {Gps 4 Some(14.0) Some(186.0) Some(14.0)}, \
-         {Gps 13 Some(28.0) Some(70.0) Some(17.0)}, \
-         {Gps 16 Some(9.0) Some(20.0) None}, \
-         {Gps 26 Some(23.0) Some(252.0) None}, \
-         {Gps 29 Some(9.0) Some(301.0) Some(24.0)}, \
-         {Gps 36 None None None}",
-        dump_sattelites(nmea.satellites())
+        vec![
+            "{Gps 2 Some(39.0) Some(223.0) Some(19.0)}",
+            "{Gps 4 Some(14.0) Some(186.0) Some(14.0)}",
+            "{Gps 13 Some(28.0) Some(70.0) Some(17.0)}",
+            "{Gps 16 Some(9.0) Some(20.0) None}",
+            "{Gps 26 Some(23.0) Some(252.0) None}",
+            "{Gps 29 Some(9.0) Some(301.0) Some(24.0)}",
+            "{Gps 36 None None None}",
+        ],
+        format_satellites(nmea.satellites())
     );
 }
 
@@ -242,19 +261,21 @@ fn test_parse() {
     assert_eq!(nmea.latitude().unwrap(), 53. + 21.6802 / 60.);
     assert_eq!(nmea.longitude().unwrap(), -(6. + 30.3372 / 60.));
     assert_eq!(nmea.altitude().unwrap(), 61.7);
-    assert_eq!(
-        "{Gps 2 Some(39.0) Some(223.0) Some(19.0)}, \
-         {Gps 4 Some(14.0) Some(186.0) Some(14.0)}, \
-         {Gps 5 Some(59.0) Some(290.0) Some(20.0)}, \
-         {Gps 7 Some(61.0) Some(98.0) Some(15.0)}, \
-         {Gps 8 Some(54.0) Some(157.0) Some(30.0)}, \
-         {Gps 10 Some(63.0) Some(137.0) Some(17.0)}, \
-         {Gps 13 Some(28.0) Some(70.0) Some(17.0)}, \
-         {Gps 16 Some(9.0) Some(20.0) None}, \
-         {Gps 26 Some(23.0) Some(252.0) None}, \
-         {Gps 29 Some(9.0) Some(301.0) Some(24.0)}, \
-         {Gps 36 None None None}",
-        dump_sattelites(nmea.satellites())
+    pretty_assertions::assert_eq!(
+        vec![
+            "{Gps 2 Some(39.0) Some(223.0) Some(19.0)}",
+            "{Gps 4 Some(14.0) Some(186.0) Some(14.0)}",
+            "{Gps 5 Some(59.0) Some(290.0) Some(20.0)}",
+            "{Gps 7 Some(61.0) Some(98.0) Some(15.0)}",
+            "{Gps 8 Some(54.0) Some(157.0) Some(30.0)}",
+            "{Gps 10 Some(63.0) Some(137.0) Some(17.0)}",
+            "{Gps 13 Some(28.0) Some(70.0) Some(17.0)}",
+            "{Gps 16 Some(9.0) Some(20.0) None}",
+            "{Gps 26 Some(23.0) Some(252.0) None}",
+            "{Gps 29 Some(9.0) Some(301.0) Some(24.0)}",
+            "{Gps 36 None None None}",
+        ],
+        format_satellites(nmea.satellites())
     );
 }
 
@@ -449,27 +470,21 @@ fn test_gll() {
     assert_eq!(44, nmea.fix_timestamp().unwrap().second());
 }
 
-// ensure right order before dump to string
-fn dump_sattelites(mut sats: Vec<Satellite>) -> String {
-    use std::fmt::Write;
-
+/// ensure right order before dump to string
+fn format_satellites(mut sats: Vec<Satellite, 58>) -> std::vec::Vec<String> {
     sats.sort_by_key(|s| (s.gnss_type() as u8, s.prn()));
-    // to not depend on Debug impl for `Sattelite` stability
-    let mut ret = String::new();
-    for s in &sats {
-        if !ret.is_empty() {
-            ret.push_str(", ");
-        }
-        write!(
-            ret,
-            "{{{gnss_type:?} {prn} {elevation:?} {azimuth:?} {snr:?}}}",
-            gnss_type = s.gnss_type(),
-            prn = s.prn(),
-            elevation = s.elevation(),
-            azimuth = s.azimuth(),
-            snr = s.snr(),
-        )
-        .unwrap();
-    }
-    ret
+    // to not depend on Debug impl for `Satellite` stability
+
+    sats.iter()
+        .map(|s| {
+            format!(
+                "{{{gnss_type:?} {prn} {elevation:?} {azimuth:?} {snr:?}}}",
+                gnss_type = s.gnss_type(),
+                prn = s.prn(),
+                elevation = s.elevation(),
+                azimuth = s.azimuth(),
+                snr = s.snr(),
+            )
+        })
+        .collect::<std::vec::Vec<String>>()
 }
