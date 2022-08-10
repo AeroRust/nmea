@@ -42,7 +42,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: -- -D warnings
+          args: --no-deps -- -D warnings
   test:
     name: Test
 
@@ -106,8 +106,10 @@ jobs:
 
   # Detect cases where documentation links don't resolve and such.
   doc:
-    name: Docs
+    name: Docs check
     runs-on: ubuntu-latest
+    env:
+      RUSTDOCFLAGS: "-D warnings"
     steps:
       - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
@@ -116,12 +118,18 @@ jobs:
           # Docs.rs uses nightly, which allows for easier syntax for linking to functions.
           toolchain: nightly
           override: true
-      - uses: actions-rs/cargo@v1
+
+      - name: Docs --all-features
+        uses: actions-rs/cargo@v1
         with:
-          # Need to use `cargo rustdoc` to actually get it to respect -D
-          # warnings... Note: this also requires nightly.
-          command: rustdoc
-          args: -- -D warnings
+          command: doc
+          args: --all-features --no-deps
+
+      - name: Docs --no-default-features
+        uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --no-default-features --no-deps
 
   codecov:
     name: Generate code coverage
