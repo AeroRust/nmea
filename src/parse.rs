@@ -63,25 +63,23 @@ fn do_parse_nmea_sentence(i: &[u8]) -> IResult<&[u8], NmeaSentence> {
     ))
 }
 
-pub fn parse_nmea_sentence<'a>(
-    sentence: &'a [u8],
-) -> core::result::Result<NmeaSentence, NmeaError<'a>> {
-    /*
-     * From gpsd:
-     * We've had reports that on the Garmin GPS-10 the device sometimes
-     * (1:1000 or so) sends garbage packets that have a valid checksum
-     * but are like 2 successive NMEA packets merged together in one
-     * with some fields lost.  Usually these are much longer than the
-     * legal limit for NMEA, so we can cope by just tossing out overlong
-     * packets.  This may be a generic bug of all Garmin chipsets.
-     * NMEA 3.01, Section 5.3 says the max sentence length shall be
-     * 82 chars, including the leading $ and terminating \r\n.
-     *
-     * Some receivers (TN-200, GSW 2.3.2) emit oversized sentences.
-     * The Trimble BX-960 receiver emits a 91-character GGA message.
-     * The current hog champion is the Skytraq S2525F8 which emits
-     * a 100-character PSTI message.
-     */
+pub fn parse_nmea_sentence(sentence: &[u8]) -> core::result::Result<NmeaSentence, NmeaError<'_>> {
+    // From gpsd:
+    //
+    // We've had reports that on the Garmin GPS-10 the device sometimes
+    // (1:1000 or so) sends garbage packets that have a valid checksum
+    // but are like 2 successive NMEA packets merged together in one
+    // with some fields lost. Usually these are much longer than the
+    // legal limit for NMEA, so we can cope by just tossing out overlong
+    // packets.  This may be a generic bug of all Garmin chipsets.
+    // NMEA 3.01, Section 5.3 says the max sentence length shall be
+    // 82 chars, including the leading $ and terminating \r\n.
+    //
+    // Some receivers (TN-200, GSW 2.3.2) emit oversized sentences.
+    // The Trimble BX-960 receiver emits a 91-character GGA message.
+    // The current hog champion is the Skytraq S2525F8 which emits
+    // a 100-character PSTI message.
+
     if sentence.len() > SENTENCE_MAX_LEN {
         Err(NmeaError::SentenceLength(sentence.len()))
     } else {
