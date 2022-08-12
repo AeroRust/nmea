@@ -8,6 +8,9 @@ use nom::combinator::{map, map_parser, map_res};
 use nom::number::complete::double;
 use nom::sequence::tuple;
 use nom::IResult;
+#[cfg(not(feature = "std"))]
+#[allow(unused_imports)]
+use num_traits::float::FloatCore;
 
 pub(crate) fn parse_hms(i: &[u8]) -> IResult<&[u8], NaiveTime> {
     map_res(
