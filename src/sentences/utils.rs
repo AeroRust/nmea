@@ -102,8 +102,11 @@ pub(crate) fn parse_date(i: &[u8]) -> IResult<&[u8], NaiveDate> {
     )(i)
 }
 
-pub(crate) fn parse_num<I: str::FromStr>(data: &[u8]) -> core::result::Result<I, &'static str> {
-    str::parse::<I>(unsafe { str::from_utf8_unchecked(data) }).map_err(|_| "parse of number failed")
+pub(crate) fn parse_num<I: str::FromStr>(data: &[u8]) -> Result<I, &'static str> {
+    str::from_utf8(data)
+        .map_err(|_| "Number str is not UTF-8")?
+        .parse::<I>()
+        .map_err(|_| "parse of number failed")
 }
 
 pub(crate) fn parse_float_num<T: str::FromStr>(

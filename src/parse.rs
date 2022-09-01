@@ -37,8 +37,9 @@ pub fn checksum<'a, I: Iterator<Item = &'a u8>>(bytes: I) -> u8 {
 }
 
 fn parse_hex(data: &[u8]) -> core::result::Result<u8, &'static str> {
-    u8::from_str_radix(unsafe { str::from_utf8_unchecked(data) }, 16)
-        .map_err(|_| "Failed to parse checksum as hex number")
+    let string_data = str::from_utf8(data).map_err(|_| "Number str is not UTF-8")?;
+
+    u8::from_str_radix(string_data, 16).map_err(|_| "Failed to parse checksum as hex number")
 }
 
 fn parse_checksum(i: &[u8]) -> IResult<&[u8], u8> {
@@ -118,7 +119,7 @@ pub enum NmeaError<'a> {
     Unsupported(SentenceType),
     /// The provided navigation configuration was empty and thus invalid
     EmptyNavConfig,
-    /// invalid senetence number field in nmea sentence of type GSV
+    /// Invalid sentence number field in nmea sentence of type GSV
     InvalidGsvSentenceNum,
 }
 

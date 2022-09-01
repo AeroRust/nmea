@@ -20,6 +20,7 @@
 // limitations under the License.
 //
 #![cfg_attr(not(any(feature = "std", test)), no_std)]
+#![deny(unsafe_code)]
 
 use chrono::{NaiveDate, NaiveTime};
 use core::convert::TryInto;

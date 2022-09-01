@@ -67,7 +67,7 @@ fn test_parse_all_logs() {
                 || line.starts_with("$GNZDA")
                 || line.starts_with("$GNGBS")
             {
-                println!("Ignroing unsupported {line} at {log_path:?}:{line_no}");
+                println!("Ignoring unsupported {line} at {log_path:?}:{line_no}");
                 continue;
             }
             let s = line.as_bytes();
