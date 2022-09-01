@@ -1,3 +1,5 @@
 Felix Obenhuber <felix@obenhuber.de>
 Evgeniy A. Dushistov <dushistov@mail.ru>
 Henrik Böving <hargonix@gmail.com>
+Lachezar Lechev <elpiel93@gmail.com>
+AeroRust <aerospace.rust@gmail.com>
