@@ -1,26 +1,26 @@
-[NMEA][doc]
-===========
+# [NMEA][doc]
 
 [![Version](https://img.shields.io/crates/v/nmea.svg)](https://crates.io/crates/nmea)
 [![Build Status](https://github.com/AeroRust/nmea/workflows/CI/badge.svg)](https://github.com/AeroRust/nmea/actions?query=workflow%3ACI+branch%3Amaster)
 [![codecov](https://codecov.io/gh/AeroRust/nmea/branch/master/graph/badge.svg)](https://codecov.io/gh/AeroRust/nmea)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/AeroRust/nmea/blob/master/LICENSE.txt)
 
-[Complete Documentation][doc]
+[Complete documentation can be found on www.docs.rs/nmea][doc]
 
 NMEA 0183 sentence parser for Rust.
 
-Currently only _GGA_, _GSV_, _GSA_, _VTG_ and _RMC_ sentences are supported.
+Currently **GGA**, **GSV**, **GSA**, **VTG** and **RMC** sentences are supported.
+
 Feel free to open PR and add others.
 
 > NMEA 0183 is a combined electrical and data specification for communication
 > between marine electronics such as echo sounder, sonars, anemometer,
 > gyrocompass, autopilot, GPS receivers and many other types of instruments.
 >
-> _https://en.wikipedia.org/wiki/NMEA_0183_
+- _https://en.wikipedia.org/wiki/NMEA_0183_
 
 
-[doc]: https://docs.rs/nmea/
+[doc]: https://docs.rs/nmea
 
 ## Usage
 
@@ -28,7 +28,7 @@ Put this in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nmea = "0.2.0"
+nmea = "0.3.0"
 ```
 
 For Rust 2015 edition put this in your crate root:
@@ -50,6 +50,10 @@ fn main() {
     println!("{}", nmea);
 }
 ```
+
+## Supported Rust Versions
+
+The Minimum supported Rust version (or MSRV) is **1.56**.
 
 ## License
 
