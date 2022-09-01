@@ -134,10 +134,12 @@ fn do_parse_gsa(i: &[u8]) -> IResult<&[u8], GsaData> {
     ))
 }
 
-/// Parse GSA
-/// from gpsd:
-/// eg1. $GPGSA,A,3,,,,,,16,18,,22,24,,,3.6,2.1,2.2*3C
-/// eg2. $GPGSA,A,3,19,28,14,18,27,22,31,39,,,,,1.7,1.0,1.3*35
+/// # Parse GSA
+///
+/// From gpsd:
+///
+/// eg1. `$GPGSA,A,3,,,,,,16,18,,22,24,,,3.6,2.1,2.2*3C`
+/// eg2. `$GPGSA,A,3,19,28,14,18,27,22,31,39,,,,,1.7,1.0,1.3*35`
 /// 1    = Mode:
 /// M=Manual, forced to operate in 2D or 3D
 /// A=Automatic, 3D/2D
@@ -148,9 +150,9 @@ fn do_parse_gsa(i: &[u8]) -> IResult<&[u8], GsaData> {
 /// 17   = VDOP
 ///
 /// Not all documentation specifies the number of PRN fields, it
-/// may be variable.  Most doc that specifies says 12 PRNs.
+/// may be variable. Most doc that specifies says 12 PRNs.
 ///
-/// the CH-4701 ourputs 24 PRNs!
+/// The CH-4701 outputs 24 PRNs!
 ///
 /// The Skytraq S2525F8-BD-RTK output both GPGSA and BDGSA in the
 /// same cycle:
@@ -165,14 +167,19 @@ fn do_parse_gsa(i: &[u8]) -> IResult<&[u8], GsaData> {
 /// another GNGSA with the BeiDou birds.
 ///
 /// SEANEXX and others also do it:
+///
+/// ```text
 /// $GNGSA,A,3,31,26,21,,,,,,,,,,3.77,2.55,2.77*1A
 /// $GNGSA,A,3,75,86,87,,,,,,,,,,3.77,2.55,2.77*1C
+/// ```
 /// seems like the first is GNSS and the second GLONASS
 ///
 /// One chipset called the i.Trek M3 issues GPGSA lines that look like
-/// this: "$GPGSA,A,1,,,,*32" when it has no fix.  This is broken
-/// in at least two ways: it's got the wrong number of fields, and
-/// it claims to be a valid sentence (A flag) when it isn't.
+/// this: "$GPGSA,A,1,,,,*32" when it has no fix. This is broken
+/// in at least two ways: 
+/// - It's got the wrong number of fields
+/// - it claims to be a valid sentence (A flag) when it isn't
+///
 /// Alarmingly, it's possible this error may be generic to SiRFstarIII
 pub fn parse_gsa(sentence: NmeaSentence) -> Result<GsaData, NmeaError> {
     if sentence.message_id != b"GSA" {

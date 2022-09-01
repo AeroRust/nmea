@@ -92,13 +92,13 @@ pub fn parse_nmea_sentence(sentence: &[u8]) -> core::result::Result<NmeaSentence
 pub enum ParseResult {
     BWC(BwcData),
     GGA(GgaData),
-    RMC(RmcData),
-    GSV(GsvData),
-    GSA(GsaData),
-    VTG(VtgData),
     GLL(GllData),
-    TXT(TxtData),
     GNS(GnsData),
+    GSA(GsaData),
+    GSV(GsvData),
+    RMC(RmcData),
+    TXT(TxtData),
+    VTG(VtgData),
     Unsupported(SentenceType),
 }
 

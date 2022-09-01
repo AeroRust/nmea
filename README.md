@@ -9,7 +9,16 @@
 
 NMEA 0183 sentence parser for Rust.
 
-Currently **GGA**, **GSV**, **GSA**, **VTG** and **RMC** sentences are supported.
+Supported sentences:
+- BWC
+- GGA
+- GLL
+- GNS
+- GSA
+- GSV
+- RMC
+- TXT
+- VTG
 
 Feel free to open PR and add others.
 
