@@ -470,4 +470,3 @@ fn test_gll() {
     assert_eq!(54, nmea.fix_timestamp().unwrap().minute());
     assert_eq!(44, nmea.fix_timestamp().unwrap().second());
 }
-

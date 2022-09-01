@@ -55,6 +55,10 @@ fn main() {
 
 The Minimum supported Rust version (or MSRV) is **1.56**.
 
+## Unsafe-free crate
+
+We use `#![deny(unsafe_code)]` for a fully `unsafe`-free crate.
+
 ## License
 
 This project is licensed under the [Apache-2.0](./LICENSE.txt).

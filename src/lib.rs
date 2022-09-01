@@ -2,23 +2,14 @@
 //!
 //! Use [`Nmea::parse()`](Nmea::parse) and [`Nmea::parse_for_fix()`](Nmea::parse_for_fix)
 //! to preserve state between receiving new NMEA sentence,
-//! and [`parse()`] to parse sentences without state
+//! and [`parse()`] to parse sentences without state.
 //!
 //! Units used: **degrees**, **knots**, **meters** for altitude
-// Copyright (C) 2016 Felix Obenhuber
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
+//!
+//! # Crate features
+//!
+//! - `default` features - `std`
+//! - `std` - enable `std`
 #![cfg_attr(not(any(feature = "std", test)), no_std)]
 #![deny(unsafe_code)]
 
