@@ -37,7 +37,7 @@ Put this in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nmea = "0.3.0"
+nmea = "0.3"
 ```
 
 For Rust 2015 edition put this in your crate root:
