@@ -6,20 +6,36 @@
 //!
 //! Units used: **degrees**, **knots**, **meters** for altitude
 //!
+//! # Supported sentences:
+//! - BWC
+//! - GGA
+//! - GLL
+//! - GNS
+//! - GSA
+//! - GSV
+//! - RMC
+//! - TXT
+//! - VTG
+//!
 //! # Crate features
 //!
 //! - `default` features - `std`
 //! - `std` - enable `std`
+
+// only enables the `doc_cfg` feature when
+// the `docsrs` configuration attribute is defined
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(not(any(feature = "std", test)), no_std)]
 #![deny(unsafe_code, rustdoc::broken_intra_doc_links)]
 
+use core::{convert::TryInto, fmt, mem, ops::BitOr};
+
 use chrono::{NaiveDate, NaiveTime};
-use core::convert::TryInto;
-use core::{fmt, mem, ops::BitOr};
 use heapless::{Deque, Vec};
 
 mod parse;
-mod sentences;
+
+pub mod sentences;
 
 #[doc(inline)]
 pub use parse::{
@@ -125,7 +141,7 @@ impl<'a> Nmea {
         self.latitude
     }
 
-    /// Returns last fixed longitude in degress. None if not fixed.
+    /// Returns last fixed longitude in degrees. None if not fixed.
     pub fn longitude(&self) -> Option<f64> {
         self.longitude
     }
@@ -966,9 +982,9 @@ impl From<char> for FixType {
 
 #[cfg(test)]
 mod tests {
-    use super::parse::checksum;
-    use super::*;
     use quickcheck::{QuickCheck, TestResult};
+
+    use super::{parse::checksum, *};
 
     fn check_parsing_lat_lon_in_gga(lat: f64, lon: f64) -> TestResult {
         fn scale(val: f64, max: f64) -> f64 {
