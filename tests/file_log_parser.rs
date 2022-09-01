@@ -7,7 +7,9 @@ use std::{
 
 use nmea::{parse, Nmea};
 
-use crate::format_satellites;
+use helpers::format_satellites;
+
+mod helpers;
 
 #[test]
 fn test_parse_file_log() {
@@ -18,8 +20,9 @@ fn test_parse_file_log() {
         File::open(&Path::new("tests").join("data").join("nmea1.log.expected")).unwrap(),
     )
     .lines()
-    .map(|v| v.unwrap())
-    .collect();
+    .collect::<Result<_, _>>()
+    .expect("Should collect lines");
+
     assert_eq!(expected, res);
 }
 
@@ -72,19 +75,11 @@ fn test_parse_all_logs() {
             }
             let s = line.as_bytes();
 
-            macro_rules! err_handler {
-                () => {
-                    |err| {
-                        panic!(
-                            "Parsing of {line} at {log_path:?}:{line_no} failed: {err}",
-                            line_no = line_no + 1
-                        )
-                    }
-                };
-            }
-            parse(s).unwrap_or_else(err_handler!());
-            nmea1.parse(line).unwrap_or_else(err_handler!());
-            nmea2.parse_for_fix(s).unwrap_or_else(err_handler!());
+            let expect_msg = format!("Parsing of {line} at {log_path:?}:{line_no} failed");
+
+            parse(s).expect(&expect_msg);
+            nmea1.parse(line).expect(&expect_msg);
+            nmea2.parse_for_fix(s).expect(&expect_msg);
         }
 
         let sat_state = match i {

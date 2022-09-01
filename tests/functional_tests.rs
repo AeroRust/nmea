@@ -1,9 +1,10 @@
-mod file_log_parser;
-
 use approx::assert_relative_eq;
 use chrono::NaiveTime;
-use heapless::Vec;
 use nmea::*;
+
+use helpers::format_satellites;
+
+mod helpers;
 
 #[test]
 fn test_invalid_datetime() {
@@ -470,21 +471,3 @@ fn test_gll() {
     assert_eq!(44, nmea.fix_timestamp().unwrap().second());
 }
 
-/// ensure right order before dump to string
-fn format_satellites(mut sats: Vec<Satellite, 58>) -> std::vec::Vec<String> {
-    sats.sort_by_key(|s| (s.gnss_type() as u8, s.prn()));
-    // to not depend on Debug impl for `Satellite` stability
-
-    sats.iter()
-        .map(|s| {
-            format!(
-                "{{{gnss_type:?} {prn} {elevation:?} {azimuth:?} {snr:?}}}",
-                gnss_type = s.gnss_type(),
-                prn = s.prn(),
-                elevation = s.elevation(),
-                azimuth = s.azimuth(),
-                snr = s.snr(),
-            )
-        })
-        .collect::<std::vec::Vec<String>>()
-}
