@@ -11,7 +11,7 @@
 //! - `default` features - `std`
 //! - `std` - enable `std`
 #![cfg_attr(not(any(feature = "std", test)), no_std)]
-#![deny(unsafe_code)]
+#![deny(unsafe_code, rustdoc::broken_intra_doc_links)]
 
 use chrono::{NaiveDate, NaiveTime};
 use core::convert::TryInto;
