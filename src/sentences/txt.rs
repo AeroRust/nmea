@@ -1,6 +1,5 @@
 use arrayvec::ArrayString;
-use nom::character::complete::char;
-use nom::{bytes::complete::take_while, IResult};
+use nom::{bytes::complete::take_while, character::complete::char, IResult};
 
 use super::utils::number;
 use crate::{parse::NmeaSentence, NmeaError};
@@ -80,7 +79,6 @@ struct TxtData0<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use crate::parse::parse_nmea_sentence;
 
     #[test]

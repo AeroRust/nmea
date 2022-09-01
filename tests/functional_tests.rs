@@ -1,8 +1,7 @@
 use approx::assert_relative_eq;
 use chrono::NaiveTime;
-use nmea::*;
-
 use helpers::format_satellites;
+use nmea::*;
 
 mod helpers;
 

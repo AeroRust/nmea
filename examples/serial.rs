@@ -15,9 +15,11 @@
 
 extern crate nmea;
 
-use std::env;
-use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::{
+    env,
+    fs::File,
+    io::{BufRead, BufReader},
+};
 
 fn main() {
     let mut nmea = nmea::Nmea::default();

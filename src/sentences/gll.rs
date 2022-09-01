@@ -1,19 +1,21 @@
 use chrono::NaiveTime;
-use nom::bytes::complete::take;
-use nom::character::complete::{char, one_of};
-use nom::combinator::opt;
-use nom::IResult;
+use nom::{
+    bytes::complete::take,
+    character::complete::{char, one_of},
+    combinator::opt,
+    IResult,
+};
 
-use crate::parse::NmeaSentence;
+use super::{nom_parse_failure, parse_faa_mode, FaaMode};
 use crate::{
+    parse::NmeaSentence,
     sentences::utils::{parse_hms, parse_lat_lon},
     NmeaError,
 };
 
-use super::{nom_parse_failure, parse_faa_mode, FaaMode};
-
-/// Parse GPGLL (Geographic position)
-/// From https://docs.novatel.com/OEM7/Content/Logs/GPGLL.htm
+/// # Parse GLL (Geographic position) message
+///
+/// From <https://docs.novatel.com/OEM7/Content/Logs/GPGLL.htm>
 ///
 /// | Field | Structure   | Description
 /// |-------|-------------|---------------------------------------------------------------------
@@ -81,9 +83,10 @@ fn do_parse_gll(i: &[u8]) -> IResult<&[u8], GllData> {
 
 #[cfg(test)]
 mod tests {
+    use approx::assert_relative_eq;
+
     use super::*;
     use crate::parse::parse_nmea_sentence;
-    use approx::assert_relative_eq;
 
     #[test]
     fn test_parse_gpgll() {

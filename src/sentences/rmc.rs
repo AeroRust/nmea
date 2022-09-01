@@ -1,16 +1,17 @@
 use chrono::{NaiveDate, NaiveTime};
+use nom::{
+    character::complete::{char, one_of},
+    combinator::opt,
+    number::complete::float,
+    IResult,
+};
 
-use nom::character::complete::{char, one_of};
-use nom::combinator::opt;
-
-use nom::number::complete::float;
-use nom::IResult;
-
-use crate::parse::NmeaSentence;
 use crate::{
+    parse::NmeaSentence,
     sentences::utils::{parse_date, parse_hms, parse_lat_lon},
     NmeaError,
 };
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum RmcStatusOfFix {
     Autonomous,
@@ -62,9 +63,12 @@ fn do_parse_rmc(i: &[u8]) -> IResult<&[u8], RmcData> {
     ))
 }
 
-/// Parse RMC message
+/// # Parse RMC message
+///
 /// From gpsd:
-/// RMC,225446.33,A,4916.45,N,12311.12,W,000.5,054.7,191194,020.3,E,A*68
+///
+/// `RMC,225446.33,A,4916.45,N,12311.12,W,000.5,054.7,191194,020.3,E,A*68`
+///
 /// 1     225446.33    Time of fix 22:54:46 UTC
 /// 2     A          Status of Fix: A = Autonomous, valid;
 /// D = Differential, valid; V = invalid
@@ -93,9 +97,10 @@ pub fn parse_rmc(sentence: NmeaSentence) -> Result<RmcData, NmeaError> {
 
 #[cfg(test)]
 mod tests {
+    use approx::assert_relative_eq;
+
     use super::*;
     use crate::parse::parse_nmea_sentence;
-    use approx::assert_relative_eq;
 
     #[test]
     fn test_parse_rmc() {

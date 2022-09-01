@@ -1,6 +1,5 @@
-use nmea::Satellite;
-
 use heapless::Vec;
+use nmea::Satellite;
 
 /// ensure right order before dump to string
 pub fn format_satellites(mut sats: Vec<Satellite, 58>) -> std::vec::Vec<String> {

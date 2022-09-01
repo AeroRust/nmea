@@ -1,16 +1,17 @@
 use chrono::NaiveTime;
+use nom::{
+    bytes::complete::take_until,
+    character::complete::{char, one_of},
+    combinator::{map_res, opt},
+    number::complete::float,
+    IResult,
+};
 
-use nom::bytes::complete::take_until;
-use nom::character::complete::{char, one_of};
-use nom::combinator::{map_res, opt};
-
-use nom::number::complete::float;
-
-use nom::IResult;
-
-use crate::parse::NmeaSentence;
-use crate::sentences::utils::{number, parse_float_num, parse_hms, parse_lat_lon};
-use crate::{FixType, NmeaError};
+use crate::{
+    parse::NmeaSentence,
+    sentences::utils::{number, parse_float_num, parse_hms, parse_lat_lon},
+    FixType, NmeaError,
+};
 
 #[derive(Debug, PartialEq)]
 pub struct GgaData {
@@ -58,9 +59,11 @@ fn do_parse_gga(i: &[u8]) -> IResult<&[u8], GgaData> {
     ))
 }
 
-/// Parse GGA message
-/// from gpsd/driver_nmea0183.c
-/// GGA,123519,4807.038,N,01131.324,E,1,08,0.9,545.4,M,46.9,M, , *42
+/// # Parse GGA message
+///
+/// From gpsd/driver_nmea0183.c
+///
+/// `GGA,123519,4807.038,N,01131.324,E,1,08,0.9,545.4,M,46.9,M, , *42`
 /// 1     123519       Fix taken at 12:35:19 UTC
 /// 2,3   4807.038,N   Latitude 48 deg 07.038' N
 /// 4,5   01131.324,E  Longitude 11 deg 31.324' E
@@ -88,9 +91,10 @@ pub fn parse_gga(sentence: NmeaSentence) -> Result<GgaData, NmeaError> {
 
 #[cfg(test)]
 mod tests {
+    use approx::assert_relative_eq;
+
     use super::*;
     use crate::parse::parse_nmea_sentence;
-    use approx::assert_relative_eq;
 
     #[test]
     fn test_parse_gga_full() {

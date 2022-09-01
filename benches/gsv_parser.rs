@@ -4,9 +4,8 @@ extern crate test;
 
 #[cfg(test)]
 mod tests {
-    use test::{black_box, Bencher};
-
     use nmea::{Nmea, SentenceType};
+    use test::{black_box, Bencher};
 
     #[bench]
     fn bench_gsv_parser(b: &mut Bencher) {

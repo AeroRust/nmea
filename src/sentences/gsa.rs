@@ -1,19 +1,16 @@
 use heapless::Vec;
-use nom::branch::alt;
-use nom::bytes::complete::take_while1;
-use nom::character::complete::{char, one_of};
-use nom::combinator::{all_consuming, opt, value};
-use nom::error::ErrorKind;
-use nom::error::ParseError;
-use nom::number::complete::float;
-use nom::sequence::terminated;
-use nom::Err;
-use nom::IResult;
-use nom::InputLength;
-use nom::Parser;
+use nom::{
+    branch::alt,
+    bytes::complete::take_while1,
+    character::complete::{char, one_of},
+    combinator::{all_consuming, opt, value},
+    error::{ErrorKind, ParseError},
+    number::complete::float,
+    sequence::terminated,
+    Err, IResult, InputLength, Parser,
+};
 
-use crate::parse::NmeaSentence;
-use crate::{sentences::utils::number, NmeaError};
+use crate::{parse::NmeaSentence, sentences::utils::number, NmeaError};
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum GsaMode1 {
@@ -134,7 +131,7 @@ fn do_parse_gsa(i: &[u8]) -> IResult<&[u8], GsaData> {
     ))
 }
 
-/// # Parse GSA
+/// # Parse GSA message
 ///
 /// From gpsd:
 ///
@@ -176,7 +173,7 @@ fn do_parse_gsa(i: &[u8]) -> IResult<&[u8], GsaData> {
 ///
 /// One chipset called the i.Trek M3 issues GPGSA lines that look like
 /// this: "$GPGSA,A,1,,,,*32" when it has no fix. This is broken
-/// in at least two ways: 
+/// in at least two ways:
 /// - It's got the wrong number of fields
 /// - it claims to be a valid sentence (A flag) when it isn't
 ///
@@ -195,7 +192,6 @@ pub fn parse_gsa(sentence: NmeaSentence) -> Result<GsaData, NmeaError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use crate::parse::parse_nmea_sentence;
 
     #[test]

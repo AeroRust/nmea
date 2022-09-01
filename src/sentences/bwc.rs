@@ -1,13 +1,17 @@
 use arrayvec::ArrayString;
 use chrono::NaiveTime;
-use nom::bytes::complete::is_not;
-use nom::character::complete::char;
-use nom::combinator::{map_res, opt};
-use nom::number::complete::float;
+use nom::{
+    bytes::complete::is_not,
+    character::complete::char,
+    combinator::{map_res, opt},
+    number::complete::float,
+};
 
-use crate::parse::NmeaSentence;
-use crate::sentences::utils::{parse_hms, parse_lat_lon};
-use crate::NmeaError;
+use crate::{
+    parse::NmeaSentence,
+    sentences::utils::{parse_hms, parse_lat_lon},
+    NmeaError,
+};
 
 const MAX_LEN: usize = 64;
 
@@ -88,8 +92,9 @@ fn do_parse_bwc(i: &[u8]) -> Result<BwcData, NmeaError> {
     })
 }
 
-/// Parse BWC message
-/// See: https://gpsd.gitlab.io/gpsd/NMEA.html#_bwc_bearing_distance_to_waypoint_great_circle
+/// # Parse BWC message
+///
+/// See: <https://gpsd.gitlab.io/gpsd/NMEA.html#_bwc_bearing_distance_to_waypoint_great_circle>
 pub fn parse_bwc(sentence: NmeaSentence) -> Result<BwcData, NmeaError> {
     if sentence.message_id != b"BWC" {
         Err(NmeaError::WrongSentenceHeader {
@@ -105,9 +110,8 @@ pub fn parse_bwc(sentence: NmeaSentence) -> Result<BwcData, NmeaError> {
 mod tests {
     use approx::assert_relative_eq;
 
-    use crate::parse::parse_nmea_sentence;
-
     use super::*;
+    use crate::parse::parse_nmea_sentence;
 
     #[test]
     fn test_parse_bwc_full() {

@@ -5,9 +5,8 @@ use std::{
     path::Path,
 };
 
-use nmea::{parse, Nmea};
-
 use helpers::format_satellites;
+use nmea::{parse, Nmea};
 
 mod helpers;
 

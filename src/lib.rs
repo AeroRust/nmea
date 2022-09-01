@@ -35,7 +35,7 @@ use heapless::{Deque, Vec};
 
 mod parse;
 
-pub mod sentences;
+mod sentences;
 
 #[doc(inline)]
 pub use parse::{

@@ -15,11 +15,10 @@ pub use gll::{parse_gll, GllData};
 pub use gns::{parse_gns, GnsData, NavigationStatus};
 pub use gsa::{parse_gsa, GsaData};
 pub use gsv::{parse_gsv, GsvData};
+use nom::IResult;
 pub use rmc::{parse_rmc, RmcData, RmcStatusOfFix};
 pub use txt::{parse_txt, TxtData};
 pub use vtg::{parse_vtg, VtgData};
-
-use nom::IResult;
 
 use crate::FixType;
 

@@ -36,15 +36,20 @@ pub enum NavigationStatus {
     NotValidForNavigation,
 }
 
+/// # Parse GNS message
+///
 /// Information from gpsd:
+///
 /// Introduced in NMEA 4.0?
 ///
 /// This mostly duplicates RMC, except for the multi GNSS mode
 /// indicator.
 ///
-/// Example.  Ignore the line break.
+/// ## Example (Ignore the line break):
+/// ```text
 /// $GPGNS,224749.00,3333.4268304,N,11153.3538273,W,D,19,0.6,406.110,
 ///        -26.294,6.0,0138,S,*6A
+///```
 ///
 /// 1:  224749.00     UTC HHMMSS.SS.  22:47:49.00
 /// 2:  3333.4268304  Latitude DDMM.MMMMM. 33 deg. 33.4268304 min
@@ -127,9 +132,10 @@ fn do_parse_gns(i: &[u8]) -> IResult<&[u8], GnsData> {
 
 #[cfg(test)]
 mod tests {
+    use approx::assert_relative_eq;
+
     use super::*;
     use crate::parse::parse_nmea_sentence;
-    use approx::assert_relative_eq;
 
     #[test]
     fn test_parse_gns() {

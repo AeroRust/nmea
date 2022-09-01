@@ -1,13 +1,15 @@
 use core::str;
 
 use chrono::{NaiveDate, NaiveTime};
-use nom::branch::alt;
-use nom::bytes::complete::{tag, take, take_until};
-use nom::character::complete::{char, digit1, one_of};
-use nom::combinator::{map, map_parser, map_res};
-use nom::number::complete::double;
-use nom::sequence::tuple;
-use nom::IResult;
+use nom::{
+    branch::alt,
+    bytes::complete::{tag, take, take_until},
+    character::complete::{char, digit1, one_of},
+    combinator::{map, map_parser, map_res},
+    number::complete::double,
+    sequence::tuple,
+    IResult,
+};
 #[cfg(not(feature = "std"))]
 #[allow(unused_imports)]
 use num_traits::float::FloatCore;
@@ -122,8 +124,9 @@ pub(crate) fn number<T: str::FromStr>(i: &[u8]) -> IResult<&[u8], T> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use approx::assert_relative_eq;
+
+    use super::*;
 
     #[test]
     fn test_do_parse_lat_lon() {

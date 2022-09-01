@@ -1,7 +1,4 @@
-use nom::character::complete::char;
-use nom::combinator::opt;
-use nom::number::complete::float;
-use nom::IResult;
+use nom::{character::complete::char, combinator::opt, number::complete::float, IResult};
 
 use crate::{parse::NmeaSentence, NmeaError};
 
@@ -40,21 +37,23 @@ fn do_parse_vtg(i: &[u8]) -> IResult<&[u8], VtgData> {
     ))
 }
 
-/// parse VTG
-/// from http://aprs.gids.nl/nmea/#vtg
+/// # Parse VTG message
+///
+/// From <http://aprs.gids.nl/nmea/#vtg>
+///
 /// Track Made Good and Ground Speed.
 ///
-/// eg1. $GPVTG,360.0,T,348.7,M,000.0,N,000.0,K*43
-/// eg2. $GPVTG,054.7,T,034.4,M,005.5,N,010.2,K
+/// eg1. `$GPVTG,360.0,T,348.7,M,000.0,N,000.0,K*43`
+/// eg2. `$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K`
 ///
 ///
-/// 054.7,T      True track made good
-/// 034.4,M      Magnetic track made good
-/// 005.5,N      Ground speed, knots
-/// 010.2,K      Ground speed, Kilometers per hour
+/// `054.7,T`      True track made good
+/// `034.4,M`      Magnetic track made good
+/// `005.5,N`      Ground speed, knots
+/// `010.2,K`      Ground speed, Kilometers per hour
 ///
 ///
-/// eg3. $GPVTG,t,T,,,s.ss,N,s.ss,K*hh
+/// eg3. `$GPVTG,t,T,,,s.ss,N,s.ss,K*hh`
 /// 1    = Track made good
 /// 2    = Fixed text 'T' indicates that track made good is relative to true north
 /// 3    = not used
@@ -85,7 +84,6 @@ pub fn parse_vtg(sentence: NmeaSentence) -> Result<VtgData, NmeaError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use crate::parse::{parse_nmea_sentence, NmeaError};
 
     fn run_parse_vtg(line: &[u8]) -> Result<VtgData, NmeaError> {

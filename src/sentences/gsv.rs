@@ -1,11 +1,11 @@
 use heapless::Vec;
-use nom::character::complete::char;
-use nom::combinator::{cond, opt, rest_len};
-use nom::IResult;
+use nom::{
+    character::complete::char,
+    combinator::{cond, opt, rest_len},
+    IResult,
+};
 
-use crate::parse::NmeaSentence;
-use crate::sentences::utils::number;
-use crate::{GnssType, NmeaError, Satellite};
+use crate::{parse::NmeaSentence, sentences::utils::number, GnssType, NmeaError, Satellite};
 
 #[derive(Debug, PartialEq)]
 pub struct GsvData {
@@ -68,9 +68,12 @@ fn do_parse_gsv(i: &[u8]) -> IResult<&[u8], GsvData> {
     ))
 }
 
-/// Parsin one GSV sentence
-/// from gpsd/driver_nmea0183.c:
-/// $IDGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75
+/// # Parse one GSV message
+///
+/// From gpsd/driver_nmea0183.c:
+///
+/// `$IDGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75`
+///
 /// 2           Number of sentences for full data
 /// 1           Sentence 1 of 2
 /// 08          Total number of satellites in view
