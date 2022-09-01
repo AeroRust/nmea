@@ -52,7 +52,7 @@ jobs:
 
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        rust: [stable, beta]
+        rust: [1.56, stable, beta]
     env:
       RUSTUP_MAX_RETRIES: 10
       CARGO_NET_RETRY: 10
