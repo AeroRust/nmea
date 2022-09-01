@@ -58,24 +58,28 @@ fn test_parse_all_logs() {
     .iter()
     .enumerate()
     {
-        println!("test parsing of {log_path:?}");
+        println!("test parsing of {:?}", log_path);
         let full_log = fs::read_to_string(&log_path).unwrap();
 
         let mut nmea1 = Nmea::default();
         let mut nmea2 = Nmea::default();
 
-        for (line_no, line) in full_log.lines().enumerate() {
+        for (line_index, line) in full_log.lines().enumerate() {
+            let line_no = line_index + 1;
             if line.starts_with("$GNGRS")
                 || line.starts_with("$GNGST")
                 || line.starts_with("$GNZDA")
                 || line.starts_with("$GNGBS")
             {
-                println!("Ignoring unsupported {line} at {log_path:?}:{line_no}");
+                println!(
+                    "Ignoring unsupported {} at {:?}:{}",
+                    line, log_path, line_no
+                );
                 continue;
             }
             let s = line.as_bytes();
 
-            let expect_msg = format!("Parsing of {line} at {log_path:?}:{line_no} failed");
+            let expect_msg = format!("Parsing of {} at {:?}:{} failed", line, log_path, line_no);
 
             parse(s).expect(&expect_msg);
             nmea1.parse(line).expect(&expect_msg);
