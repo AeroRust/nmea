@@ -88,15 +88,17 @@ pub struct Nmea {
     sentences_for_this_time: SentenceMask,
 }
 
+/// max number of visible GNSS satellites per hemisphere, assuming global coverage
+/// GPS: 16
+/// GLONASS: 12
+/// BeiDou: 12 + 3 IGSO + 3 GEO
+/// Galileo: 12
+const MAX_VISIBLE_SATS: usize = 16 + 12 + 12 + 3 + 3 + 12;
+const MAX_VISIBLE_SATS_ROW_PER_4: usize = (MAX_VISIBLE_SATS + (4 - 1)) / 4;
+
 #[derive(Debug, Clone, Default)]
 struct SatsPack {
-    /// max number of visible GNSS satellites per hemisphere, assuming global coverage
-    /// GPS: 16
-    /// GLONASS: 12
-    /// BeiDou: 12 + 3 IGSO + 3 GEO
-    /// Galileo: 12
-    /// => 58 total Satellites => max 15 rows of data
-    data: Deque<Vec<Option<Satellite>, 4>, 15>,
+    data: Deque<Vec<Option<Satellite>, 4>, MAX_VISIBLE_SATS_ROW_PER_4>,
     max_len: usize,
 }
 
@@ -170,8 +172,8 @@ impl<'a> Nmea {
     }
 
     /// Returns used satellites
-    pub fn satellites(&self) -> Vec<Satellite, 58> {
-        let mut ret = Vec::<Satellite, 58>::new();
+    pub fn satellites(&self) -> Vec<Satellite, MAX_VISIBLE_SATS> {
+        let mut ret = Vec::<Satellite, MAX_VISIBLE_SATS>::new();
         let sat_key = |sat: &Satellite| (sat.gnss_type() as u8, sat.prn());
         for sns in &self.satellites_scan {
             // for sat_pack in sns.data.iter().rev() {
