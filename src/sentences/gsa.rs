@@ -46,7 +46,6 @@ where
     O: core::fmt::Debug,
 {
     move |mut i: I| {
-        // let mut acc = crate::lib::std::vec::Vec::with_capacity(4);
         let mut acc = Vec::<_, 12>::new();
         loop {
             let len = i.input_len();
