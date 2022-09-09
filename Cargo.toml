@@ -9,7 +9,7 @@ authors = [
     "AeroRust <aerospace.rust@gmail.com>"
 ]
 description = "Simple NMEA 0183 parser"
-license = "Apache-2.0"
+license = "MIT OR Apache-2.0"
 keywords = ["NMEA", "gps", "glonass", "coordinate", "position"]
 categories = ["parser-implementations", "no-std", "embedded"]
 repository = "https://github.com/AeroRust/nmea"
@@ -38,6 +38,7 @@ quickcheck = { version = "1.0.3", default-features = false }
 approx = "0.5.1"
 pretty_assertions = "1"
 doc-comment = "0.3"
+once_cell = "1"
 
 [features]
 default = ["std"]
