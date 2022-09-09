@@ -1,5 +1,6 @@
 use core::str;
 
+use arrayvec::ArrayString;
 use chrono::{NaiveDate, NaiveTime};
 use nom::{
     branch::alt,
@@ -13,6 +14,8 @@ use nom::{
 #[cfg(not(feature = "std"))]
 #[allow(unused_imports)]
 use num_traits::float::FloatCore;
+
+use crate::NmeaError;
 
 pub(crate) fn parse_hms(i: &[u8]) -> IResult<&[u8], NaiveTime> {
     map_res(
@@ -113,13 +116,22 @@ pub(crate) fn parse_num<I: str::FromStr>(data: &[u8]) -> Result<I, &'static str>
 
 pub(crate) fn parse_float_num<T: str::FromStr>(
     input: &[u8],
-) -> core::result::Result<T, &'static str> {
+) -> Result<T, &'static str> {
     let s = str::from_utf8(input).map_err(|_| "invalid float number")?;
     str::parse::<T>(s).map_err(|_| "parse of float number failed")
 }
 
 pub(crate) fn number<T: str::FromStr>(i: &[u8]) -> IResult<&[u8], T> {
     map_res(digit1, parse_num)(i)
+}
+
+/// Parses a given `&str` slice to an owned `ArrayString` with a given `MAX_LEN`.
+///
+/// # Errors
+///
+/// If `&str` length > `MAX_LEN` it returns a [`NmeaError::SentenceLength`] error.
+pub(crate) fn array_string<const MAX_LEN: usize>(string: &str) -> Result<ArrayString<MAX_LEN>, NmeaError> {
+    ArrayString::from(string).map_err(|_e| NmeaError::SentenceLength(string.len()))
 }
 
 #[cfg(test)]

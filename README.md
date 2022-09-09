@@ -10,6 +10,7 @@
 NMEA 0183 sentence parser for Rust.
 
 Supported sentences:
+- BOD (untested)
 - BWC (supported by `parse()`, but not by `Nmea::parse()`)
 - GGA
 - GLL
