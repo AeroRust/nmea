@@ -90,6 +90,7 @@ pub fn parse_nmea_sentence(sentence: &[u8]) -> core::result::Result<NmeaSentence
 
 #[derive(Debug, PartialEq)]
 pub enum ParseResult {
+    BOD(BodData),
     BWC(BwcData),
     GGA(GgaData),
     GLL(GllData),
@@ -177,6 +178,7 @@ pub fn parse(xs: &[u8]) -> Result<ParseResult, NmeaError> {
 
     if nmea_sentence.checksum == calculated_checksum {
         match SentenceType::from_slice(nmea_sentence.message_id) {
+            SentenceType::BOD => parse_bod(nmea_sentence).map(ParseResult::BOD),
             SentenceType::BWC => {
                 let data = parse_bwc(nmea_sentence)?;
                 Ok(ParseResult::BWC(data))
