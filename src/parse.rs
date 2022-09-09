@@ -92,6 +92,7 @@ pub fn parse_nmea_sentence(sentence: &[u8]) -> core::result::Result<NmeaSentence
 pub enum ParseResult {
     BOD(BodData),
     BWC(BwcData),
+    GBS(GbsData),
     GGA(GgaData),
     GLL(GllData),
     GNS(GnsData),
