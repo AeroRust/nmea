@@ -1,11 +1,5 @@
 use chrono::NaiveTime;
-use nom::{
-    bytes::complete::take_until,
-    character::complete::{char, one_of},
-    combinator::{map_res, opt},
-    number::complete::float,
-    IResult,
-};
+use nom::{character::complete::char, combinator::opt, number::complete::float, IResult};
 
 use crate::{
     parse::NmeaSentence,

@@ -114,9 +114,7 @@ pub(crate) fn parse_num<I: str::FromStr>(data: &[u8]) -> Result<I, &'static str>
         .map_err(|_| "parse of number failed")
 }
 
-pub(crate) fn parse_float_num<T: str::FromStr>(
-    input: &[u8],
-) -> Result<T, &'static str> {
+pub(crate) fn parse_float_num<T: str::FromStr>(input: &[u8]) -> Result<T, &'static str> {
     let s = str::from_utf8(input).map_err(|_| "invalid float number")?;
     str::parse::<T>(s).map_err(|_| "parse of float number failed")
 }
@@ -130,7 +128,9 @@ pub(crate) fn number<T: str::FromStr>(i: &[u8]) -> IResult<&[u8], T> {
 /// # Errors
 ///
 /// If `&str` length > `MAX_LEN` it returns a [`NmeaError::SentenceLength`] error.
-pub(crate) fn array_string<const MAX_LEN: usize>(string: &str) -> Result<ArrayString<MAX_LEN>, NmeaError> {
+pub(crate) fn array_string<const MAX_LEN: usize>(
+    string: &str,
+) -> Result<ArrayString<MAX_LEN>, NmeaError> {
     ArrayString::from(string).map_err(|_e| NmeaError::SentenceLength(string.len()))
 }
 

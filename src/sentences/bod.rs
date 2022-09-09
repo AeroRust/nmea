@@ -41,7 +41,7 @@ fn do_parse_bod(i: &[u8]) -> Result<BodData, NmeaError> {
     // 4. M = Magnetic
     let (i, _) = opt(char('M'))(i)?;
     let (i, _) = char(',')(i)?;
-    
+
     // 5. Destination Waypoint
     let (i, to_waypoint) = opt(map_res(take_until(","), core::str::from_utf8))(i)?;
     let (i, _) = char(',')(i)?;
