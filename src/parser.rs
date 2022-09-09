@@ -257,7 +257,9 @@ impl<'a> Nmea {
                 self.merge_txt_data(txt);
                 Ok(SentenceType::TXT)
             }
-            ParseResult::BWC(_) => Err(NmeaError::Unsupported(SentenceType::BWC)),
+            ParseResult::BWC(_) | ParseResult::BOD(_) | ParseResult::GBS(_) => {
+                Err(NmeaError::Unsupported(SentenceType::BWC))
+            }
             ParseResult::Unsupported(sentence_type) => Err(NmeaError::Unsupported(sentence_type)),
         }
     }
@@ -345,7 +347,9 @@ impl<'a> Nmea {
                 self.merge_txt_data(txt_data);
                 return Ok(FixType::Invalid);
             }
-            ParseResult::BWC(_) | ParseResult::BOD(_) | ParseResult::GBS(_) => return Ok(FixType::Invalid),
+            ParseResult::BWC(_) | ParseResult::BOD(_) | ParseResult::GBS(_) => {
+                return Ok(FixType::Invalid)
+            }
             ParseResult::Unsupported(_) => {
                 return Ok(FixType::Invalid);
             }
