@@ -45,4 +45,3 @@ pub use parse::{
 #[cfg(doctest)]
 // Test the README examples
 doc_comment::doctest!("../README.md");
-
