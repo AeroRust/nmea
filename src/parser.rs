@@ -681,12 +681,13 @@ define_sentence_type_enum! {
     /// - [`SentenceType::ZTG`]
     #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
     #[repr(u32)]
+    #[allow(rustdoc::bare_urls)]
     pub enum SentenceType {
         /// AAM - Waypoint Arrival Alarm
         ///
-        /// Type: `Waypoints and tacks`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_aam_waypoint_arrival_alarm>
+        ///
+        /// Type: `Waypoints and tacks`
         AAM,
         ABK,
         ACA,
@@ -695,22 +696,22 @@ define_sentence_type_enum! {
         AIR,
         /// ALM - GPS Almanac Data
         ///
-        /// Type: `GPS`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_alm_gps_almanac_data>
+        ///
+        /// Type: `GPS`
         ALM,
         ALR,
         /// APA - Autopilot Sentence "A"
         ///
-        /// Type: `Autopilot`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_apa_autopilot_sentence_a>
+        ///
+        /// Type: `Autopilot`
         APA,
         /// APB - Autopilot Sentence "B"
         ///
-        /// Type: `Autopilot`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_apb_autopilot_sentence_b>
+        ///
+        /// Type: `Autopilot`
         APB,
         /// Type: `Autopilot`
         ASD,
@@ -718,58 +719,58 @@ define_sentence_type_enum! {
         BEC,
         /// BOD - Bearing - Waypoint to Waypoint
         ///
-        /// Type: `Waypoints and tacks`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_bod_bearing_waypoint_to_waypoint>
+        ///
+        /// Type: `Waypoints and tacks`
         BOD,
         /// BWC - Bearing & Distance to Waypoint - Great Circle
         ///
-        /// Type: `Waypoints and tacks`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_bwc_bearing_distance_to_waypoint_great_circle>
+        ///
+        /// Type: `Waypoints and tacks`
         BWC,
         /// BWR - Bearing and Distance to Waypoint - Rhumb Line
         ///
-        /// Type: `Waypoints and tacks`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_bwr_bearing_and_distance_to_waypoint_rhumb_line>
+        ///
+        /// Type: `Waypoints and tacks`
         BWR,
         /// BWW - Bearing - Waypoint to Waypoint
         ///
-        /// Type: `Waypoints and tacks`
-        ///
         /// https://gpsd.gitlab.io/gpsd/NMEA.html#_bww_bearing_waypoint_to_waypoint
+        ///
+        /// Type: `Waypoints and tacks`
         BWW,
         CUR,
         /// DBK - Depth Below Keel
         ///
-        /// Type: `Echo`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_dbk_depth_below_keel>
+        ///
+        /// Type: `Echo`
         DBK,
         /// DBS - Depth Below Surface
         ///
-        /// Type: `Echo`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_dbs_depth_below_surface>
+        ///
+        /// Type: `Echo`
         DBS,
         /// DBT - Depth below transducer
         ///
-        /// Type: `Echo`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_dbt_depth_below_transducer>
+        ///
+        /// Type: `Echo`
         DBT,
         /// DCN - Decca Position
         ///
-        /// Type: `Decca`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_dcn_decca_position>
+        ///
+        /// Type: `Decca`
         DCN,
         /// DPT - Depth of Water
         ///
-        /// Type: `Course`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_dpt_depth_of_water>
+        ///
+        /// Type: `Course`
         DPT,
         DSC,
         DSE,
@@ -778,46 +779,46 @@ define_sentence_type_enum! {
         DSR,
         /// DTM - Datum Reference
         ///
-        /// Type: `Position`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_dtm_datum_reference>
+        ///
+        /// Type: `Position`
         DTM,
         /// FSI - Frequency Set Information
         ///
-        /// Type: `Radio`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_fsi_frequency_set_information>
+        ///
+        /// Type: `Radio`
         FSI,
         /// GBS - GPS Satellite Fault Detection
         ///
-        /// Type: `GPS`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gbs_gps_satellite_fault_detection>
+        ///
+        /// Type: `GPS`
         GBS,
         /// GGA - Global Positioning System Fix Data
         ///
-        /// Type: `GPS`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gga_global_positioning_system_fix_data>
+        ///
+        /// Type: `GPS`
         GGA,
         /// GLC - Geographic Position, Loran-C
         ///
-        /// Type: `Loran-C`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_glc_geographic_position_loran_c>
+        ///
+        /// Type: `Loran-C`
         GLC,
         /// GLL - Geographic Position - Latitude/Longitude
         ///
-        /// Type: `Position`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gll_geographic_position_latitudelongitude>
+        ///
+        /// Type: `Position`
         GLL,
         GMP,
         /// GNS - Fix data
         ///
-        /// Type: `GPS`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gns_fix_data>
+        ///
+        /// Type: `GPS`
         GNS,
         /// GRS - GPS Range Residuals
         ///
@@ -825,9 +826,9 @@ define_sentence_type_enum! {
         GRS,
         /// GSA - GPS DOP and active satellites
         ///
-        /// Type: `GPS`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gsa_gps_dop_and_active_satellites>
+        ///
+        /// Type: `GPS`
         GSA,
         /// GST - GPS Pseudorange Noise Statistics
         ///
@@ -835,27 +836,27 @@ define_sentence_type_enum! {
         GST,
         /// GSV - Satellites in view
         ///
-        /// Type: `GPS`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gsv_satellites_in_view>
+        ///
+        /// Type: `GPS`
         GSV,
         /// GTD - Geographic Location in Time Differences
         ///
-        /// Type: `Date and Time`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gtd_geographic_location_in_time_differences>
+        ///
+        /// Type: `Date and Time`
         GTD,
         /// GXA - TRANSIT Position - Latitude/Longitude
         ///
-        /// Type: `Transit`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gxa_transit_position_latitudelongitude>
+        ///
+        /// Type: `Transit`
         GXA,
         /// HDG - Heading - Deviation & Variation
         ///
-        /// Type: `Course`
-        ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_hdg_heading_deviation_variation>
+        ///
+        /// Type: `Course`
         HDG,
         /// HDM - Heading - Magnetic
         ///
@@ -867,6 +868,7 @@ define_sentence_type_enum! {
         /// HDT - Heading - True
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_hdt_heading_true>
+        ///
         /// Type: `Course`
         HDT,
         /// HFB - Trawl Headrope to Footrope and Bottom
@@ -878,6 +880,7 @@ define_sentence_type_enum! {
         /// HSC - Heading Steering Command
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_hsc_heading_steering_command>
+        ///
         /// Type: `Course`
         HSC,
         /// HWBIAS - Unknown
@@ -893,6 +896,7 @@ define_sentence_type_enum! {
         /// LCD - Loran-C Signal Data
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_lcd_loran_c_signal_data>
+        ///
         /// Type: `Loran-C`
         LCD,
         LRF,
@@ -908,6 +912,7 @@ define_sentence_type_enum! {
         /// MSK - Control for a Beacon Receiver
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_msk_control_for_a_beacon_receiver>
+        ///
         /// Type: `D-GPS`
         MSK,
         /// MSS - Beacon Receiver Status
@@ -918,11 +923,13 @@ define_sentence_type_enum! {
         /// MTW - Mean Temperature of Water
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_mtw_mean_temperature_of_water>
+        ///
         /// Type: `Temperature`
         MTW,
         /// MWV - Wind Speed and Angle
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_mwv_wind_speed_and_angle>
+        ///
         /// Type: `Wind`
         MWV,
         /// OLN - Omega Lane Numbers
@@ -933,11 +940,13 @@ define_sentence_type_enum! {
         /// OSD - Own Ship Data
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_osd_own_ship_data>
+        ///
         /// Type: `General`
         OSD,
         /// R00 - Waypoints in active route
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_r00_waypoints_in_active_route>
+        ///
         /// Type: `Waypoints and tacks`
         ROO,
         /// RLM – Return Link Message
@@ -947,46 +956,55 @@ define_sentence_type_enum! {
         /// RMA - Recommended Minimum Navigation Information
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_rma_recommended_minimum_navigation_information>
+        ///
         /// Type: `Navigation`
         RMA,
         /// RMB - Recommended Minimum Navigation Information
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_rmb_recommended_minimum_navigation_information>
+        ///
         /// Type: `Navigation`
         RMB,
         /// RMC - Recommended Minimum Navigation Information
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_rmc_recommended_minimum_navigation_information>
+        ///
         /// Type: `Navigation`
         RMC,
         /// ROT - Rate Of Turn
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_rot_rate_of_turn>
+        ///
         /// Type: `Course`
         ROT,
         /// RPM - Revolutions
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_rpm_revolutions>
+        ///
         /// Type: `Machine`
         RPM,
         /// RSA - Rudder Sensor Angle
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_rsa_rudder_sensor_angle>
+        ///
         /// Type: `Rudder`
         RSA,
         /// RSD - RADAR System Data
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_rsd_radar_system_data>
+        ///
         /// Type: `Radar`
         RSD,
         /// RTE - Routes
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_rte_routes>
+        ///
         /// Type: `Waypoints and tacks`
         RTE,
         /// SFI - Scanning Frequency Information
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_sfi_scanning_frequency_information>
+        ///
         /// Type: `Radio`
         SFI,
         SSD,
@@ -1030,6 +1048,7 @@ define_sentence_type_enum! {
         /// TTM - Tracked Target Message
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_ttm_tracked_target_message>
+        ///
         /// Type: `Radar`
         TTM,
         TUT,
@@ -1037,6 +1056,7 @@ define_sentence_type_enum! {
         /// VBW - Dual Ground/Water Speed
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_vbw_dual_groundwater_speed>
+        ///
         /// Type: `Speed`
         VBW,
         VDM,
@@ -1044,73 +1064,87 @@ define_sentence_type_enum! {
         /// VDR - Set and Drift
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_vdr_set_and_drift>
+        ///
         /// Type: `Course`
         VDR,
         /// VHW - Water speed and heading
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_vhw_water_speed_and_heading>
+        ///
         /// Type: `Speed`
         VHW,
         /// VLW - Distance Traveled through Water
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_vlw_distance_traveled_through_water>
+        ///
         /// Type: `Speed`
         VLW,
         /// VPW - Speed - Measured Parallel to Wind
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_vpw_speed_measured_parallel_to_wind>
+        ///
         /// Type: `Wind`
         VPW,
         VSD,
         /// VTG - Track made good and Ground speed
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_vtg_track_made_good_and_ground_speed>
+        ///
         /// Type: `Waypoints and tacks`
         VTG,
         /// VWR - Relative Wind Speed and Angle
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_vwr_relative_wind_speed_and_angle>
+        ///
         /// Type: `Wind`
         VWR,
         /// WCV - Waypoint Closure Velocity
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_wcv_waypoint_closure_velocity>
+        ///
         /// Type: `Waypoints and tacks`
         WCV,
         /// WNC - Distance - Waypoint to Waypoint
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_wnc_distance_waypoint_to_waypoint>
+        ///
         /// Type: `Waypoints and tacks`
         WNC,
         /// WPL - Waypoint Location
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_wpl_waypoint_location>
+        ///
         /// Type: `Waypoints and tacks`
         WPL,
         /// XDR - Transducer Measurement
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_xdr_transducer_measurement>
+        ///
         /// Type: `Waypoints and tacks`
         XDR,
         /// XTE - Cross-Track Error, Measured
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_xte_cross_track_error_measured>
+        ///
         /// Type: `Waypoints and tacks`
         XTE,
         /// XTR - Cross Track Error - Dead Reckoning
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_xtr_cross_track_error_dead_reckoning>
+        ///
         /// Type: `Waypoints and tacks`
         XTR,
         /// ZDA - Time & Date - UTC, day, month, year and local time zone
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_zda_time_date_utc_day_month_year_and_local_time_zone>
+        ///
         /// Type: `Date and Time`
         ZDA,
         ZDL,
         /// ZFO - UTC & Time from origin Waypoint
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_zfo_utc_time_from_origin_waypoint>
+        ///
         /// Type: `Date and Time`
         ZFO,
         /// ZTG - UTC & Time to Destination Waypoint
