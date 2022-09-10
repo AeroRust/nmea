@@ -12,7 +12,7 @@ const MAX_LEN: usize = 64;
 /// 1   01  Total number of messages in this transmission, 01..99
 /// 2   01  Message number in this transmission, range 01..xx
 /// 3   02  Text identifier, u-blox GPS receivers specify the severity of the message with this number. 00 = ERROR, 01 = WARNING, 02 = NOTICE, 07 = USER
-/// 4   u-blox AG - www.u-blox.com  Any ASCII text
+/// 4   u-blox AG - www.u-blox.com Any ASCII text
 /// *68        mandatory nmea_checksum
 pub fn parse_txt(s: NmeaSentence) -> Result<TxtData, Error> {
     if s.message_id != SentenceType::TXT {
@@ -58,7 +58,8 @@ fn do_parse_txt(i: &str) -> IResult<&str, TxtData0<'_>> {
     ))
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+/// TXT - Text
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct TxtData {
     pub count: u8,
     pub seq: u8,

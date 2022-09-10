@@ -5,13 +5,29 @@ use nom::{
     IResult,
 };
 
-use super::{nom_parse_failure, parse_faa_mode, FaaMode};
+use super::{faa_mode::parse_faa_mode, nom_parse_failure, FaaMode};
 use crate::{
     parse::NmeaSentence,
     sentences::utils::{parse_hms, parse_lat_lon},
     Error, SentenceType,
 };
 
+/// GLL - Geographic Position - Latitude/Longitude
+///
+/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_bwc_bearing_distance_to_waypoint_great_circle>
+///
+/// ```text
+///         1       2 3        4 5         6 7
+///         |       | |        | |         | |
+///  $--GLL,ddmm.mm,a,dddmm.mm,a,hhmmss.ss,a*hh<CR><LF>
+/// ```
+///
+/// NMEA 2.3:
+/// ```text
+///         1       2 3        4 5         6 7
+///         |       | |        | |         | |
+///  $--GLL,ddmm.mm,a,dddmm.mm,a,hhmmss.ss,a,m*hh<CR><LF>
+/// ```
 #[derive(Debug, PartialEq)]
 pub struct GllData {
     pub latitude: Option<f64>,

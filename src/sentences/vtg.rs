@@ -2,7 +2,22 @@ use nom::{character::complete::char, combinator::opt, number::complete::float, I
 
 use crate::{parse::NmeaSentence, Error, SentenceType};
 
-#[derive(Debug, PartialEq)]
+/// VTG - Track made good and Ground speed
+///
+/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_vtg_track_made_good_and_ground_speed>
+///
+/// ```text
+///          1  2  3  4  5  6  7  8 9
+///          |  |  |  |  |  |  |  | |
+///  $--VTG,x.x,T,x.x,M,x.x,N,x.x,K*hh<CR><LF>
+/// ```
+///
+// NMEA 2.3:
+///
+/// ```text
+///  $--VTG,x.x,T,x.x,M,x.x,N,x.x,K,m*hh<CR><LF>
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct VtgData {
     pub true_course: Option<f32>,
     pub speed_over_ground: Option<f32>,

@@ -12,14 +12,38 @@ use crate::{
     Error, SentenceType,
 };
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RmcStatusOfFix {
     Autonomous,
     Differential,
     Invalid,
 }
 
-#[derive(Debug, PartialEq)]
+/// RMC - Recommended Minimum Navigation Information
+///
+/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_bwc_bearing_distance_to_waypoint_great_circle>
+///
+/// ```text
+///         1         2 3       4 5        6  7   8   9    10 11
+///         |         | |       | |        |  |   |   |    |  |
+///  $--RMC,hhmmss.ss,A,ddmm.mm,a,dddmm.mm,a,x.x,x.x,xxxx,x.x,a*hh<CR><LF>
+/// ```
+///
+/// NMEA 2.3:
+///
+/// ```text
+///         1         2 3       4 5        6  7   8   9    10 11
+///         |         | |       | |        |  |   |   |    |  |
+///  $--RMC,hhmmss.ss,A,ddmm.mm,a,dddmm.mm,a,x.x,x.x,xxxx,x.x,a,m*hh<CR><LF>
+/// ```
+///
+/// NMEA 4.1:
+/// ```text
+///         1         2 3       4 5        6  7   8   9    10 11
+///         |         | |       | |        |  |   |   |    |  |
+///  $--RMC,hhmmss.ss,A,ddmm.mm,a,dddmm.mm,a,x.x,x.x,xxxx,x.x,a,m,s*hh<CR><LF>
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RmcData {
     pub fix_time: Option<NaiveTime>,
     pub fix_date: Option<NaiveDate>,

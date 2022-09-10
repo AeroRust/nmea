@@ -10,6 +10,15 @@ use nom::{
 
 const MAX_LEN: usize = 64;
 
+/// BOD - Bearing - Waypoint to Waypoint
+///
+/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_bod_bearing_waypoint_to_waypoint>
+///
+/// ```text
+///        1   2 3   4 5    6    7
+///        |   | |   | |    |    |
+/// $--BOD,x.x,T,x.x,M,c--c,c--c*hh<CR><LF>
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BodData {
     pub bearing_true: Option<f32>,
@@ -21,9 +30,9 @@ pub struct BodData {
 /// BOD - Bearing - Waypoint to Waypoint
 ///
 /// ```text
-///         1   2 3   4 5    6    7
-///         |   | |   | |    |    |
-///  $--BOD,x.x,T,x.x,M,c--c,c--c*hh<CR><LF>
+///        1   2 3   4 5    6    7
+///        |   | |   | |    |    |
+/// $--BOD,x.x,T,x.x,M,c--c,c--c*hh<CR><LF>
 /// ```
 fn do_parse_bod(i: &str) -> Result<BodData, Error> {
     // 1. Bearing Degrees, True

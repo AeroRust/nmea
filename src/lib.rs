@@ -35,7 +35,7 @@ mod error;
 pub(crate) mod parse;
 mod parser;
 
-pub(crate) mod sentences;
+pub mod sentences;
 
 #[doc(inline)]
 pub use parser::*;
@@ -43,10 +43,7 @@ pub use parser::*;
 pub use error::Error;
 
 #[doc(inline)]
-pub use parse::{
-    parse_bytes, parse_str, BwcData, GgaData, GllData, GsaData, GsvData, ParseResult, RmcData,
-    RmcStatusOfFix, TxtData, VtgData, SENTENCE_MAX_LEN,
-};
+pub use parse::*;
 
 #[cfg(doctest)]
 // Test the README examples

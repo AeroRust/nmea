@@ -12,20 +12,29 @@ use nom::{
 
 use crate::{parse::NmeaSentence, sentences::utils::number, Error, SentenceType};
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GsaMode1 {
     Manual,
     Automatic,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GsaMode2 {
     NoFix,
     Fix2D,
     Fix3D,
 }
 
-#[derive(Debug, PartialEq)]
+/// GSA - GPS DOP and active satellites
+///
+/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_bod_bearing_waypoint_to_waypoint>
+///
+/// ```text
+///        1 2 3                        14 15  16  17  18
+///        | | |                         |  |   |   |   |
+/// $--GSA,a,a,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x.x,x.x,x.x*hh<CR><LF>
+/// ```
+#[derive(Debug, Clone, PartialEq)]
 pub struct GsaData {
     pub mode1: GsaMode1,
     pub mode2: GsaMode2,

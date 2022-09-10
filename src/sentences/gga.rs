@@ -9,10 +9,23 @@ use nom::{
 
 use crate::{
     parse::NmeaSentence,
-    sentences::utils::{number, parse_float_num, parse_hms, parse_lat_lon},
-    Error, FixType, SentenceType,
+    sentences::{
+        utils::{number, parse_float_num, parse_hms, parse_lat_lon},
+        FixType,
+    },
+    Error, SentenceType,
 };
 
+/// GGA - Global Positioning System Fix Data
+///
+/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gga_global_positioning_system_fix_data>
+///
+/// ```text
+///                                                       11
+///         1         2       3 4        5 6 7  8   9  10 |  12 13  14   15
+///         |         |       | |        | | |  |   |   | |   | |   |    |
+///  $--GGA,hhmmss.ss,ddmm.mm,a,ddmm.mm,a,x,xx,x.x,x.x,M,x.x,M,x.x,xxxx*hh<CR><LF>
+/// ```
 #[derive(Debug, PartialEq)]
 pub struct GgaData {
     pub fix_time: Option<NaiveTime>,

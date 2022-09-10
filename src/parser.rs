@@ -483,6 +483,7 @@ macro_rules! count_tts {
     ($_head:tt , $($tail:tt)*) => {1usize + count_tts!($($tail)*)};
     ($item:tt) => {1usize};
 }
+pub(crate) use count_tts;
 
 macro_rules! define_sentence_type_enum {
     (
@@ -886,96 +887,13 @@ impl BitOr<SentenceType> for SentenceMask {
     }
 }
 
-/// Fix type
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
-pub enum FixType {
-    Invalid,
-    Gps,
-    DGps,
-    /// Precise Position Service
-    Pps,
-    Rtk,
-    FloatRtk,
-    Estimated,
-    Manual,
-    Simulation,
-}
-
-impl FixType {
-    #[inline]
-    pub fn is_valid(self) -> bool {
-        match self {
-            FixType::Simulation | FixType::Manual | FixType::Estimated | FixType::Invalid => false,
-            FixType::DGps | FixType::Gps | FixType::Rtk | FixType::FloatRtk | FixType::Pps => true,
-        }
-    }
-}
-
-macro_rules! define_enum_with_count {
-    (
-        $(#[$outer:meta])*
-        enum $Name:ident { $($Variant:ident),* $(,)* }
-    ) => {
-        $(#[$outer])*
-        #[derive(PartialEq, Debug, Hash, Eq, Clone, Copy)]
-        #[repr(u8)]
-        pub enum $Name {
-            $($Variant),*
-        }
-        impl $Name {
-            const COUNT: usize = count_tts!($($Variant),*);
-            pub const ALL_TYPES: [$Name; $Name::COUNT] = [
-                $($Name::$Variant),*
-            ];
-        }
-    };
-}
-
-define_enum_with_count!(
-    /// GNSS type
-    enum GnssType {
-        Beidou,
-        Galileo,
-        Gps,
-        Glonass,
-    }
-);
-
-impl fmt::Display for GnssType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            GnssType::Beidou => write!(f, "Beidou"),
-            GnssType::Galileo => write!(f, "Galileo"),
-            GnssType::Gps => write!(f, "GPS"),
-            GnssType::Glonass => write!(f, "GLONASS"),
-        }
-    }
-}
-
-impl From<char> for FixType {
-    fn from(x: char) -> Self {
-        match x {
-            '0' => FixType::Invalid,
-            '1' => FixType::Gps,
-            '2' => FixType::DGps,
-            '3' => FixType::Pps,
-            '4' => FixType::Rtk,
-            '5' => FixType::FloatRtk,
-            '6' => FixType::Estimated,
-            '7' => FixType::Manual,
-            '8' => FixType::Simulation,
-            _ => FixType::Invalid,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use core::convert::TryFrom;
 
     use quickcheck::{QuickCheck, TestResult};
 
-    use crate::{parse::checksum, FixType, Nmea, SentenceType, Error};
+    use crate::{parse::checksum, Error, FixType, Nmea, SentenceType};
 
     fn check_parsing_lat_lon_in_gga(lat: f64, lon: f64) -> TestResult {
         fn scale(val: f64, max: f64) -> f64 {
@@ -1037,8 +955,7 @@ mod tests {
     #[test]
     fn test_message_type() {
         assert_eq!(SentenceType::try_from("GGA"), Ok(SentenceType::GGA));
-        let parse_err = SentenceType::try_from("XXX")
-            .expect_err("Should trigger parsing error");
+        let parse_err = SentenceType::try_from("XXX").expect_err("Should trigger parsing error");
 
         assert_eq!(Error::Unknown("XXX"), parse_err);
     }
@@ -1054,10 +971,12 @@ mod tests {
             .quickcheck(check_parsing_lat_lon_in_gga as fn(f64, f64) -> TestResult);
     }
 
-    // #[test]
-    // fn test_sentence_type_enum() {
-    //     // So we don't trip over the max value of u128 when shifting it with
-    //     // SentenceType as u32
-    //     assert!((SentenceType::None as u32) < 127);
-    // }
+    #[test]
+    fn test_sentence_type_enum() {
+        // So we don't trip over the max value of u128 when shifting it with
+        // SentenceType as u32
+        for sentence_type in SentenceType::TYPES {
+            assert!((sentence_type as u32) < 127);
+        }
+    }
 }

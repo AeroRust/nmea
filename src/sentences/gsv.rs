@@ -6,9 +6,20 @@ use nom::{
 };
 
 use crate::{
-    parse::NmeaSentence, sentences::utils::number, Error, GnssType, Satellite, SentenceType,
+    parse::NmeaSentence,
+    sentences::{utils::number, GnssType},
+    Error, Satellite, SentenceType,
 };
 
+/// GSV - Satellites in view
+///
+/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gga_global_positioning_system_fix_data>
+///
+/// ```text
+///        1 2 3 4 5 6 7     n
+///        | | | | | | |     |
+/// $--GSV,x,x,x,x,x,x,x,...*hh<CR><LF>
+/// ```
 #[derive(Debug, PartialEq)]
 pub struct GsvData {
     pub gnss_type: GnssType,

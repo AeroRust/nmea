@@ -1,6 +1,6 @@
 use core::fmt;
 
-use crate::{GnssType, SentenceType};
+use crate::{sentences::GnssType, SentenceType};
 
 #[derive(Debug, PartialEq)]
 pub enum Error<'a> {

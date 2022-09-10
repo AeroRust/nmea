@@ -9,12 +9,21 @@ use nom::{
 };
 
 use super::{
-    parse_faa_modes,
+    faa_mode::parse_faa_modes,
     utils::{number, parse_hms, parse_lat_lon},
     FaaModes,
 };
 use crate::{parse::NmeaSentence, Error, SentenceType};
 
+/// GNS - Fix data
+///
+/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gns_fix_data>
+///
+/// ```text
+///        1         2       3 4        5 6    7  8   9   10  11  12  13
+///        |         |       | |        | |    |  |   |   |   |   |   |
+/// $--GNS,hhmmss.ss,ddmm.mm,a,dddmm.mm,a,c--c,xx,x.x,x.x,x.x,x.x,x.x*hh
+/// ```
 #[derive(Debug, PartialEq)]
 pub struct GnsData {
     pub fix_time: Option<NaiveTime>,

@@ -13,6 +13,9 @@ use crate::{
 const MAX_LEN: usize = 64;
 
 /// BWC - Bearing & Distance to Waypoint - Great Circle
+///
+/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_bwc_bearing_distance_to_waypoint_great_circle>
+///
 /// ```text
 ///                                                         12
 ///         1         2       3 4        5 6   7 8   9 10  11|    13 14
