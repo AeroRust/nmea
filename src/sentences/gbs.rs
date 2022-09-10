@@ -9,6 +9,8 @@ use crate::{
 
 /// GBS - GPS Satellite Fault Detection
 ///
+/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gbs_gps_satellite_fault_detection>
+///
 /// ```text
 /// 1      2   3   4   5   6   7   8   9
 /// |      |   |   |   |   |   |   |   |
