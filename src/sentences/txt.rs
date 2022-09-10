@@ -2,7 +2,7 @@ use arrayvec::ArrayString;
 use nom::{bytes::complete::take_while, character::complete::char, IResult};
 
 use super::utils::number;
-use crate::{parse::NmeaSentence, NmeaError};
+use crate::{parse::NmeaSentence, Error, SentenceType};
 
 const MAX_LEN: usize = 64;
 
@@ -14,20 +14,17 @@ const MAX_LEN: usize = 64;
 /// 3   02  Text identifier, u-blox GPS receivers specify the severity of the message with this number. 00 = ERROR, 01 = WARNING, 02 = NOTICE, 07 = USER
 /// 4   u-blox AG - www.u-blox.com  Any ASCII text
 /// *68        mandatory nmea_checksum
-pub fn parse_txt(s: NmeaSentence) -> Result<TxtData, NmeaError> {
-    if s.message_id != b"TXT" {
-        return Err(NmeaError::WrongSentenceHeader {
-            expected: b"TXT",
+pub fn parse_txt(s: NmeaSentence) -> Result<TxtData, Error> {
+    if s.message_id != SentenceType::TXT {
+        return Err(Error::WrongSentenceHeader {
+            expected: SentenceType::TXT,
             found: s.message_id,
         });
     }
 
-    let ret = do_parse_txt(s.data).map_err(NmeaError::ParsingError)?.1;
+    let ret = do_parse_txt(s.data).map_err(Error::ParsingError)?.1;
 
-    let text_str = core::str::from_utf8(ret.text).map_err(|_e| NmeaError::Utf8DecodingError)?;
-
-    let text =
-        ArrayString::from(text_str).map_err(|_e| NmeaError::SentenceLength(text_str.len()))?;
+    let text = ArrayString::from(ret.text).map_err(|_e| Error::SentenceLength(ret.text.len()))?;
 
     Ok(TxtData {
         count: ret.count,
@@ -37,11 +34,11 @@ pub fn parse_txt(s: NmeaSentence) -> Result<TxtData, NmeaError> {
     })
 }
 
-fn txt_str(s: &[u8]) -> IResult<&[u8], &[u8]> {
-    take_while(|c| c != b',' && c != b'*')(s)
+fn txt_str(s: &str) -> IResult<&str, &str> {
+    take_while(|c| c != ',' && c != '*')(s)
 }
 
-fn do_parse_txt(i: &[u8]) -> IResult<&[u8], TxtData0<'_>> {
+fn do_parse_txt(i: &str) -> IResult<&str, TxtData0<'_>> {
     let (i, count) = number::<u8>(i)?;
     let (i, _) = char(',')(i)?;
     let (i, seq) = number::<u8>(i)?;
@@ -73,7 +70,7 @@ struct TxtData0<'a> {
     pub count: u8,
     pub seq: u8,
     pub text_ident: u8,
-    pub text: &'a [u8],
+    pub text: &'a str,
 }
 
 #[cfg(test)]
@@ -83,7 +80,7 @@ mod tests {
 
     #[test]
     fn smoke_test_parse_txt() {
-        let s = parse_nmea_sentence(b"$GNTXT,01,01,02,u-blox AG - www.u-blox.com*4E").unwrap();
+        let s = parse_nmea_sentence("$GNTXT,01,01,02,u-blox AG - www.u-blox.com*4E").unwrap();
         let txt = parse_txt(s).unwrap();
         assert_eq!(
             TxtData {
@@ -106,7 +103,7 @@ mod tests {
         ];
         for line in &gsa_examples {
             println!("we parse line '{}'", line);
-            let s = parse_nmea_sentence(line.as_bytes()).unwrap();
+            let s = parse_nmea_sentence(line).unwrap();
             parse_txt(s).unwrap();
         }
     }

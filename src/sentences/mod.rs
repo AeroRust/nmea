@@ -1,4 +1,4 @@
-use nom::IResult;
+use nom::{character::complete::anychar, combinator::opt, IResult};
 
 mod bod;
 mod bwc;
@@ -51,21 +51,29 @@ impl From<FaaModes> for FixType {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FaaMode {
+    /// A - Autonomous mode
     Autonomous,
-    /// Quectel unique
+    /// C - Quectel Querk, "Caution"
     Caution,
+    /// D - Differential Mode
     Differential,
-    /// Estimated dead reckoning
+    /// E - Estimated (dead-reckoning) mode
     Estimated,
+    /// F - RTK Float mode
     FloatRtk,
+    /// M - Manual Input Mode
+    Manual,
+    /// N - Data Not Valid
     DataNotValid,
+    /// P - Precise (4.00 and later)
+    ///
     /// Sort of DGPS, NMEA 4+
     Precise,
+    /// R - RTK Integer mode
     FixedRtk,
-    /// Same as simulated?  Or surveyed?
-    Manual,
-    Simualtor,
-    /// Quectel unique
+    /// S - Simulated Mode
+    Simulator,
+    /// U - Quectel Querk, "Unsafe"
     Unsafe,
 }
 
@@ -81,32 +89,29 @@ impl From<FaaMode> for FixType {
             FaaMode::Precise => FixType::DGps,
             FaaMode::FixedRtk => FixType::Rtk,
             FaaMode::Manual => FixType::Manual,
-            FaaMode::Simualtor => FixType::Simulation,
+            FaaMode::Simulator => FixType::Simulation,
             FaaMode::Unsafe => FixType::Invalid,
         }
     }
 }
 
-pub(crate) fn parse_faa_modes(i: &[u8]) -> IResult<&[u8], FaaModes> {
-    let (sym, rest) = match i.split_first() {
-        Some(x) => x,
-        None => {
-            return Err(nom_parse_failure(i));
-        }
-    };
+pub(crate) fn parse_faa_modes(i: &str) -> IResult<&str, FaaModes> {
+    let (rest, sym) = anychar(i)?;
 
     let mut ret = FaaModes {
-        sys_state0: parse_faa_mode(*sym).ok_or_else(|| nom_parse_failure(i))?,
+        sys_state0: parse_faa_mode(sym).ok_or_else(|| nom_parse_failure(i))?,
         sys_state1: None,
     };
 
-    let (sym, rest2) = match rest.split_first() {
-        Some(x) => x,
-        None => {
-            return Ok((rest, ret));
+    let (rest2, sym) = opt(anychar)(rest)?;
+
+    match sym {
+        Some(sym) => {
+            ret.sys_state1 = Some(parse_faa_mode(sym).ok_or_else(|| nom_parse_failure(rest))?);
         }
+        None => return Ok((rest, ret)),
     };
-    ret.sys_state1 = Some(parse_faa_mode(*sym).ok_or_else(|| nom_parse_failure(rest))?);
+
     if rest2.is_empty() {
         Ok((rest2, ret))
     } else {
@@ -114,49 +119,58 @@ pub(crate) fn parse_faa_modes(i: &[u8]) -> IResult<&[u8], FaaModes> {
     }
 }
 
-pub(crate) fn parse_faa_mode(value: u8) -> Option<FaaMode> {
+pub(crate) fn parse_faa_mode(value: char) -> Option<FaaMode> {
     match value {
-        b'A' => Some(FaaMode::Autonomous),
-        b'C' => Some(FaaMode::Caution),
-        b'D' => Some(FaaMode::Differential),
-        b'E' => Some(FaaMode::Estimated),
-        b'F' => Some(FaaMode::FloatRtk),
-        b'N' => Some(FaaMode::DataNotValid),
-        b'P' => Some(FaaMode::Precise),
-        b'R' => Some(FaaMode::FixedRtk),
-        b'M' => Some(FaaMode::Manual),
-        b'S' => Some(FaaMode::Simualtor),
-        b'U' => Some(FaaMode::Unsafe),
+        'A' => Some(FaaMode::Autonomous),
+        'C' => Some(FaaMode::Caution),
+        'D' => Some(FaaMode::Differential),
+        'E' => Some(FaaMode::Estimated),
+        'F' => Some(FaaMode::FloatRtk),
+        'N' => Some(FaaMode::DataNotValid),
+        'P' => Some(FaaMode::Precise),
+        'R' => Some(FaaMode::FixedRtk),
+        'M' => Some(FaaMode::Manual),
+        'S' => Some(FaaMode::Simulator),
+        'U' => Some(FaaMode::Unsafe),
         _ => None,
     }
 }
 
-pub(crate) fn nom_parse_failure(inp: &[u8]) -> nom::Err<nom::error::Error<&[u8]>> {
+pub(crate) fn nom_parse_failure(inp: &str) -> nom::Err<nom::error::Error<&str>> {
     nom::Err::Failure(nom::error::Error::new(inp, nom::error::ErrorKind::Fail))
 }
 
-#[test]
-fn test_parse_faa_modes() {
-    assert_eq!(nom_parse_failure(b""), parse_faa_modes(b"").unwrap_err());
-    assert_eq!(
-        (
-            b"" as &[u8],
-            FaaModes {
-                sys_state0: FaaMode::Autonomous,
-                sys_state1: None,
-            }
-        ),
-        parse_faa_modes(b"A").unwrap()
-    );
+#[cfg(test)]
+mod test {
+    use super::*;
 
-    assert_eq!(
-        (
-            b"" as &[u8],
-            FaaModes {
-                sys_state0: FaaMode::DataNotValid,
-                sys_state1: Some(FaaMode::Autonomous),
-            }
-        ),
-        parse_faa_modes(b"NA").unwrap()
-    );
+    #[test]
+    fn test_parse_faa_modes() {
+        assert_eq!(
+            nom::Err::Error(nom::error::Error::new("", nom::error::ErrorKind::Eof)),
+            parse_faa_modes("").unwrap_err(),
+            "Should return a Digit error on empty string"
+        );
+        assert_eq!(
+            (
+                "",
+                FaaModes {
+                    sys_state0: FaaMode::Autonomous,
+                    sys_state1: None,
+                }
+            ),
+            parse_faa_modes("A").unwrap()
+        );
+
+        assert_eq!(
+            (
+                "",
+                FaaModes {
+                    sys_state0: FaaMode::DataNotValid,
+                    sys_state1: Some(FaaMode::Autonomous),
+                }
+            ),
+            parse_faa_modes("NA").unwrap()
+        );
+    }
 }

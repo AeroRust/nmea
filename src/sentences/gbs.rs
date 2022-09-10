@@ -4,9 +4,16 @@ use nom::{character::complete::char, combinator::opt, number::complete::float, I
 use crate::{
     parse::NmeaSentence,
     sentences::utils::{number, parse_hms, parse_lat_lon},
-    NmeaError,
+    Error, SentenceType,
 };
 
+/// GBS - GPS Satellite Fault Detection
+///
+/// ```text
+/// 1      2   3   4   5   6   7   8   9
+/// |      |   |   |   |   |   |   |   |
+/// $--GBS,hhmmss.ss,x.x,x.x,x.x,x.x,x.x,x.x,x.x*hh<CR><LF>
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GbsData {
     pub time: Option<NaiveTime>,
@@ -18,14 +25,15 @@ pub struct GbsData {
     pub bias_estimate: Option<f32>,
     pub bias_standard_deviation: Option<f32>,
 }
-/// GBS - GPS Satellite Fault Detection
 
+/// GBS - GPS Satellite Fault Detection
+///
 /// ```text
 /// 1      2   3   4   5   6   7   8   9
 /// |      |   |   |   |   |   |   |   |
 /// $--GBS,hhmmss.ss,x.x,x.x,x.x,x.x,x.x,x.x,x.x*hh<CR><LF>
 /// ```
-fn do_parse_gbs(i: &[u8]) -> IResult<&[u8], GbsData> {
+fn do_parse_gbs(i: &str) -> IResult<&str, GbsData> {
     // 1. UTC time of the GGA or GNS fix associated with this sentence. hh is hours, mm is minutes, ss.ss is seconds
     let (i, time) = opt(parse_hms)(i)?;
     let (i, _) = char(',')(i)?;
@@ -72,10 +80,10 @@ fn do_parse_gbs(i: &[u8]) -> IResult<&[u8], GbsData> {
 /// # Parse BOD message
 ///
 /// See: <https://gpsd.gitlab.io/gpsd/NMEA.html#_gbs_gps_satellite_fault_detection>
-pub fn parse_gbs(sentence: NmeaSentence) -> Result<GbsData, NmeaError> {
-    if sentence.message_id != b"GBS" {
-        Err(NmeaError::WrongSentenceHeader {
-            expected: b"GBS",
+pub fn parse_gbs(sentence: NmeaSentence) -> Result<GbsData, Error> {
+    if sentence.message_id != SentenceType::GBS {
+        Err(Error::WrongSentenceHeader {
+            expected: SentenceType::GBS,
             found: sentence.message_id,
         })
     } else {

@@ -1,7 +1,6 @@
 use chrono::NaiveTime;
 use nom::{
-    bytes::complete::take,
-    character::complete::{char, one_of},
+    character::complete::{anychar, char, one_of},
     combinator::opt,
     IResult,
 };
@@ -10,8 +9,17 @@ use super::{nom_parse_failure, parse_faa_mode, FaaMode};
 use crate::{
     parse::NmeaSentence,
     sentences::utils::{parse_hms, parse_lat_lon},
-    NmeaError,
+    Error, SentenceType,
 };
+
+#[derive(Debug, PartialEq)]
+pub struct GllData {
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
+    pub fix_time: NaiveTime,
+    pub valid: bool,
+    pub faa_mode: Option<FaaMode>,
+}
 
 /// # Parse GLL (Geographic position) message
 ///
@@ -28,10 +36,10 @@ use crate::{
 /// | 7     | data status | Data status: A = Data valid, V = Data invalid
 /// | 8     | mode ind    | Positioning system mode indicator, see `PosSystemIndicator`
 /// | 9     | *xx         | Check sum
-pub fn parse_gll(sentence: NmeaSentence) -> Result<GllData, NmeaError> {
-    if sentence.message_id != b"GLL" {
-        Err(NmeaError::WrongSentenceHeader {
-            expected: b"GLL",
+pub fn parse_gll(sentence: NmeaSentence) -> Result<GllData, Error> {
+    if sentence.message_id != SentenceType::GLL {
+        Err(Error::WrongSentenceHeader {
+            expected: SentenceType::GLL,
             found: sentence.message_id,
         })
     } else {
@@ -39,16 +47,7 @@ pub fn parse_gll(sentence: NmeaSentence) -> Result<GllData, NmeaError> {
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub struct GllData {
-    pub latitude: Option<f64>,
-    pub longitude: Option<f64>,
-    pub fix_time: NaiveTime,
-    pub valid: bool,
-    pub faa_mode: Option<FaaMode>,
-}
-
-fn do_parse_gll(i: &[u8]) -> IResult<&[u8], GllData> {
+fn do_parse_gll(i: &str) -> IResult<&str, GllData> {
     let (i, lat_lon) = parse_lat_lon(i)?;
     let (i, _) = char(',')(i)?;
     let (i, fix_time) = parse_hms(i)?;
@@ -60,14 +59,10 @@ fn do_parse_gll(i: &[u8]) -> IResult<&[u8], GllData> {
         _ => unreachable!(),
     };
     let (i, _) = char(',')(i)?;
-    let (rest, mode) = opt(take(1usize))(i)?;
-    let mut faa_mode = None;
-    if let Some(mode) = mode {
-        match parse_faa_mode(mode[0]) {
-            Some(x) => faa_mode = Some(x),
-            None => return Err(nom_parse_failure(i)),
-        }
-    }
+    let (rest, mode) = opt(anychar)(i)?;
+    let faa_mode = mode
+        .map(|mode| parse_faa_mode(mode).ok_or_else(|| nom_parse_failure(i)))
+        .transpose()?;
 
     Ok((
         rest,
@@ -98,7 +93,7 @@ mod tests {
         };
 
         let s = parse(
-            b"$GPGLL,5107.0013414,N,11402.3279144,W,205412.00,A,A*73",
+            "$GPGLL,5107.0013414,N,11402.3279144,W,205412.00,A,A*73",
             0x73,
         );
         let gll_data = parse_gll(s).unwrap();
@@ -107,7 +102,7 @@ mod tests {
         assert_eq!(gll_data.fix_time, NaiveTime::from_hms_milli(20, 54, 12, 0));
         assert_eq!(gll_data.faa_mode, Some(FaaMode::Autonomous));
 
-        let s = parse(b"$GNGLL,,,,,181604.00,V,N*5E", 0x5e);
+        let s = parse("$GNGLL,,,,,181604.00,V,N*5E", 0x5e);
         let gll_data = parse_gll(s).unwrap();
         assert_eq!(NaiveTime::from_hms_milli(18, 16, 4, 0), gll_data.fix_time);
         assert!(!gll_data.valid);

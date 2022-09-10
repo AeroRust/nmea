@@ -6,7 +6,7 @@ use std::{
 };
 
 use helpers::format_satellites;
-use nmea::{parse, Nmea};
+use nmea::{parse_str, Nmea};
 
 mod helpers;
 
@@ -76,13 +76,12 @@ fn test_parse_all_logs() {
                 );
                 continue;
             }
-            let s = line.as_bytes();
 
             let expect_msg = format!("Parsing of {} at {:?}:{} failed", line, log_path, line_no);
 
-            parse(s).expect(&expect_msg);
+            parse_str(line).expect(&expect_msg);
             nmea1.parse(line).expect(&expect_msg);
-            nmea2.parse_for_fix(s).expect(&expect_msg);
+            nmea2.parse_for_fix(line).expect(&expect_msg);
         }
 
         let sat_state = match i {

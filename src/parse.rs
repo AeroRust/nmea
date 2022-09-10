@@ -1,4 +1,4 @@
-use core::{fmt, str};
+use core::str;
 
 use nom::{
     bytes::complete::{take, take_until},
@@ -8,15 +8,17 @@ use nom::{
     IResult,
 };
 
+use crate::{Error, SentenceType};
+
 pub use crate::sentences::*;
-use crate::SentenceType;
 
 pub const SENTENCE_MAX_LEN: usize = 102;
 
+/// A known and parsable Nmea sentence type.
 pub struct NmeaSentence<'a> {
-    pub talker_id: &'a [u8],
-    pub message_id: &'a [u8],
-    pub data: &'a [u8],
+    pub talker_id: &'a str,
+    pub message_id: SentenceType,
+    pub data: &'a str,
     pub checksum: u8,
 }
 
@@ -24,10 +26,11 @@ impl<'a> NmeaSentence<'a> {
     pub fn calc_checksum(&self) -> u8 {
         checksum(
             self.talker_id
+                .as_bytes()
                 .iter()
-                .chain(self.message_id.iter())
+                .chain(self.message_id.as_str().as_bytes())
                 .chain(&[b','])
-                .chain(self.data.iter()),
+                .chain(self.data.as_bytes()),
         )
     }
 }
@@ -36,19 +39,25 @@ pub fn checksum<'a, I: Iterator<Item = &'a u8>>(bytes: I) -> u8 {
     bytes.fold(0, |c, x| c ^ *x)
 }
 
-fn parse_hex(data: &[u8]) -> core::result::Result<u8, &'static str> {
-    let string_data = str::from_utf8(data).map_err(|_| "Number str is not UTF-8")?;
-
-    u8::from_str_radix(string_data, 16).map_err(|_| "Failed to parse checksum as hex number")
+fn parse_hex(data: &str) -> Result<u8, &'static str> {
+    u8::from_str_radix(data, 16).map_err(|_| "Failed to parse checksum as hex number")
 }
 
-fn parse_checksum(i: &[u8]) -> IResult<&[u8], u8> {
+fn parse_checksum(i: &str) -> IResult<&str, u8> {
     map_res(preceded(char('*'), take(2usize)), parse_hex)(i)
 }
 
-fn do_parse_nmea_sentence(i: &[u8]) -> IResult<&[u8], NmeaSentence> {
+fn parse_sentence_type(i: &str) -> IResult<&str, SentenceType> {
+    map_res(take(3usize), |sentence_type: &str| {
+        SentenceType::try_from(sentence_type).map_err(|_| "Unknown sentence type")
+    })(i)
+
+    // .map_err(|_err| Error::Unknown(sentence_type))
+}
+
+fn do_parse_nmea_sentence(i: &str) -> IResult<&str, NmeaSentence> {
     let (i, talker_id) = preceded(char('$'), take(2usize))(i)?;
-    let (i, message_id) = take(3usize)(i)?;
+    let (i, message_id) = parse_sentence_type(i)?;
     let (i, _) = char(',')(i)?;
     let (i, data) = take_until("*")(i)?;
     let (i, checksum) = parse_checksum(i)?;
@@ -64,7 +73,7 @@ fn do_parse_nmea_sentence(i: &[u8]) -> IResult<&[u8], NmeaSentence> {
     ))
 }
 
-pub fn parse_nmea_sentence(sentence: &[u8]) -> core::result::Result<NmeaSentence, NmeaError<'_>> {
+pub fn parse_nmea_sentence(sentence: &str) -> core::result::Result<NmeaSentence, Error<'_>> {
     // From gpsd:
     //
     // We've had reports that on the Garmin GPS-10 the device sometimes
@@ -82,7 +91,7 @@ pub fn parse_nmea_sentence(sentence: &[u8]) -> core::result::Result<NmeaSentence
     // a 100-character PSTI message.
 
     if sentence.len() > SENTENCE_MAX_LEN {
-        Err(NmeaError::SentenceLength(sentence.len()))
+        Err(Error::SentenceLength(sentence.len()))
     } else {
         Ok(do_parse_nmea_sentence(sentence)?.1)
     }
@@ -104,108 +113,47 @@ pub enum ParseResult {
     Unsupported(SentenceType),
 }
 
-#[derive(Debug, PartialEq)]
-pub enum NmeaError<'a> {
-    /// The provided input was not a proper UTF-8 string
-    Utf8DecodingError,
-    /// The checksum of the sentence was corrupt or wrong
-    ChecksumMismatch { calculated: u8, found: u8 },
-    /// For some reason a sentence was passed to the wrong sentence specific parser, this error
-    /// should never happen. First slice is the expected header, second is the found one
-    WrongSentenceHeader { expected: &'a [u8], found: &'a [u8] },
-    /// The sentence could not be parsed because its format was invalid
-    ParsingError(nom::Err<nom::error::Error<&'a [u8]>>),
-    /// The sentence was too long to be parsed, our current limit is `SENTENCE_MAX_LEN` characters
-    SentenceLength(usize),
-    /// The sentence has and maybe will never be implemented
-    Unsupported(SentenceType),
-    /// The provided navigation configuration was empty and thus invalid
-    EmptyNavConfig,
-    /// Invalid sentence number field in nmea sentence of type GSV
-    InvalidGsvSentenceNum,
-}
+///
+/// # Errors
+///
+/// Apart from errors returned by message parsing itself, it can return additional errors:
+///
+/// - [`Error::Utf8Decoding`] when bytes are not valid UTF-8 string
+/// - [`Error::ASCII`] when bytes are not ASCII only
+pub fn parse_bytes(sentence_input: &[u8]) -> Result<ParseResult, Error> {
+    let string = core::str::from_utf8(sentence_input).map_err(|_err| Error::Utf8Decoding)?;
 
-impl<'a> From<nom::Err<nom::error::Error<&'a [u8]>>> for NmeaError<'a> {
-    fn from(error: nom::Err<nom::error::Error<&'a [u8]>>) -> Self {
-        Self::ParsingError(error)
+    if !string.is_ascii() {
+        return Err(Error::ASCII);
     }
+
+    parse_str(string)
 }
 
-impl<'a> fmt::Display for NmeaError<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            NmeaError::Utf8DecodingError => {
-                write!(f, "The provided input was not a valid UTF-8 string")
-            }
-            NmeaError::ChecksumMismatch { calculated, found } => write!(
-                f,
-                "Checksum Mismatch(calculated = {}, found = {})",
-                calculated, found
-            ),
-            NmeaError::WrongSentenceHeader { expected, found } => write!(
-                f,
-                "Wrong Sentence Header (expected = {:?}, found = {:?})",
-                expected, found
-            ),
-            NmeaError::ParsingError(e) => write!(f, "Parse error: {}", e),
-            NmeaError::SentenceLength(size) => write!(
-                f,
-                "The sentence was too long to be parsed, current limit is {} characters",
-                size
-            ),
-            NmeaError::Unsupported(sentence) => {
-                write!(f, "Unsupported NMEA sentence {:?}", sentence)
-            }
-            NmeaError::EmptyNavConfig => write!(
-                f,
-                "The provided navigation configuration was empty and thus invalid"
-            ),
-            NmeaError::InvalidGsvSentenceNum => write!(
-                f,
-                "Invalid senetence number field in nmea sentence of type GSV"
-            ),
-        }
-    }
-}
-
-#[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-impl<'a> std::error::Error for NmeaError<'a> {}
-
-/// Parse NMEA 0183 sentence and extract data from it
-pub fn parse(xs: &[u8]) -> Result<ParseResult, NmeaError> {
-    let nmea_sentence = parse_nmea_sentence(xs)?;
+/// Parse a NMEA 0183 sentence and extract data from it.
+///
+/// Should not contain `\r\n` ending.
+pub fn parse_str(sentence_input: &str) -> Result<ParseResult, Error> {
+    let nmea_sentence = parse_nmea_sentence(sentence_input)?;
     let calculated_checksum = nmea_sentence.calc_checksum();
 
     if nmea_sentence.checksum == calculated_checksum {
-        match SentenceType::from_slice(nmea_sentence.message_id) {
+        match nmea_sentence.message_id {
             SentenceType::BOD => parse_bod(nmea_sentence).map(ParseResult::BOD),
-            SentenceType::BWC => {
-                let data = parse_bwc(nmea_sentence)?;
-                Ok(ParseResult::BWC(data))
-            }
+            SentenceType::BWC => parse_bwc(nmea_sentence).map(ParseResult::BWC),
             SentenceType::GBS => parse_gbs(nmea_sentence).map(ParseResult::GBS),
-            SentenceType::GGA => {
-                let data = parse_gga(nmea_sentence)?;
-                Ok(ParseResult::GGA(data))
-            }
-            SentenceType::GSV => {
-                let data = parse_gsv(nmea_sentence)?;
-                Ok(ParseResult::GSV(data))
-            }
-            SentenceType::RMC => {
-                let data = parse_rmc(nmea_sentence)?;
-                Ok(ParseResult::RMC(data))
-            }
-            SentenceType::GSA => Ok(ParseResult::GSA(parse_gsa(nmea_sentence)?)),
-            SentenceType::VTG => Ok(ParseResult::VTG(parse_vtg(nmea_sentence)?)),
-            SentenceType::GLL => Ok(ParseResult::GLL(parse_gll(nmea_sentence)?)),
-            SentenceType::TXT => Ok(ParseResult::TXT(parse_txt(nmea_sentence)?)),
-            SentenceType::GNS => Ok(ParseResult::GNS(parse_gns(nmea_sentence)?)),
-            msg_id => Ok(ParseResult::Unsupported(msg_id)),
+            SentenceType::GGA => parse_gga(nmea_sentence).map(ParseResult::GGA),
+            SentenceType::GSV => parse_gsv(nmea_sentence).map(ParseResult::GSV),
+            SentenceType::RMC => parse_rmc(nmea_sentence).map(ParseResult::RMC),
+            SentenceType::GSA => parse_gsa(nmea_sentence).map(ParseResult::GSA),
+            SentenceType::VTG => parse_vtg(nmea_sentence).map(ParseResult::VTG),
+            SentenceType::GLL => parse_gll(nmea_sentence).map(ParseResult::GLL),
+            SentenceType::TXT => parse_txt(nmea_sentence).map(ParseResult::TXT),
+            SentenceType::GNS => parse_gns(nmea_sentence).map(ParseResult::GNS),
+            sentence_type => Ok(ParseResult::Unsupported(sentence_type)),
         }
     } else {
-        Err(NmeaError::ChecksumMismatch {
+        Err(Error::ChecksumMismatch {
             calculated: calculated_checksum,
             found: nmea_sentence.checksum,
         })

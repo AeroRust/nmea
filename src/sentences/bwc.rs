@@ -1,20 +1,24 @@
 use arrayvec::ArrayString;
 use chrono::NaiveTime;
 use nom::{
-    bytes::complete::is_not,
-    character::complete::char,
-    combinator::{map_res, opt},
-    number::complete::float,
+    bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
 };
 
 use crate::{
     parse::NmeaSentence,
     sentences::utils::{parse_hms, parse_lat_lon},
-    NmeaError,
+    Error, SentenceType,
 };
 
 const MAX_LEN: usize = 64;
 
+/// BWC - Bearing & Distance to Waypoint - Great Circle
+/// ```text
+///                                                         12
+///         1         2       3 4        5 6   7 8   9 10  11|    13 14
+///         |         |       | |        | |   | |   | |   | |    |   |
+/// $--BWC,hhmmss.ss,llll.ll,a,yyyyy.yy,a,x.x,T,x.x,M,x.x,N,c--c,m,*hh<CR><LF>
+/// ```
 #[derive(Debug, PartialEq)]
 pub struct BwcData {
     pub fix_time: Option<NaiveTime>,
@@ -26,15 +30,14 @@ pub struct BwcData {
     pub waypoint_id: Option<ArrayString<MAX_LEN>>,
 }
 
-fn do_parse_bwc(i: &[u8]) -> Result<BwcData, NmeaError> {
-    /*
-    BWC - Bearing & Distance to Waypoint - Great Circle
-                                                            12
-           1         2       3 4        5 6   7 8   9 10  11|    13 14
-           |         |       | |        | |   | |   | |   | |    |   |
-    $--BWC,hhmmss.ss,llll.ll,a,yyyyy.yy,a,x.x,T,x.x,M,x.x,N,c--c,m,*hh<CR><LF>
-    */
-
+/// BWC - Bearing & Distance to Waypoint - Great Circle
+/// ```text
+///                                                         12
+///         1         2       3 4        5 6   7 8   9 10  11|    13 14
+///         |         |       | |        | |   | |   | |   | |    |   |
+/// $--BWC,hhmmss.ss,llll.ll,a,yyyyy.yy,a,x.x,T,x.x,M,x.x,N,c--c,m,*hh<CR><LF>
+/// ```
+fn do_parse_bwc(i: &str) -> Result<BwcData, Error> {
     // 1. UTC Time or observation
     let (i, fix_time) = opt(parse_hms)(i)?;
     let (i, _) = char(',')(i)?;
@@ -68,14 +71,14 @@ fn do_parse_bwc(i: &[u8]) -> Result<BwcData, NmeaError> {
     let (i, _) = char(',')(i)?;
 
     // 12. Waypoint ID
-    let (_i, waypoint_id) = opt(map_res(is_not(",*"), core::str::from_utf8))(i)?;
+    let (_i, waypoint_id) = opt(is_not(",*"))(i)?;
 
     // 13. FAA mode indicator (NMEA 2.3 and later, optional)
 
     let waypoint_id = if let Some(waypoint_id) = waypoint_id {
         Some(
             ArrayString::from(waypoint_id)
-                .map_err(|_e| NmeaError::SentenceLength(waypoint_id.len()))?,
+                .map_err(|_e| Error::SentenceLength(waypoint_id.len()))?,
         )
     } else {
         None
@@ -95,10 +98,10 @@ fn do_parse_bwc(i: &[u8]) -> Result<BwcData, NmeaError> {
 /// # Parse BWC message
 ///
 /// See: <https://gpsd.gitlab.io/gpsd/NMEA.html#_bwc_bearing_distance_to_waypoint_great_circle>
-pub fn parse_bwc(sentence: NmeaSentence) -> Result<BwcData, NmeaError> {
-    if sentence.message_id != b"BWC" {
-        Err(NmeaError::WrongSentenceHeader {
-            expected: b"BWC",
+pub fn parse_bwc(sentence: NmeaSentence) -> Result<BwcData, Error> {
+    if sentence.message_id != SentenceType::BWC {
+        Err(Error::WrongSentenceHeader {
+            expected: SentenceType::BWC,
             found: sentence.message_id,
         })
     } else {
@@ -116,7 +119,7 @@ mod tests {
     #[test]
     fn test_parse_bwc_full() {
         let sentence = parse_nmea_sentence(
-            b"$GPBWC,220516,5130.02,N,00046.34,W,213.8,T,218.0,M,0004.6,N,EGLM*21",
+            "$GPBWC,220516,5130.02,N,00046.34,W,213.8,T,218.0,M,0004.6,N,EGLM*21",
         )
         .unwrap();
         assert_eq!(sentence.checksum, sentence.calc_checksum());
@@ -135,7 +138,7 @@ mod tests {
 
     #[test]
     fn test_parse_bwc_with_optional_fields() {
-        let sentence = parse_nmea_sentence(b"$GPBWC,081837,,,,,,T,,M,,N,*13").unwrap();
+        let sentence = parse_nmea_sentence("$GPBWC,081837,,,,,,T,,M,,N,*13").unwrap();
         assert_eq!(sentence.checksum, sentence.calc_checksum());
         assert_eq!(sentence.checksum, 0x13);
 

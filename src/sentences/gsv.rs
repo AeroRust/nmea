@@ -5,7 +5,9 @@ use nom::{
     IResult,
 };
 
-use crate::{parse::NmeaSentence, sentences::utils::number, GnssType, NmeaError, Satellite};
+use crate::{
+    parse::NmeaSentence, sentences::utils::number, Error, GnssType, Satellite, SentenceType,
+};
 
 #[derive(Debug, PartialEq)]
 pub struct GsvData {
@@ -17,7 +19,7 @@ pub struct GsvData {
     pub sats_info: Vec<Option<Satellite>, 4>,
 }
 
-fn parse_gsv_sat_info(i: &[u8]) -> IResult<&[u8], Satellite> {
+fn parse_gsv_sat_info(i: &str) -> IResult<&str, Satellite> {
     let (i, prn) = number::<u32>(i)?;
     let (i, _) = char(',')(i)?;
     let (i, elevation) = opt(number::<i32>)(i)?;
@@ -38,7 +40,7 @@ fn parse_gsv_sat_info(i: &[u8]) -> IResult<&[u8], Satellite> {
     ))
 }
 
-fn do_parse_gsv(i: &[u8]) -> IResult<&[u8], GsvData> {
+fn do_parse_gsv(i: &str) -> IResult<&str, GsvData> {
     let (i, number_of_sentences) = number::<u16>(i)?;
     let (i, _) = char(',')(i)?;
     let (i, sentence_num) = number::<u16>(i)?;
@@ -96,24 +98,19 @@ fn do_parse_gsv(i: &[u8]) -> IResult<&[u8], GsvData> {
 /// GL may be (incorrectly) used when GSVs are mixed containing
 /// GLONASS, GN may be (incorrectly) used when GSVs contain GLONASS
 /// only.  Usage is inconsistent.
-pub fn parse_gsv(sentence: NmeaSentence) -> Result<GsvData, NmeaError> {
-    if sentence.message_id != b"GSV" {
-        Err(NmeaError::WrongSentenceHeader {
-            expected: b"GSV",
+pub fn parse_gsv(sentence: NmeaSentence) -> Result<GsvData, Error> {
+    if sentence.message_id != SentenceType::GSV {
+        Err(Error::WrongSentenceHeader {
+            expected: SentenceType::GSV,
             found: sentence.message_id,
         })
     } else {
         let gnss_type = match sentence.talker_id {
-            b"GA" => GnssType::Galileo,
-            b"GP" => GnssType::Gps,
-            b"GL" => GnssType::Glonass,
-            b"PQ" => GnssType::Beidou,
-            _ => {
-                return Err(NmeaError::WrongSentenceHeader {
-                    expected: b"GA|GP|GL|PQ",
-                    found: sentence.message_id,
-                })
-            }
+            "GA" => GnssType::Galileo,
+            "GP" => GnssType::Gps,
+            "GL" => GnssType::Glonass,
+            "PQ" => GnssType::Beidou,
+            _ => return Err(Error::UnknownGnssType(sentence.talker_id)),
         };
         let mut res = do_parse_gsv(sentence.data)?.1;
         res.gnss_type = gnss_type;
@@ -133,9 +130,9 @@ mod tests {
     #[test]
     fn test_parse_gsv_full() {
         let data = parse_gsv(NmeaSentence {
-            talker_id: b"GP",
-            message_id: b"GSV",
-            data: b"2,1,08,01,,083,46,02,17,308,,12,07,344,39,14,22,228,",
+            talker_id: "GP",
+            message_id: SentenceType::GSV,
+            data: "2,1,08,01,,083,46,02,17,308,,12,07,344,39,14,22,228,",
             checksum: 0,
         })
         .unwrap();
@@ -185,9 +182,9 @@ mod tests {
         );
 
         let data = parse_gsv(NmeaSentence {
-            talker_id: b"GL",
-            message_id: b"GSV",
-            data: b"3,3,10,72,40,075,43,87,00,000,",
+            talker_id: "GL",
+            message_id: SentenceType::GSV,
+            data: "3,3,10,72,40,075,43,87,00,000,",
             checksum: 0,
         })
         .unwrap();

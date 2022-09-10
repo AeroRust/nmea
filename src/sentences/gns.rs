@@ -13,7 +13,7 @@ use super::{
     utils::{number, parse_hms, parse_lat_lon},
     FaaModes,
 };
-use crate::{parse::NmeaSentence, NmeaError};
+use crate::{parse::NmeaSentence, Error, SentenceType};
 
 #[derive(Debug, PartialEq)]
 pub struct GnsData {
@@ -77,10 +77,10 @@ pub enum NavigationStatus {
 ///                   U = Unsafe
 ///                   V = Not valid for navigation
 /// 8:   *6A          Mandatory NMEA checksum
-pub fn parse_gns(sentence: NmeaSentence) -> Result<GnsData, NmeaError> {
-    if sentence.message_id != b"GNS" {
-        Err(NmeaError::WrongSentenceHeader {
-            expected: b"GNS",
+pub fn parse_gns(sentence: NmeaSentence) -> Result<GnsData, Error> {
+    if sentence.message_id != SentenceType::GNS {
+        Err(Error::WrongSentenceHeader {
+            expected: SentenceType::GNS,
             found: sentence.message_id,
         })
     } else {
@@ -88,7 +88,7 @@ pub fn parse_gns(sentence: NmeaSentence) -> Result<GnsData, NmeaError> {
     }
 }
 
-fn do_parse_gns(i: &[u8]) -> IResult<&[u8], GnsData> {
+fn do_parse_gns(i: &str) -> IResult<&str, GnsData> {
     let (i, fix_time) = opt(parse_hms)(i)?;
     let (i, _) = char(',')(i)?;
     let (i, lat_lon) = parse_lat_lon(i)?;
@@ -105,7 +105,7 @@ fn do_parse_gns(i: &[u8]) -> IResult<&[u8], GnsData> {
     let (i, _) = char(',')(i)?;
     let (i, _age_of_diff) = take_until(",")(i)?; // TODO parse age of diff. corr.
     let (i, _) = char(',')(i)?;
-    let (i, _station_id) = take_while(|c| c != b',')(i)?;
+    let (i, _station_id) = take_while(|c| c != ',')(i)?;
     let (i, nav_status) = opt(preceded(char(','), one_of("SCUV")))(i)?;
     let nav_status = nav_status.map(|ch| match ch {
         'S' => NavigationStatus::Safe,
@@ -139,7 +139,7 @@ mod tests {
 
     #[test]
     fn test_parse_gns() {
-        let s = parse_nmea_sentence(b"$GPGNS,224749.00,3333.4268304,N,11153.3538273,W,D,19,0.6,406.110,-26.294,6.0,0138,S,*46").unwrap();
+        let s = parse_nmea_sentence("$GPGNS,224749.00,3333.4268304,N,11153.3538273,W,D,19,0.6,406.110,-26.294,6.0,0138,S,*46").unwrap();
         assert_eq!(s.checksum, s.calc_checksum());
         assert_eq!(s.checksum, 0x46);
         let gns_data = parse_gns(s).unwrap();

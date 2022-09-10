@@ -1,15 +1,15 @@
 //! NMEA 0183 parser
 //!
-//! Use [`Nmea::parse()`](Nmea::parse) and [`Nmea::parse_for_fix()`](Nmea::parse_for_fix)
+//! Use [`Nmea::parse()`] and [`Nmea::parse_for_fix()`]
 //! to preserve state between receiving new NMEA sentence,
-//! and [`parse()`] to parse sentences without state.
+//! and [`parse_str()`] or [`parse_bytes()`] to parse sentences without state.
 //!
 //! Units used: **degrees**, **knots**, **meters** for altitude
 //!
 //! # Supported sentences:
-//! - BWC
-//! - GGA
-//! - GLL
+//! - BOD (untested, not supported by [`Nmea::parse()`])
+//! - BWC (not supported by `Nmea::parse()`)
+//! - GBS (untested, not supported by [`Nmea::parse()`])
 //! - GNS
 //! - GSA
 //! - GSV
@@ -21,6 +21,9 @@
 //!
 //! - `default` features - `std`
 //! - `std` - enable `std`
+//!
+//! [`Nmea::parse()`]: Nmea::parse
+//! [`Nmea::parse_for_fix()`]: Nmea::parse_for_fix
 
 // only enables the `doc_cfg` feature when
 // the `docsrs` configuration attribute is defined
@@ -28,7 +31,8 @@
 #![cfg_attr(not(any(feature = "std", test)), no_std)]
 #![deny(unsafe_code, rustdoc::broken_intra_doc_links)]
 
-mod parse;
+mod error;
+pub(crate) mod parse;
 mod parser;
 
 pub(crate) mod sentences;
@@ -36,9 +40,11 @@ pub(crate) mod sentences;
 #[doc(inline)]
 pub use parser::*;
 
+pub use error::Error;
+
 #[doc(inline)]
 pub use parse::{
-    parse, BwcData, GgaData, GllData, GsaData, GsvData, NmeaError, ParseResult, RmcData,
+    parse_bytes, parse_str, BwcData, GgaData, GllData, GsaData, GsvData, ParseResult, RmcData,
     RmcStatusOfFix, TxtData, VtgData, SENTENCE_MAX_LEN,
 };
 

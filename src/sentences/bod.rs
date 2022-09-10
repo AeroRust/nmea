@@ -1,10 +1,10 @@
-use crate::{parse::*, sentences::utils::array_string};
+use crate::{parse::*, sentences::utils::array_string, Error, SentenceType};
 
 use arrayvec::ArrayString;
 use nom::{
     bytes::complete::take_until,
     character::complete::char,
-    combinator::{map_res, opt},
+    combinator::{map_parser, opt},
     number::complete::float,
 };
 
@@ -25,13 +25,13 @@ pub struct BodData {
 ///         |   | |   | |    |    |
 ///  $--BOD,x.x,T,x.x,M,c--c,c--c*hh<CR><LF>
 /// ```
-fn do_parse_bod(i: &[u8]) -> Result<BodData, NmeaError> {
+fn do_parse_bod(i: &str) -> Result<BodData, Error> {
     // 1. Bearing Degrees, True
-    let (i, bearing_true) = opt(float)(i)?;
+    let (i, bearing_true) = opt(map_parser(take_until(","), float))(i)?;
     let (i, _) = char(',')(i)?;
 
     // 2. T = True
-    let (i, _) = opt(char('T'))(i)?;
+    let (i, _) = char('T')(i)?;
     let (i, _) = char(',')(i)?;
 
     // 3. Bearing Degrees, Magnetic
@@ -39,15 +39,15 @@ fn do_parse_bod(i: &[u8]) -> Result<BodData, NmeaError> {
     let (i, _) = char(',')(i)?;
 
     // 4. M = Magnetic
-    let (i, _) = opt(char('M'))(i)?;
+    let (i, _) = char('M')(i)?;
     let (i, _) = char(',')(i)?;
 
     // 5. Destination Waypoint
-    let (i, to_waypoint) = opt(map_res(take_until(","), core::str::from_utf8))(i)?;
+    let (i, to_waypoint) = opt(take_until(","))(i)?;
     let (i, _) = char(',')(i)?;
 
     // 6. origin Waypoint
-    let (_i, from_waypoint) = opt(map_res(take_until("*"), core::str::from_utf8))(i)?;
+    let (_i, from_waypoint) = opt(take_until("*"))(i)?;
 
     // 7. Checksum
 
@@ -62,10 +62,10 @@ fn do_parse_bod(i: &[u8]) -> Result<BodData, NmeaError> {
 /// # Parse BOD message
 ///
 /// See: <https://gpsd.gitlab.io/gpsd/NMEA.html#_bod_bearing_waypoint_to_waypoint>
-pub fn parse_bod(sentence: NmeaSentence) -> Result<BodData, NmeaError> {
-    if sentence.message_id != b"BOD" {
-        Err(NmeaError::WrongSentenceHeader {
-            expected: b"BOD",
+pub fn parse_bod(sentence: NmeaSentence) -> Result<BodData, Error> {
+    if sentence.message_id != SentenceType::BOD {
+        Err(Error::WrongSentenceHeader {
+            expected: SentenceType::BOD,
             found: sentence.message_id,
         })
     } else {

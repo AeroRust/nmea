@@ -9,7 +9,7 @@ use nom::{
 use crate::{
     parse::NmeaSentence,
     sentences::utils::{parse_date, parse_hms, parse_lat_lon},
-    NmeaError,
+    Error, SentenceType,
 };
 
 #[derive(Debug, PartialEq, Eq)]
@@ -30,7 +30,7 @@ pub struct RmcData {
     pub true_course: Option<f32>,
 }
 
-fn do_parse_rmc(i: &[u8]) -> IResult<&[u8], RmcData> {
+fn do_parse_rmc(i: &str) -> IResult<&str, RmcData> {
     let (i, fix_time) = opt(parse_hms)(i)?;
     let (i, _) = char(',')(i)?;
     let (i, status_of_fix) = one_of("ADV")(i)?;
@@ -84,10 +84,10 @@ fn do_parse_rmc(i: &[u8]) -> IResult<&[u8], RmcData> {
 /// *68        mandatory nmea_checksum
 ///
 /// SiRF chipsets don't return either Mode Indicator or magnetic variation.
-pub fn parse_rmc(sentence: NmeaSentence) -> Result<RmcData, NmeaError> {
-    if sentence.message_id != b"RMC" {
-        Err(NmeaError::WrongSentenceHeader {
-            expected: b"RMC",
+pub fn parse_rmc(sentence: NmeaSentence) -> Result<RmcData, Error> {
+    if sentence.message_id != SentenceType::RMC {
+        Err(Error::WrongSentenceHeader {
+            expected: SentenceType::RMC,
             found: sentence.message_id,
         })
     } else {
@@ -105,7 +105,7 @@ mod tests {
     #[test]
     fn test_parse_rmc() {
         let s = parse_nmea_sentence(
-            b"$GPRMC,225446.33,A,4916.45,N,12311.12,W,\
+            "$GPRMC,225446.33,A,4916.45,N,12311.12,W,\
                                   000.5,054.7,191194,020.3,E,A*2B",
         )
         .unwrap();
@@ -133,7 +133,7 @@ mod tests {
         assert_relative_eq!(rmc_data.speed_over_ground.unwrap(), 0.5);
         assert_relative_eq!(rmc_data.true_course.unwrap(), 54.7);
 
-        let s = parse_nmea_sentence(b"$GPRMC,,V,,,,,,,,,,N*53").unwrap();
+        let s = parse_nmea_sentence("$GPRMC,,V,,,,,,,,,,N*53").unwrap();
         let rmc = parse_rmc(s).unwrap();
         assert_eq!(
             RmcData {

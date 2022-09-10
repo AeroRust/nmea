@@ -1,20 +1,20 @@
 [package]
-name = "nmea"
-version = "0.3.1"
 authors = [
-    "Felix Obenhuber <felix@obenhuber.de>",
-    "Evgeniy A. Dushistov <dushistov@mail.ru>",
-    "Henrik Böving <hargonix@gmail.com>",
-    "Lachezar Lechev <elpiel93@gmail.com>",
-    "AeroRust <aerospace.rust@gmail.com>"
+  "Felix Obenhuber <felix@obenhuber.de>",
+  "Evgeniy A. Dushistov <dushistov@mail.ru>",
+  "Henrik Böving <hargonix@gmail.com>",
+  "Lachezar Lechev <elpiel93@gmail.com>",
+  "AeroRust <aerospace.rust@gmail.com>",
 ]
-description = "Simple NMEA 0183 parser"
-license = "Apache-2.0"
-keywords = ["NMEA", "gps", "glonass", "coordinate", "position"]
 categories = ["parser-implementations", "no-std", "embedded"]
-repository = "https://github.com/AeroRust/nmea"
+description = "Simple NMEA 0183 parser"
 documentation = "https://docs.rs/nmea"
+keywords = ["NMEA", "gps", "glonass", "coordinate", "position"]
+license = "MIT OR Apache-2.0"
+name = "nmea"
 readme = "README.md"
+repository = "https://github.com/AeroRust/nmea"
+version = "0.3.1"
 
 edition = "2021"
 rust-version = "1.56"
@@ -24,20 +24,20 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-nom = { version = "7.1.1", default-features = false }
-chrono = { version = "0.4.19", default-features = false }
-arrayvec = { version = "0.7.2", default-features = false }
+arrayvec = {version = "0.7.2", default-features = false}
+chrono = {version = "0.4.19", default-features = false}
 heapless = "0.7.15"
+nom = {version = "7.1.1", default-features = false}
 
 # we include num-traits only when `std` is not enabled
 # because of `fract()` and `trunc()` methods
-num-traits = { version = "0.2", default-features = false }
+num-traits = {version = "0.2", default-features = false}
 
 [dev-dependencies]
-quickcheck = { version = "1.0.3", default-features = false }
 approx = "0.5.1"
-pretty_assertions = "1"
 doc-comment = "0.3"
+pretty_assertions = "1"
+quickcheck = {version = "1.0.3", default-features = false}
 
 [features]
 default = ["std"]
