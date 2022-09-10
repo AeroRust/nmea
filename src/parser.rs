@@ -893,7 +893,7 @@ mod tests {
 
     use quickcheck::{QuickCheck, TestResult};
 
-    use crate::{parse::checksum, Error, FixType, Nmea, SentenceType};
+    use crate::{parse::checksum, sentences::FixType, Error, Nmea, SentenceType};
 
     fn check_parsing_lat_lon_in_gga(lat: f64, lon: f64) -> TestResult {
         fn scale(val: f64, max: f64) -> f64 {
