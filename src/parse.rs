@@ -183,6 +183,7 @@ pub fn parse(xs: &[u8]) -> Result<ParseResult, NmeaError> {
                 let data = parse_bwc(nmea_sentence)?;
                 Ok(ParseResult::BWC(data))
             }
+            SentenceType::GBS => parse_gbs(nmea_sentence).map(ParseResult::GBS),
             SentenceType::GGA => {
                 let data = parse_gga(nmea_sentence)?;
                 Ok(ParseResult::GGA(data))

@@ -3,15 +3,16 @@
 [![Version](https://img.shields.io/crates/v/nmea.svg)](https://crates.io/crates/nmea)
 [![Build Status](https://github.com/AeroRust/nmea/workflows/CI/badge.svg)](https://github.com/AeroRust/nmea/actions?query=workflow%3ACI+branch%3Amaster)
 [![codecov](https://codecov.io/gh/AeroRust/nmea/branch/master/graph/badge.svg)](https://codecov.io/gh/AeroRust/nmea)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/AeroRust/nmea/blob/master/LICENSE.txt)
+[![License Apache-2](https://img.shields.io/crates/l/nmea.svg)](./LICENSE-APACHE)
 
 [Complete documentation can be found on www.docs.rs/nmea][doc]
 
-NMEA 0183 sentence parser for Rust.
+NMEA 0183 sentence parser for Rust. 
 
 Supported sentences:
 - BOD (untested)
 - BWC (supported by `parse()`, but not by `Nmea::parse()`)
+- GBS (untested)
 - GGA
 - GLL
 - GNS

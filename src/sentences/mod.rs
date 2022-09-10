@@ -2,6 +2,7 @@ use nom::IResult;
 
 mod bod;
 mod bwc;
+mod gbs;
 mod gga;
 mod gll;
 mod gns;
@@ -14,6 +15,7 @@ mod vtg;
 
 pub use bod::{parse_bod, BodData};
 pub use bwc::{parse_bwc, BwcData};
+pub use gbs::{parse_gbs, GbsData};
 pub use gga::{parse_gga, GgaData};
 pub use gll::{parse_gll, GllData};
 pub use gns::{parse_gns, GnsData, NavigationStatus};
