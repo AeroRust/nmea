@@ -1,4 +1,7 @@
 [package]
+name = "nmea"
+version = "0.4.0"
+
 authors = [
   "Felix Obenhuber <felix@obenhuber.de>",
   "Evgeniy A. Dushistov <dushistov@mail.ru>",
@@ -6,15 +9,14 @@ authors = [
   "Lachezar Lechev <elpiel93@gmail.com>",
   "AeroRust <aerospace.rust@gmail.com>",
 ]
+
 categories = ["parser-implementations", "no-std", "embedded"]
-description = "Simple NMEA 0183 parser"
-documentation = "https://docs.rs/nmea"
 keywords = ["NMEA", "gps", "glonass", "coordinate", "position"]
+description = "Simple NMEA 0183 parser"
 license = "MIT OR Apache-2.0"
-name = "nmea"
-readme = "README.md"
+documentation = "https://docs.rs/nmea"
 repository = "https://github.com/AeroRust/nmea"
-version = "0.4.0"
+readme = "README.md"
 
 edition = "2021"
 rust-version = "1.56"
