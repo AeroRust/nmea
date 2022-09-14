@@ -10,22 +10,31 @@ use nom::{
     Err, IResult, InputLength, Parser,
 };
 
-use crate::{parse::NmeaSentence, sentences::utils::number, NmeaError};
+use crate::{parse::NmeaSentence, sentences::utils::number, Error, SentenceType};
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GsaMode1 {
     Manual,
     Automatic,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GsaMode2 {
     NoFix,
     Fix2D,
     Fix3D,
 }
 
-#[derive(Debug, PartialEq)]
+/// GSA - GPS DOP and active satellites
+///
+/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_bod_bearing_waypoint_to_waypoint>
+///
+/// ```text
+///        1 2 3                        14 15  16  17  18
+///        | | |                         |  |   |   |   |
+/// $--GSA,a,a,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x.x,x.x,x.x*hh<CR><LF>
+/// ```
+#[derive(Debug, Clone, PartialEq)]
 pub struct GsaData {
     pub mode1: GsaMode1,
     pub mode2: GsaMode2,
@@ -66,13 +75,13 @@ where
     }
 }
 
-fn gsa_prn_fields_parse(i: &[u8]) -> IResult<&[u8], Vec<Option<u32>, 12>> {
+fn gsa_prn_fields_parse(i: &str) -> IResult<&str, Vec<Option<u32>, 12>> {
     many0(terminated(opt(number::<u32>), char(',')))(i)
 }
 
 type GsaTail = (Vec<Option<u32>, 12>, Option<f32>, Option<f32>, Option<f32>);
 
-fn do_parse_gsa_tail(i: &[u8]) -> IResult<&[u8], GsaTail> {
+fn do_parse_gsa_tail(i: &str) -> IResult<&str, GsaTail> {
     let (i, prns) = gsa_prn_fields_parse(i)?;
     let (i, pdop) = float(i)?;
     let (i, _) = char(',')(i)?;
@@ -82,18 +91,18 @@ fn do_parse_gsa_tail(i: &[u8]) -> IResult<&[u8], GsaTail> {
     Ok((i, (prns, Some(pdop), Some(hdop), Some(vdop))))
 }
 
-fn is_comma(x: u8) -> bool {
-    x == b','
+fn is_comma(x: char) -> bool {
+    x == ','
 }
 
-fn do_parse_empty_gsa_tail(i: &[u8]) -> IResult<&[u8], GsaTail> {
+fn do_parse_empty_gsa_tail(i: &str) -> IResult<&str, GsaTail> {
     value(
         (Vec::new(), None, None, None),
         all_consuming(take_while1(is_comma)),
     )(i)
 }
 
-fn do_parse_gsa(i: &[u8]) -> IResult<&[u8], GsaData> {
+fn do_parse_gsa(i: &str) -> IResult<&str, GsaData> {
     let (i, mode1) = one_of("MA")(i)?;
     let (i, _) = char(',')(i)?;
     let (i, mode2) = one_of("123")(i)?;
@@ -177,10 +186,10 @@ fn do_parse_gsa(i: &[u8]) -> IResult<&[u8], GsaData> {
 /// - it claims to be a valid sentence (A flag) when it isn't
 ///
 /// Alarmingly, it's possible this error may be generic to SiRFstarIII
-pub fn parse_gsa(sentence: NmeaSentence) -> Result<GsaData, NmeaError> {
-    if sentence.message_id != b"GSA" {
-        Err(NmeaError::WrongSentenceHeader {
-            expected: b"GSA",
+pub fn parse_gsa(sentence: NmeaSentence) -> Result<GsaData, Error> {
+    if sentence.message_id != SentenceType::GSA {
+        Err(Error::WrongSentenceHeader {
+            expected: SentenceType::GSA,
             found: sentence.message_id,
         })
     } else {
@@ -195,19 +204,19 @@ mod tests {
 
     #[test]
     fn test_gsa_prn_fields_parse() {
-        let (_, ret) = gsa_prn_fields_parse(b"5,").unwrap();
+        let (_, ret) = gsa_prn_fields_parse("5,").unwrap();
         assert_eq!(ret, &[Some(5)]);
 
-        let (_, ret) = gsa_prn_fields_parse(b",").unwrap();
+        let (_, ret) = gsa_prn_fields_parse(",").unwrap();
         assert_eq!(ret, &[None]);
 
-        let (_, ret) = gsa_prn_fields_parse(b",,5,6,").unwrap();
+        let (_, ret) = gsa_prn_fields_parse(",,5,6,").unwrap();
         assert_eq!(ret, &[None, None, Some(5), Some(6)],);
     }
 
     #[test]
     fn smoke_test_parse_gsa() {
-        let s = parse_nmea_sentence(b"$GPGSA,A,3,,,,,,16,18,,22,24,,,3.6,2.1,2.2*3C").unwrap();
+        let s = parse_nmea_sentence("$GPGSA,A,3,,,,,,16,18,,22,24,,,3.6,2.1,2.2*3C").unwrap();
         let gsa = parse_gsa(s).unwrap();
         assert_eq!(
             GsaData {
@@ -230,7 +239,7 @@ mod tests {
         ];
         for line in &gsa_examples {
             println!("we parse line '{}'", line);
-            let s = parse_nmea_sentence(line.as_bytes()).unwrap();
+            let s = parse_nmea_sentence(line).unwrap();
             parse_gsa(s).unwrap();
         }
     }

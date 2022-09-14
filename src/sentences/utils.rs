@@ -1,5 +1,6 @@
 use core::str;
 
+use arrayvec::ArrayString;
 use chrono::{NaiveDate, NaiveTime};
 use nom::{
     branch::alt,
@@ -14,7 +15,9 @@ use nom::{
 #[allow(unused_imports)]
 use num_traits::float::FloatCore;
 
-pub(crate) fn parse_hms(i: &[u8]) -> IResult<&[u8], NaiveTime> {
+use crate::Error;
+
+pub(crate) fn parse_hms(i: &str) -> IResult<&str, NaiveTime> {
     map_res(
         tuple((
             map_res(take(2usize), parse_num::<u32>),
@@ -45,7 +48,7 @@ pub(crate) fn parse_hms(i: &[u8]) -> IResult<&[u8], NaiveTime> {
     )(i)
 }
 
-pub fn do_parse_lat_lon(i: &[u8]) -> IResult<&[u8], (f64, f64)> {
+pub fn do_parse_lat_lon(i: &str) -> IResult<&str, (f64, f64)> {
     let (i, lat_deg) = map_res(take(2usize), parse_num::<u8>)(i)?;
     let (i, lat_min) = double(i)?;
     let (i, _) = char(',')(i)?;
@@ -68,11 +71,11 @@ pub fn do_parse_lat_lon(i: &[u8]) -> IResult<&[u8], (f64, f64)> {
     Ok((i, (lat, lon)))
 }
 
-pub(crate) fn parse_lat_lon(i: &[u8]) -> IResult<&[u8], Option<(f64, f64)>> {
+pub(crate) fn parse_lat_lon(i: &str) -> IResult<&str, Option<(f64, f64)>> {
     alt((map(tag(",,,"), |_| None), map(do_parse_lat_lon, Some)))(i)
 }
 
-pub(crate) fn parse_date(i: &[u8]) -> IResult<&[u8], NaiveDate> {
+pub(crate) fn parse_date(i: &str) -> IResult<&str, NaiveDate> {
     map_res(
         tuple((
             map_res(take(2usize), parse_num::<u8>),
@@ -104,22 +107,27 @@ pub(crate) fn parse_date(i: &[u8]) -> IResult<&[u8], NaiveDate> {
     )(i)
 }
 
-pub(crate) fn parse_num<I: str::FromStr>(data: &[u8]) -> Result<I, &'static str> {
-    str::from_utf8(data)
-        .map_err(|_| "Number str is not UTF-8")?
-        .parse::<I>()
-        .map_err(|_| "parse of number failed")
+pub(crate) fn parse_num<I: str::FromStr>(data: &str) -> Result<I, &'static str> {
+    data.parse::<I>().map_err(|_| "parse of number failed")
 }
 
-pub(crate) fn parse_float_num<T: str::FromStr>(
-    input: &[u8],
-) -> core::result::Result<T, &'static str> {
-    let s = str::from_utf8(input).map_err(|_| "invalid float number")?;
-    str::parse::<T>(s).map_err(|_| "parse of float number failed")
+pub(crate) fn parse_float_num<T: str::FromStr>(input: &str) -> Result<T, &'static str> {
+    str::parse::<T>(input).map_err(|_| "parse of float number failed")
 }
 
-pub(crate) fn number<T: str::FromStr>(i: &[u8]) -> IResult<&[u8], T> {
+pub(crate) fn number<T: str::FromStr>(i: &str) -> IResult<&str, T> {
     map_res(digit1, parse_num)(i)
+}
+
+/// Parses a given `&str` slice to an owned `ArrayString` with a given `MAX_LEN`.
+///
+/// # Errors
+///
+/// If `&str` length > `MAX_LEN` it returns a [`Error::SentenceLength`] error.
+pub(crate) fn array_string<const MAX_LEN: usize>(
+    string: &str,
+) -> Result<ArrayString<MAX_LEN>, Error> {
+    ArrayString::from(string).map_err(|_e| Error::SentenceLength(string.len()))
 }
 
 #[cfg(test)]
@@ -130,7 +138,7 @@ mod tests {
 
     #[test]
     fn test_do_parse_lat_lon() {
-        let (_, lat_lon) = do_parse_lat_lon(b"4807.038,N,01131.324,E").unwrap();
+        let (_, lat_lon) = do_parse_lat_lon("4807.038,N,01131.324,E").unwrap();
         assert_relative_eq!(lat_lon.0, 48. + 7.038 / 60.);
         assert_relative_eq!(lat_lon.1, 11. + 31.324 / 60.);
     }
@@ -138,12 +146,12 @@ mod tests {
     #[test]
     fn test_parse_hms() {
         use chrono::Timelike;
-        let (_, time) = parse_hms(b"125619,").unwrap();
+        let (_, time) = parse_hms("125619,").unwrap();
         assert_eq!(time.hour(), 12);
         assert_eq!(time.minute(), 56);
         assert_eq!(time.second(), 19);
         assert_eq!(time.nanosecond(), 0);
-        let (_, time) = parse_hms(b"125619.5,").unwrap();
+        let (_, time) = parse_hms("125619.5,").unwrap();
         assert_eq!(time.hour(), 12);
         assert_eq!(time.minute(), 56);
         assert_eq!(time.second(), 19);
@@ -152,16 +160,16 @@ mod tests {
 
     #[test]
     fn test_parse_date() {
-        let (_, date) = parse_date(b"180283").unwrap();
+        let (_, date) = parse_date("180283").unwrap();
         assert_eq!(date, NaiveDate::from_ymd(1983, 2, 18));
 
-        let (_, date) = parse_date(b"180299").unwrap();
+        let (_, date) = parse_date("180299").unwrap();
         assert_eq!(date, NaiveDate::from_ymd(1999, 2, 18));
 
-        let (_, date) = parse_date(b"311200").unwrap();
+        let (_, date) = parse_date("311200").unwrap();
         assert_eq!(date, NaiveDate::from_ymd(2000, 12, 31));
 
-        let (_, date) = parse_date(b"311282").unwrap();
+        let (_, date) = parse_date("311282").unwrap();
         assert_eq!(date, NaiveDate::from_ymd(2082, 12, 31));
     }
 }

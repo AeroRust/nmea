@@ -1,7 +1,7 @@
 use approx::assert_relative_eq;
 use chrono::NaiveTime;
 use helpers::format_satellites;
-use nmea::*;
+use nmea::{sentences::FixType, *};
 
 mod helpers;
 
@@ -10,7 +10,7 @@ fn test_invalid_datetime() {
     let mut nmea = Nmea::default();
     let res = nmea.parse("$,GRMC,,A,,,,,,,290290GLCR*40");
     println!("parse result {:?}", res);
-    assert!(matches!(res, Err(NmeaError::ParsingError(_))));
+    assert!(matches!(res, Err(Error::ParsingError(_))));
 }
 
 #[test]
@@ -242,7 +242,7 @@ fn test_gsv_two_of_three() {
 }
 
 #[test]
-fn test_parse() {
+fn test_nmea_parse() {
     let sentences = [
         "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76",
         "$GPGSA,A,3,10,07,05,02,29,04,08,13,,,,,1.72,1.03,1.38*0A",
@@ -280,7 +280,7 @@ fn test_parse() {
 }
 
 #[test]
-fn test_parse_for_fix() {
+fn test_nmea_parse_for_fix() {
     {
         let mut nmea =
             Nmea::create_for_navigation(&[SentenceType::RMC, SentenceType::GGA]).unwrap();
@@ -378,7 +378,7 @@ fn test_parse_for_fix() {
         ];
 
         for (i, item) in log.iter().enumerate() {
-            let res = nmea.parse_for_fix(item.0.as_bytes()).unwrap();
+            let res = nmea.parse_for_fix(item.0).unwrap();
             println!("parse result({}): {:?}, {:?}", i, res, nmea.fix_time);
             assert_eq!((&res, &nmea.fix_time), (&item.1, &item.2));
         }
@@ -406,7 +406,7 @@ fn test_parse_for_fix() {
         ];
 
         for (i, item) in log.iter().enumerate() {
-            let res = nmea.parse_for_fix(item.0.as_bytes()).unwrap();
+            let res = nmea.parse_for_fix(item.0).unwrap();
             println!("parse result({}): {:?}, {:?}", i, res, nmea.fix_time);
             assert_eq!((&res, &nmea.fix_time), (&item.1, &item.2));
         }
@@ -431,7 +431,7 @@ fn test_some_reciever() {
     println!("start test");
     let mut nfixes = 0_usize;
     for line in &lines {
-        match nmea.parse_for_fix(line.as_bytes()) {
+        match nmea.parse_for_fix(line) {
             Ok(FixType::Invalid) => {
                 println!("invalid");
                 continue;

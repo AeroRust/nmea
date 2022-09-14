@@ -9,10 +9,23 @@ use nom::{
 
 use crate::{
     parse::NmeaSentence,
-    sentences::utils::{number, parse_float_num, parse_hms, parse_lat_lon},
-    FixType, NmeaError,
+    sentences::{
+        utils::{number, parse_float_num, parse_hms, parse_lat_lon},
+        FixType,
+    },
+    Error, SentenceType,
 };
 
+/// GGA - Global Positioning System Fix Data
+///
+/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gga_global_positioning_system_fix_data>
+///
+/// ```text
+///                                                       11
+///         1         2       3 4        5 6 7  8   9  10 |  12 13  14   15
+///         |         |       | |        | | |  |   |   | |   | |   |    |
+///  $--GGA,hhmmss.ss,ddmm.mm,a,ddmm.mm,a,x,xx,x.x,x.x,M,x.x,M,x.x,xxxx*hh<CR><LF>
+/// ```
 #[derive(Debug, PartialEq)]
 pub struct GgaData {
     pub fix_time: Option<NaiveTime>,
@@ -25,7 +38,7 @@ pub struct GgaData {
     pub geoid_separation: Option<f32>,
 }
 
-fn do_parse_gga(i: &[u8]) -> IResult<&[u8], GgaData> {
+fn do_parse_gga(i: &str) -> IResult<&str, GgaData> {
     let (i, fix_time) = opt(parse_hms)(i)?;
     let (i, _) = char(',')(i)?;
     let (i, lat_lon) = parse_lat_lon(i)?;
@@ -78,10 +91,10 @@ fn do_parse_gga(i: &[u8]) -> IResult<&[u8], GgaData> {
 /// ellipsoid, in Meters
 /// (empty field) time in seconds since last DGPS update
 /// (empty field) DGPS station ID number (0000-1023)
-pub fn parse_gga(sentence: NmeaSentence) -> Result<GgaData, NmeaError> {
-    if sentence.message_id != b"GGA" {
-        Err(NmeaError::WrongSentenceHeader {
-            expected: b"GGA",
+pub fn parse_gga(sentence: NmeaSentence) -> Result<GgaData, Error> {
+    if sentence.message_id != SentenceType::GGA {
+        Err(Error::WrongSentenceHeader {
+            expected: SentenceType::GGA,
             found: sentence.message_id,
         })
     } else {
@@ -99,9 +112,9 @@ mod tests {
     #[test]
     fn test_parse_gga_full() {
         let data = parse_gga(NmeaSentence {
-            talker_id: b"GP",
-            message_id: b"GGA",
-            data: b"033745.0,5650.82344,N,03548.9778,E,1,07,1.8,101.2,M,14.7,M,,",
+            talker_id: "GP",
+            message_id: SentenceType::GGA,
+            data: "033745.0,5650.82344,N,03548.9778,E,1,07,1.8,101.2,M,14.7,M,,",
             checksum: 0x57,
         })
         .unwrap();
@@ -114,7 +127,7 @@ mod tests {
         assert_relative_eq!(data.altitude.unwrap(), 101.2);
         assert_relative_eq!(data.geoid_separation.unwrap(), 14.7);
 
-        let s = parse_nmea_sentence(b"$GPGGA,,,,,,0,,,,,,,,*66").unwrap();
+        let s = parse_nmea_sentence("$GPGGA,,,,,,0,,,,,,,,*66").unwrap();
         assert_eq!(s.checksum, s.calc_checksum());
         let data = parse_gga(s).unwrap();
         assert_eq!(
@@ -135,7 +148,7 @@ mod tests {
     #[test]
     fn test_parse_gga_with_optional_fields() {
         let sentence =
-            parse_nmea_sentence(b"$GPGGA,133605.0,5521.75946,N,03731.93769,E,0,00,,,M,,M,,*4F")
+            parse_nmea_sentence("$GPGGA,133605.0,5521.75946,N,03731.93769,E,0,00,,,M,,M,,*4F")
                 .unwrap();
         assert_eq!(sentence.checksum, sentence.calc_checksum());
         assert_eq!(sentence.checksum, 0x4f);
