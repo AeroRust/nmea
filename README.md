@@ -7,7 +7,7 @@
 
 [Complete documentation can be found on www.docs.rs/nmea][doc]
 
-NMEA 0183 sentence parser for Rust. 
+## NMEA 0183 sentence parser for Rust.
 
 Supported sentences:
 - BOD (untested, not supported by `Nmea::parse()`)
@@ -22,7 +22,17 @@ Supported sentences:
 - TXT
 - VTG
 
-Feel free to open PR and add others.
+## How to contribute
+
+We have an ongoing effort to support as many sentences from `NMEA 0183` as possible,
+starting with the most well-known.
+If you'd like to contribute by writing a parser for a given message, check out the [Supporting additional sentences (AeroRust/nmea#54)](https://github.com/AeroRust/nmea/issues/54) issue and contribute in **3** easy steps:
+
+1. Write a comment - Please write a comment in the issue for the sentence(s) you'd like to implement, you will be mentioned on the task to avoid duplicate implementations.
+2. Implement each sentence alongside at least 1 test in its own module under the [`./src/sentences`](./src/sentences) directory using the `nom` crate.
+3. Open a PR 🎉
+
+## What is NMEA 0183?
 
 > NMEA 0183 is a combined electrical and data specification for communication
 > between marine electronics such as echo sounder, sonars, anemometer,
@@ -35,20 +45,32 @@ Feel free to open PR and add others.
 
 ## Usage
 
-Put this in your `Cargo.toml`:
+Add the `nmea` dependency in your `Cargo.toml`:
 
 ```toml
 [dependencies]
 nmea = "0.3"
 ```
 
-For Rust 2015 edition put this in your crate root:
+### For `no_std`
+
+This crate support `no_std` without the use of an allocator ( `alloc` ),
+just add the `nmea` crate without the default features:
+
+```toml
+[dependencies]
+nmea = {version = "0.3", default-features = false}
+```
+
+### For Rust edition 2015
+
+For Rust 2015 edition you should put this in your crate's `lib.rs` or `main.rs`:
 
 ```rust
 extern crate nmea;
 ```
 
-To use the NMEA parser create a `Nmea` struct and feed it with NMEA sentences:
+To use the NMEA parser create a `Nmea` struct and feed it with NMEA sentences (only supports `GNSS` messages, otherwise use the `parse_str()` and `parse_bytes()`):
 
 ```rust
 use nmea::Nmea;
