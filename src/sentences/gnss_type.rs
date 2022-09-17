@@ -5,7 +5,10 @@ use crate::count_tts;
 macro_rules! define_enum_with_count {
     (
         $(#[$outer:meta])*
-        enum $Name:ident { $($Variant:ident),* $(,)* }
+        enum $Name:ident { $(
+            $(#[$variant:meta])*
+            $Variant:ident
+        ),* $(,)* }
     ) => {
         $(#[$outer])*
         #[derive(PartialEq, Debug, Hash, Eq, Clone, Copy)]
@@ -23,12 +26,20 @@ macro_rules! define_enum_with_count {
 }
 
 define_enum_with_count!(
-    /// GNSS type
+    /// Supported GNSS types
     enum GnssType {
+        /// BeiDou Navigation Satellite System (BDS) from China.
         Beidou,
+        /// European Global Navigation System (Galileo) from Europe.
         Galileo,
+        /// Global Positioning System (GPS) from the United States.
         Gps,
+        /// Globalnaya Navigazionnaya Sputnikovaya Sistema (GLONASS) from Russia.
         Glonass,
+        /// Navigation Indian Constellation (NavIC) from India.
+        NavIC,
+        /// Quasi-Zenith Satellite System (QZSS) from Japan.
+        Qzss,
     }
 );
 
@@ -39,6 +50,8 @@ impl fmt::Display for GnssType {
             GnssType::Galileo => write!(f, "Galileo"),
             GnssType::Gps => write!(f, "GPS"),
             GnssType::Glonass => write!(f, "GLONASS"),
+            GnssType::NavIC => write!(f, "NavIC"),
+            GnssType::Qzss => write!(f, "QZSS"),
         }
     }
 }

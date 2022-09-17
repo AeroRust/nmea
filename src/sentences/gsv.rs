@@ -97,14 +97,16 @@ fn do_parse_gsv(i: &str) -> IResult<&str, GsvData> {
 /// <repeat for up to 4 satellites per sentence>
 ///
 /// Can occur with talker IDs:
-///   BD (Beidou),
-///   GA (Galileo),
-///   GB (Beidou),
-///   GL (GLONASS),
-///   GN (GLONASS, any combination GNSS),
-///   GP (GPS, SBAS, QZSS),
-///   PQ (Beidou)
-///   QZ (QZSS).
+/// - BD (Beidou),
+/// - GA (Galileo),
+/// - GB (Beidou),
+/// - GI (NavIC - India)
+/// - GL (GLONASS),
+/// - GN (GLONASS, any combination GNSS),
+/// - GP (GPS, SBAS, QZSS),
+/// - GQ (QZSS)
+/// - PQ (QZSS)
+/// - QZ (QZSS)
 ///
 /// GL may be (incorrectly) used when GSVs are mixed containing
 /// GLONASS, GN may be (incorrectly) used when GSVs contain GLONASS
@@ -120,7 +122,9 @@ pub fn parse_gsv(sentence: NmeaSentence) -> Result<GsvData, Error> {
             "GA" => GnssType::Galileo,
             "GP" => GnssType::Gps,
             "GL" => GnssType::Glonass,
-            "PQ" => GnssType::Beidou,
+            "BD" | "GB" => GnssType::Beidou,
+            "GI" => GnssType::NavIC,
+            "PQ" | "QZ" => GnssType::Qzss,
             _ => return Err(Error::UnknownGnssType(sentence.talker_id)),
         };
         let mut res = do_parse_gsv(sentence.data)?.1;
