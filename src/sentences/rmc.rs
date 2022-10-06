@@ -32,15 +32,15 @@ pub enum RmcStatusOfFix {
 /// NMEA 2.3:
 ///
 /// ```text
-///         1         2 3       4 5        6  7   8   9    10 11
-///         |         | |       | |        |  |   |   |    |  |
+///         1         2 3       4 5        6  7   8   9    10 1112
+///         |         | |       | |        |  |   |   |    |  | |
 ///  $--RMC,hhmmss.ss,A,ddmm.mm,a,dddmm.mm,a,x.x,x.x,xxxx,x.x,a,m*hh<CR><LF>
 /// ```
 ///
 /// NMEA 4.1:
 /// ```text
-///         1         2 3       4 5        6  7   8   9    10 11
-///         |         | |       | |        |  |   |   |    |  |
+///         1         2 3       4 5        6  7   8   9    10 111213
+///         |         | |       | |        |  |   |   |    |  | | |
 ///  $--RMC,hhmmss.ss,A,ddmm.mm,a,dddmm.mm,a,x.x,x.x,xxxx,x.x,a,m,s*hh<CR><LF>
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq)]
