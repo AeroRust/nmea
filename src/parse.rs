@@ -108,6 +108,7 @@ pub enum ParseResult {
     RMC(RmcData),
     TXT(TxtData),
     VTG(VtgData),
+    PGRMZ(PgrmzData),
     /// A message that is not supported by the crate and cannot be parsed.
     Unsupported(SentenceType),
 }
@@ -152,6 +153,7 @@ pub fn parse_str(sentence_input: &str) -> Result<ParseResult, Error> {
             SentenceType::GLL => parse_gll(nmea_sentence).map(ParseResult::GLL),
             SentenceType::TXT => parse_txt(nmea_sentence).map(ParseResult::TXT),
             SentenceType::GNS => parse_gns(nmea_sentence).map(ParseResult::GNS),
+            SentenceType::RMZ => parse_pgrmz(nmea_sentence).map(ParseResult::PGRMZ),
             sentence_type => Ok(ParseResult::Unsupported(sentence_type)),
         }
     } else {

@@ -30,6 +30,8 @@ pub enum Error<'a> {
     EmptyNavConfig,
     /// Invalid sentence number field in nmea sentence of type GSV
     InvalidGsvSentenceNum,
+    /// An unknown talker ID was found in the NMEA message.
+    UnknownTalkerId { expected: &'a str, found: &'a str },
 }
 
 impl<'a> From<nom::Err<nom::error::Error<&'a str>>> for Error<'a> {
@@ -80,6 +82,11 @@ impl<'a> fmt::Display for Error<'a> {
             Error::InvalidGsvSentenceNum => write!(
                 f,
                 "Invalid senetence number field in nmea sentence of type GSV"
+            ),
+            Error::UnknownTalkerId { expected, found } => write!(
+                f,
+                "Unknown Talker ID (expected = '{}', found = '{}')",
+                expected, found
             ),
         }
     }
