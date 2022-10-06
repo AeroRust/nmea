@@ -21,7 +21,7 @@ pub enum RmcStatusOfFix {
 
 /// RMC - Recommended Minimum Navigation Information
 ///
-/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_bwc_bearing_distance_to_waypoint_great_circle>
+/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_rmc_recommended_minimum_navigation_information>
 ///
 /// ```text
 ///         1         2 3       4 5        6  7   8   9    10 11
