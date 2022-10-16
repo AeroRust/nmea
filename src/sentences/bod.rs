@@ -2,10 +2,11 @@ use crate::{parse::*, sentences::utils::array_string, Error, SentenceType};
 
 use arrayvec::ArrayString;
 use nom::{
-    bytes::complete::take_until,
+    bytes::complete::{is_not, take_until},
     character::complete::char,
     combinator::{map_parser, opt},
     number::complete::float,
+    sequence::preceded,
 };
 
 const MAX_LEN: usize = 64;
@@ -37,26 +38,25 @@ pub struct BodData {
 fn do_parse_bod(i: &str) -> Result<BodData, Error> {
     // 1. Bearing Degrees, True
     let (i, bearing_true) = opt(map_parser(take_until(","), float))(i)?;
-    let (i, _) = char(',')(i)?;
 
     // 2. T = True
-    let (i, _) = char('T')(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = preceded(char(','), char('T'))(i)?;
 
     // 3. Bearing Degrees, Magnetic
-    let (i, bearing_magnetic) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, bearing_magnetic) = opt(preceded(char(','), float))(i)?;
 
     // 4. M = Magnetic
-    let (i, _) = char('M')(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = preceded(char(','), char('M'))(i)?;
 
     // 5. Destination Waypoint
-    let (i, to_waypoint) = opt(take_until(","))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, to_waypoint) = opt(preceded(char(','), is_not(",*")))(i)?;
 
     // 6. origin Waypoint
-    let (_i, from_waypoint) = opt(take_until("*"))(i)?;
+    let from_waypoint = if to_waypoint.is_none() {
+        None
+    } else {
+        opt(preceded(char(','), is_not("*")))(i)?.1
+    };
 
     // 7. Checksum
 
@@ -78,6 +78,40 @@ pub fn parse_bod(sentence: NmeaSentence) -> Result<BodData, Error> {
             found: sentence.message_id,
         })
     } else {
-        Ok(do_parse_bod(sentence.data)?)
+        do_parse_bod(sentence.data)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use approx::assert_relative_eq;
+
+    use super::*;
+
+    #[test]
+    fn parse_bod_with_route_active_example_full() {
+        let sentence = parse_nmea_sentence("$GPBOD,097.0,T,103.2,M,POINTB,POINTA*4A").unwrap();
+        assert_eq!(sentence.checksum, sentence.calc_checksum());
+        assert_eq!(sentence.checksum, 0x4A);
+
+        let data = parse_bod(sentence).unwrap();
+        assert_relative_eq!(data.bearing_true.unwrap(), 97.0);
+        assert_relative_eq!(data.bearing_magnetic.unwrap(), 103.2);
+        assert_eq!(data.to_waypoint.as_deref(), Some("POINTB"));
+        assert_eq!(data.from_waypoint.as_deref(), Some("POINTA"));
+    }
+
+    #[test]
+    fn parse_bod_no_route_active_example_full() {
+        let sentence = parse_nmea_sentence("$GPBOD,099.3,T,105.6,M,POINTB*64").unwrap();
+        assert_eq!(sentence.checksum, sentence.calc_checksum());
+        assert_eq!(sentence.checksum, 0x64);
+        let data = parse_bod(sentence).unwrap();
+
+        assert_relative_eq!(data.bearing_true.unwrap(), 99.3);
+        assert_relative_eq!(data.bearing_magnetic.unwrap(), 105.6);
+        assert_eq!(data.to_waypoint.as_deref(), Some("POINTB"));
+        assert!(data.from_waypoint.is_none());
     }
 }
