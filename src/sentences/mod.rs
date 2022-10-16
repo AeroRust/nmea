@@ -9,6 +9,7 @@ mod gns;
 mod gsa;
 mod gsv;
 mod rmc;
+mod rmz;
 mod txt;
 mod utils;
 mod vtg;
@@ -30,6 +31,7 @@ pub use {
     gsa::{parse_gsa, GsaData},
     gsv::{parse_gsv, GsvData},
     rmc::{parse_rmc, RmcData, RmcStatusOfFix},
+    rmz::{parse_pgrmz, PgrmzData},
     txt::{parse_txt, TxtData},
     vtg::{parse_vtg, VtgData},
 };
