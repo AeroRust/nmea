@@ -43,20 +43,16 @@ fn do_parse_bod(i: &str) -> Result<BodData, Error> {
     let (i, _) = preceded(char(','), char('T'))(i)?;
 
     // 3. Bearing Degrees, Magnetic
-    let (i, bearing_magnetic) = opt(preceded(char(','), float))(i)?;
+    let (i, bearing_magnetic) = preceded(char(','), opt(float))(i)?;
 
     // 4. M = Magnetic
     let (i, _) = preceded(char(','), char('M'))(i)?;
 
     // 5. Destination Waypoint
-    let (i, to_waypoint) = opt(preceded(char(','), is_not(",*")))(i)?;
+    let (i, to_waypoint) = preceded(char(','), opt(is_not(",*")))(i)?;
 
     // 6. origin Waypoint
-    let from_waypoint = if to_waypoint.is_none() {
-        None
-    } else {
-        opt(preceded(char(','), is_not("*")))(i)?.1
-    };
+    let from_waypoint = opt(preceded(char(','), is_not("*")))(i)?.1;
 
     // 7. Checksum
 
@@ -103,6 +99,34 @@ mod tests {
     }
 
     #[test]
+    fn parse_bod_with_route_active_missing_destination_waypoint_example_full() {
+        let sentence = parse_nmea_sentence("$GPBOD,097.0,T,103.2,M,,POINTA*44").unwrap();
+        assert_eq!(sentence.checksum, sentence.calc_checksum());
+        assert_eq!(sentence.checksum, 0x44);
+
+        let data = parse_bod(sentence).unwrap();
+        assert_relative_eq!(data.bearing_true.unwrap(), 97.0);
+        assert_relative_eq!(data.bearing_magnetic.unwrap(), 103.2);
+        assert!(data.to_waypoint.is_none());
+        assert_eq!(data.from_waypoint.as_deref(), Some("POINTA"));
+    }
+
+    #[test]
+    fn parse_bod_with_route_active_missing_source_waypoint_example_full() {
+        // this is equivalent to the "no route active" test, except here there is a comma with an empty field
+        // before the checksum. This is just to make sure parsing is resilient to missing data.
+        let sentence = parse_nmea_sentence("$GPBOD,097.0,T,103.2,M,POINTB,*47").unwrap();
+        assert_eq!(sentence.checksum, sentence.calc_checksum());
+        assert_eq!(sentence.checksum, 0x47);
+
+        let data = parse_bod(sentence).unwrap();
+        assert_relative_eq!(data.bearing_true.unwrap(), 97.0);
+        assert_relative_eq!(data.bearing_magnetic.unwrap(), 103.2);
+        assert_eq!(data.to_waypoint.as_deref(), Some("POINTB"));
+        assert!(data.from_waypoint.is_none());
+    }
+
+    #[test]
     fn parse_bod_no_route_active_example_full() {
         let sentence = parse_nmea_sentence("$GPBOD,099.3,T,105.6,M,POINTB*64").unwrap();
         assert_eq!(sentence.checksum, sentence.calc_checksum());
@@ -110,6 +134,19 @@ mod tests {
         let data = parse_bod(sentence).unwrap();
 
         assert_relative_eq!(data.bearing_true.unwrap(), 99.3);
+        assert_relative_eq!(data.bearing_magnetic.unwrap(), 105.6);
+        assert_eq!(data.to_waypoint.as_deref(), Some("POINTB"));
+        assert!(data.from_waypoint.is_none());
+    }
+
+    #[test]
+    fn parse_bod_no_route_active_no_bearing_example_full() {
+        let sentence = parse_nmea_sentence("$GPBOD,,T,105.6,M,POINTB*49").unwrap();
+        assert_eq!(sentence.checksum, sentence.calc_checksum());
+        assert_eq!(sentence.checksum, 0x49);
+        let data = parse_bod(sentence).unwrap();
+
+        assert!(data.bearing_true.is_none());
         assert_relative_eq!(data.bearing_magnetic.unwrap(), 105.6);
         assert_eq!(data.to_waypoint.as_deref(), Some("POINTB"));
         assert!(data.from_waypoint.is_none());
