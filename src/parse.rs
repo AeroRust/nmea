@@ -97,6 +97,7 @@ pub fn parse_nmea_sentence(sentence: &str) -> core::result::Result<NmeaSentence,
 /// The result of parsing a single NMEA message.
 #[derive(Debug, PartialEq)]
 pub enum ParseResult {
+    AAM(AamData),
     BOD(BodData),
     BWC(BwcData),
     GBS(GbsData),
@@ -141,6 +142,7 @@ pub fn parse_str(sentence_input: &str) -> Result<ParseResult, Error> {
 
     if nmea_sentence.checksum == calculated_checksum {
         match nmea_sentence.message_id {
+            SentenceType::AAM => parse_aam(nmea_sentence).map(ParseResult::AAM),
             SentenceType::BOD => parse_bod(nmea_sentence).map(ParseResult::BOD),
             SentenceType::BWC => parse_bwc(nmea_sentence).map(ParseResult::BWC),
             SentenceType::GBS => parse_gbs(nmea_sentence).map(ParseResult::GBS),

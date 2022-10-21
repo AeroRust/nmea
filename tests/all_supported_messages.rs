@@ -5,6 +5,8 @@ use nmea::{parse_str, Error, Nmea, SentenceType};
 #[test]
 fn test_all_supported_messages() {
     let sentences = [
+        // AAM
+        (SentenceType::AAM, "$GPAAM,A,A,0.10,N,WPTNME*32"),
         // BWC
         (SentenceType::BWC, "$GPBWC,220516,5130.02,N,00046.34,W,213.8,T,218.0,M,0004.6,N,EGLM*21"),
         // GGA
@@ -23,7 +25,9 @@ fn test_all_supported_messages() {
         (SentenceType::TXT, "$GNTXT,01,01,02,u-blox AG - www.u-blox.com*4E"),
         // VTG
         (SentenceType::VTG, "$GPVTG,360.0,T,348.7,M,000.0,N,000.0,K*43"),
-    ].into_iter().collect::<HashMap<_, _>>();
+    ]
+    .into_iter()
+    .collect::<HashMap<_, _>>();
 
     // `parse_str()` test
     {
@@ -60,10 +64,16 @@ fn test_all_supported_messages() {
             .collect::<Vec<_>>();
 
         assert_eq!(
-            vec![(
-                &sentences[&SentenceType::BWC],
-                Error::Unsupported(SentenceType::BWC)
-            )],
+            vec![
+                (
+                    &sentences[&SentenceType::BWC],
+                    Error::Unsupported(SentenceType::BWC)
+                ),
+                (
+                    &sentences[&SentenceType::AAM],
+                    Error::Unsupported(SentenceType::AAM)
+                ),
+            ],
             errors,
         );
     }

@@ -1,5 +1,6 @@
 //! All the supported sentence type data and parsers.
 
+mod aam;
 mod bod;
 mod bwc;
 mod gbs;
@@ -18,6 +19,7 @@ mod fix_type;
 mod gnss_type;
 
 pub use {
+    aam::{parse_aam, AamData},
     bod::{parse_bod, BodData},
     bwc::{parse_bwc, BwcData},
     faa_mode::{FaaMode, FaaModes},
