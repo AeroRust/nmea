@@ -61,20 +61,10 @@ fn test_all_supported_messages() {
         let errors = parse_results
             .into_iter()
             .filter_map(|result| result.err())
+            .map(|(_sentence, error_type)| error_type)
             .collect::<Vec<_>>();
 
-        assert_eq!(
-            vec![
-                (
-                    &sentences[&SentenceType::BWC],
-                    Error::Unsupported(SentenceType::BWC)
-                ),
-                (
-                    &sentences[&SentenceType::AAM],
-                    Error::Unsupported(SentenceType::AAM)
-                ),
-            ],
-            errors,
-        );
+        assert!(errors.contains(&Error::Unsupported(SentenceType::BWC)));
+        assert!(errors.contains(&Error::Unsupported(SentenceType::AAM)));
     }
 }
