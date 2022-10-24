@@ -356,7 +356,9 @@ impl<'a> Nmea {
             ParseResult::BWC(_)
             | ParseResult::BOD(_)
             | ParseResult::GBS(_)
-            | ParseResult::AAM(_) => return Ok(FixType::Invalid),
+            | ParseResult::AAM(_)
+            | ParseResult::PGRMZ(_) => return Ok(FixType::Invalid),
+
             ParseResult::Unsupported(_) => {
                 return Ok(FixType::Invalid);
             }
@@ -680,6 +682,10 @@ define_sentence_type_enum! {
     /// - [`SentenceType::ZDA`]
     /// - [`SentenceType::ZFO`]
     /// - [`SentenceType::ZTG`]
+    ///
+    /// ### Vendor extensions
+    ///
+    /// - [`SentenceType::RMZ`]
     #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
     #[repr(u32)]
     #[allow(rustdoc::bare_urls)]
@@ -972,6 +978,12 @@ define_sentence_type_enum! {
         ///
         /// Type: `Navigation`
         RMC,
+        /// PGRMZ - Garmin Altitude
+        ///
+        /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_pgrmz_garmin_altitude>
+        ///
+        /// Type: `Vendor extensions`
+        RMZ,
         /// ROT - Rate Of Turn
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_rot_rate_of_turn>
