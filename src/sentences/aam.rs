@@ -18,6 +18,17 @@ const MAX_LEN: usize = 64;
 ///        1 2 3   4 5    6
 ///        | | |   | |    |
 /// $--AAM,A,A,x.x,N,c--c*hh<CR><LF>
+///
+/// Field Number:
+///   1. Status, BOOLEAN, A = Arrival circle entered, V = not passed
+///   2. Status, BOOLEAN, A = perpendicular passed at waypoint, V = not passed
+///   3. Arrival circle radius
+///   4. Units of radiuos, nautical miles
+///   5. Waypoint ID
+///   6. Checksum
+///
+/// Example: $GPAAM,A,A,0.10,N,WPTNME*43
+/// WPTNME is the waypoint name.
 /// ```
 #[derive(Debug, PartialEq)]
 pub struct AamData {
@@ -41,29 +52,29 @@ pub fn parse_aam(sentence: NmeaSentence) -> Result<AamData, Error> {
 }
 
 fn do_parse_aam(i: &str) -> Result<AamData, Error> {
-    let (i, field1) = anychar(i)?;
-    let arrival_circle_entered = if field1 == 'A' {
-        Some(true)
-    } else {
-        Some(false)
+    let (i, arrival_circle_entered) = anychar(i)?;
+    let arrival_circle_entered = match arrival_circle_entered {
+        'A' => Some(true),
+        'V' => Some(false),
+        char => unreachable!("{} is not a valid AAM-Arrival Circle Entered value", char),
     };
     let (i, _) = char(',')(i)?;
 
-    let (i, field2) = anychar(i)?;
-    let perpendicular_passed = if field2 == 'A' {
-        Some(true)
-    } else {
-        Some(false)
+    let (i, perpendicular_passed) = anychar(i)?;
+    let perpendicular_passed = match perpendicular_passed {
+        'A' => Some(true),
+        'V' => Some(false),
+        char => unreachable!("{} is not a valid AAM-Perpendicular Passed value", char),
     };
     let (i, _) = char(',')(i)?;
 
     let (i, arrival_circle_radius) = opt(float)(i)?;
     let (i, _) = char(',')(i)?;
 
-    let (i, radius_units) = opt(anychar)(i)?;
+    let (i, radius_units) = opt(char('N'))(i)?;
     let (i, _) = char(',')(i)?;
 
-    let (_i, waypoint_id) = opt(is_not("\n"))(i)?;
+    let (_i, waypoint_id) = opt(is_not("*"))(i)?;
 
     Ok(AamData {
         arrival_circle_entered,
@@ -96,6 +107,42 @@ mod tests {
         assert_relative_eq!(data.arrival_circle_radius.unwrap(), 0.10);
         assert_eq!(data.radius_units.unwrap(), 'N');
         assert_eq!(&data.waypoint_id.unwrap(), "WPTNME");
+    }
+
+    #[test]
+    #[should_panic]
+    fn parse_aam_with_invalid_arrival_circle_entered_value() {
+        parse_aam(NmeaSentence {
+            talker_id: "GP",
+            message_id: SentenceType::AAM,
+            data: "G,V,0.10,N,WPTNME",
+            checksum: 0x0,
+        })
+        .unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn parse_aam_with_invalid_perpendicular_passed_value() {
+        parse_aam(NmeaSentence {
+            talker_id: "GP",
+            message_id: SentenceType::AAM,
+            data: "V,X,0.10,N,WPTNME",
+            checksum: 0x0,
+        })
+        .unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn parse_aam_with_invalid_radius_units_value() {
+        parse_aam(NmeaSentence {
+            talker_id: "GP",
+            message_id: SentenceType::AAM,
+            data: "V,A,0.10,P,WPTNME",
+            checksum: 0x0,
+        })
+        .unwrap();
     }
 
     #[test]
