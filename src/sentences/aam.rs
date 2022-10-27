@@ -1,7 +1,7 @@
 use arrayvec::ArrayString;
 use nom::{
     bytes::complete::is_not,
-    character::complete::{anychar, char},
+    character::complete::{char, one_of},
     combinator::opt,
     number::complete::float,
 };
@@ -52,19 +52,19 @@ pub fn parse_aam(sentence: NmeaSentence) -> Result<AamData, Error> {
 }
 
 fn do_parse_aam(i: &str) -> Result<AamData, Error> {
-    let (i, arrival_circle_entered) = anychar(i)?;
+    let (i, arrival_circle_entered) = one_of("AV")(i)?;
     let arrival_circle_entered = match arrival_circle_entered {
         'A' => Some(true),
         'V' => Some(false),
-        char => unreachable!("{} is not a valid AAM-Arrival Circle Entered value", char),
+        _ => unreachable!(),
     };
     let (i, _) = char(',')(i)?;
 
-    let (i, perpendicular_passed) = anychar(i)?;
+    let (i, perpendicular_passed) = one_of("AV")(i)?;
     let perpendicular_passed = match perpendicular_passed {
         'A' => Some(true),
         'V' => Some(false),
-        char => unreachable!("{} is not a valid AAM-Perpendicular Passed value", char),
+        _ => unreachable!(),
     };
     let (i, _) = char(',')(i)?;
 
