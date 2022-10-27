@@ -97,6 +97,7 @@ pub fn parse_nmea_sentence(sentence: &str) -> core::result::Result<NmeaSentence,
 /// The result of parsing a single NMEA message.
 #[derive(Debug, PartialEq)]
 pub enum ParseResult {
+    AAM(AamData),
     BOD(BodData),
     BWC(BwcData),
     GBS(GbsData),
