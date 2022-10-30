@@ -106,6 +106,8 @@ pub enum ParseResult {
     GNS(GnsData),
     GSA(GsaData),
     GSV(GsvData),
+    MDA(MdaData),
+    MWV(MwvData),
     RMC(RmcData),
     TXT(TxtData),
     VTG(VtgData),
@@ -154,6 +156,8 @@ pub fn parse_str(sentence_input: &str) -> Result<ParseResult, Error> {
             SentenceType::GLL => parse_gll(nmea_sentence).map(ParseResult::GLL),
             SentenceType::TXT => parse_txt(nmea_sentence).map(ParseResult::TXT),
             SentenceType::GNS => parse_gns(nmea_sentence).map(ParseResult::GNS),
+            SentenceType::MDA => parse_mda(nmea_sentence).map(ParseResult::MDA),
+            SentenceType::MWV => parse_mwv(nmea_sentence).map(ParseResult::MWV),
             SentenceType::RMZ => parse_pgrmz(nmea_sentence).map(ParseResult::PGRMZ),
             sentence_type => Ok(ParseResult::Unsupported(sentence_type)),
         }

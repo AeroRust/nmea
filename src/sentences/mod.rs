@@ -9,6 +9,8 @@ mod gll;
 mod gns;
 mod gsa;
 mod gsv;
+mod mda;
+mod mwv;
 mod rmc;
 mod rmz;
 mod txt;
@@ -32,6 +34,8 @@ pub use {
     gnss_type::GnssType,
     gsa::{parse_gsa, GsaData},
     gsv::{parse_gsv, GsvData},
+    mda::{parse_mda, MdaData},
+    mwv::{parse_mwv, MwvData, MwvReference, MwvWindSpeedUnits},
     rmc::{parse_rmc, RmcData, RmcStatusOfFix},
     rmz::{parse_pgrmz, PgrmzData},
     txt::{parse_txt, TxtData},
