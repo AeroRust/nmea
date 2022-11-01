@@ -71,8 +71,33 @@ pub fn do_parse_lat_lon(i: &str) -> IResult<&str, (f64, f64)> {
     Ok((i, (lat, lon)))
 }
 
+/// Parses the variation between magnetic north and true north.
+/// The angle returned will be positive or negative depending on
+/// the East or West direction.<br>
+/// E.g:<br>
+/// "14.2,E" => 14.2 <br>
+/// "14.2,W" => -14.2 <br>
+pub fn do_parse_magnetic_variation(i: &str) -> IResult<&str, f64> {
+    let (i, variation_deg) = double(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, direction) = one_of("EW")(i)?;
+    let variation_deg = match direction {
+        'E' => variation_deg,
+        'W' => -variation_deg,
+        _ => unreachable!(),
+    };
+    Ok((i, variation_deg))
+}
+
 pub(crate) fn parse_lat_lon(i: &str) -> IResult<&str, Option<(f64, f64)>> {
     alt((map(tag(",,,"), |_| None), map(do_parse_lat_lon, Some)))(i)
+}
+
+pub(crate) fn parse_magnetic_variation(i: &str) -> IResult<&str, Option<f64>> {
+    alt((
+        map(tag(","), |_| None),
+        map(do_parse_magnetic_variation, Some),
+    ))(i)
 }
 
 pub(crate) fn parse_date(i: &str) -> IResult<&str, NaiveDate> {
@@ -171,5 +196,27 @@ mod tests {
 
         let (_, date) = parse_date("311282").unwrap();
         assert_eq!(date, NaiveDate::from_ymd(2082, 12, 31));
+    }
+
+    #[test]
+    fn test_parse_magnetic_variation() {
+        let (_, res) = parse_magnetic_variation("12,E").unwrap();
+        assert_relative_eq!(res.unwrap(), 12.0);
+        let (_, res) = parse_magnetic_variation("12,W").unwrap();
+        assert_relative_eq!(res.unwrap(), -12.0);
+
+        let (_, res) = parse_magnetic_variation(",").unwrap();
+        assert!(res.is_none());
+        let (_, res) = parse_magnetic_variation(",,").unwrap();
+        assert!(res.is_none());
+        let (_, res) = parse_magnetic_variation(",W").unwrap();
+        assert!(res.is_none());
+
+        //missing direction
+        let result = parse_magnetic_variation("12,");
+        assert!(result.is_err());
+        //illegal character for direction
+        let result = parse_magnetic_variation("12,Q");
+        assert!(result.is_err());
     }
 }
