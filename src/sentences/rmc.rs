@@ -115,11 +115,8 @@ fn do_parse_rmc(i: &str) -> IResult<&str, RmcData> {
     let (i, fix_date) = opt(parse_date)(i)?;
     let (i, _) = char(',')(i)?;
     // 10. Magnetic Variation, degrees
-    let (i, magnetic_variation) = parse_magnetic_variation(i)?;
-    // let (i, magnetic_variation) = opt(float)(i)?;
-    // let (i, _) = char(',')(i)?;
     // // 11. `E` or `W`
-    // let (i, variation_direction) = opt(one_of("EW"))(i)?;
+    let (i, magnetic_variation) = parse_magnetic_variation(i)?;
     let (i, next) = opt(char(','))(i)?;
     // 12. FAA mode indicator (NMEA 2.3 and later)
     let (i, faa_mode) = cond(
