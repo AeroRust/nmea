@@ -7,10 +7,11 @@ use nom::{
     bytes::complete::{tag, take, take_until},
     character::complete::{char, digit1, one_of},
     combinator::{map, map_parser, map_res},
-    number::complete::double,
+    number::complete::{double, float},
     sequence::tuple,
     IResult,
 };
+
 #[cfg(not(feature = "std"))]
 #[allow(unused_imports)]
 use num_traits::float::FloatCore;
@@ -77,8 +78,8 @@ pub fn do_parse_lat_lon(i: &str) -> IResult<&str, (f64, f64)> {
 /// E.g:<br>
 /// "14.2,E" => 14.2 <br>
 /// "14.2,W" => -14.2 <br>
-pub fn do_parse_magnetic_variation(i: &str) -> IResult<&str, f64> {
-    let (i, variation_deg) = double(i)?;
+pub fn do_parse_magnetic_variation(i: &str) -> IResult<&str, f32> {
+    let (i, variation_deg) = float(i)?;
     let (i, _) = char(',')(i)?;
     let (i, direction) = one_of("EW")(i)?;
     let variation_deg = match direction {
@@ -93,7 +94,7 @@ pub(crate) fn parse_lat_lon(i: &str) -> IResult<&str, Option<(f64, f64)>> {
     alt((map(tag(",,,"), |_| None), map(do_parse_lat_lon, Some)))(i)
 }
 
-pub(crate) fn parse_magnetic_variation(i: &str) -> IResult<&str, Option<f64>> {
+pub(crate) fn parse_magnetic_variation(i: &str) -> IResult<&str, Option<f32>> {
     alt((
         map(tag(","), |_| None),
         map(do_parse_magnetic_variation, Some),
@@ -152,7 +153,7 @@ pub(crate) fn number<T: str::FromStr>(i: &str) -> IResult<&str, T> {
 pub(crate) fn array_string<const MAX_LEN: usize>(
     string: &str,
 ) -> Result<ArrayString<MAX_LEN>, Error> {
-    ArrayString::from(string).map_err(|_e| Error::SentenceLength(string.len()))
+    ArrayString::from(string).map_err(|_| Error::SentenceLength(string.len()))
 }
 
 #[cfg(test)]

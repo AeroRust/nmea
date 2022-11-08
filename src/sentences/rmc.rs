@@ -81,7 +81,7 @@ pub struct RmcData {
     pub lon: Option<f64>,
     pub speed_over_ground: Option<f32>,
     pub true_course: Option<f32>,
-    pub magnetic_variation: Option<f64>,
+    pub magnetic_variation: Option<f32>,
     pub faa_mode: Option<FaaMode>,
     pub nav_status: Option<RmcNavigationStatus>,
 }
