@@ -40,7 +40,12 @@ approx = "0.5.1"
 doc-comment = "0.3"
 pretty_assertions = "1"
 quickcheck = {version = "1.0.3", default-features = false}
+criterion = "0.4.0"
 
 [features]
 default = ["std"]
 std = ["nom/std", "chrono/std", "arrayvec/std"]
+
+[[bench]]
+name = "gsv_parser"
+harness = false
