@@ -16,6 +16,10 @@ struct MockBodData<'a> {
 
 static BOD_SENTENCE: &str = "097.0,T,103.2,M,POINTB,POINTA";
 fn parsing_combinators_benchmark(c: &mut Criterion) {
+    /*
+    This benchmark was created to compare parsing strategies for handling commas during
+    parsing of sentences.
+     */
     let mut bench_group = c.benchmark_group("comma-separated parsing");
 
     bench_group.bench_function("let (i, ...) = preceded(char(','), ...)(i)?", |b| {
