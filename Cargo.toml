@@ -47,5 +47,9 @@ default = ["std"]
 std = ["nom/std", "chrono/std", "arrayvec/std"]
 
 [[bench]]
+name = "nom_parsing"
+harness = false
+
+[[bench]]
 name = "gsv_parser"
 harness = false
