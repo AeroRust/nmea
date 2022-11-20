@@ -1,7 +1,6 @@
-use core::str;
-
 use arrayvec::ArrayString;
 use chrono::{NaiveDate, NaiveTime};
+use core::str;
 use nom::{
     branch::alt,
     bytes::complete::{tag, take, take_until},
