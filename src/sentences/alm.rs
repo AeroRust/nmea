@@ -65,7 +65,7 @@ pub fn parse_alm(sentence: NmeaSentence) -> Result<AlmData, Error> {
             found: sentence.message_id,
         })
     } else {
-        do_parse_bod(sentence.data)
+        Ok(do_parse_alm(sentence.data)?.1)
     }
 }
 
@@ -81,7 +81,7 @@ where
     })(i)
 }
 
-fn do_parse_bod(i: &str) -> Result<AlmData, Error> {
+fn do_parse_alm(i: &str) -> IResult<&str, AlmData> {
     // 1. Total number of messages
     let (i, total_number_of_messages) = opt(float)(i)?;
     let (i, _) = char(',')(i)?;
@@ -134,23 +134,25 @@ fn do_parse_bod(i: &str) -> Result<AlmData, Error> {
     let (i, _) = char(',')(i)?;
     // 15. F1 Clock Parameter
     let (i, f1_clock_parameter) = opt(map_res(hex_digit1, |s| u16::from_str_radix(s, 16)))(i)?;
-    let (i, _) = char(',')(i)?;
 
-    Ok(AlmData {
-        total_number_of_messages,
-        sentence_number,
-        satellite_prn_number,
-        gps_week_number,
-        sv_health,
-        eccentricity,
-        almanac_reference_time,
-        inclination_angle,
-        rate_of_right_ascension,
-        root_of_semi_major_axis,
-        argument_of_perigee,
-        longitude_of_ascension_node,
-        mean_anomaly,
-        f0_clock_parameter,
-        f1_clock_parameter,
-    })
+    Ok((
+        i,
+        AlmData {
+            total_number_of_messages,
+            sentence_number,
+            satellite_prn_number,
+            gps_week_number,
+            sv_health,
+            eccentricity,
+            almanac_reference_time,
+            inclination_angle,
+            rate_of_right_ascension,
+            root_of_semi_major_axis,
+            argument_of_perigee,
+            longitude_of_ascension_node,
+            mean_anomaly,
+            f0_clock_parameter,
+            f1_clock_parameter,
+        },
+    ))
 }
