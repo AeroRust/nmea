@@ -38,18 +38,22 @@ pub struct BodData {
 fn do_parse_bod(i: &str) -> Result<BodData, Error> {
     // 1. Bearing Degrees, True
     let (i, bearing_true) = opt(map_parser(take_until(","), float))(i)?;
+    let (i, _) = char(',')(i)?;
 
     // 2. T = True
-    let (i, _) = preceded(char(','), char('T'))(i)?;
+    let (i, _) = char('T')(i)?;
+    let (i, _) = char(',')(i)?;
 
     // 3. Bearing Degrees, Magnetic
-    let (i, bearing_magnetic) = preceded(char(','), opt(float))(i)?;
+    let (i, bearing_magnetic) = opt(float)(i)?;
+    let (i, _) = char(',')(i)?;
 
     // 4. M = Magnetic
-    let (i, _) = preceded(char(','), char('M'))(i)?;
+    let (i, _) = char('M')(i)?;
+    let (i, _) = char(',')(i)?;
 
     // 5. Destination Waypoint
-    let (i, to_waypoint) = preceded(char(','), opt(is_not(",*")))(i)?;
+    let (i, to_waypoint) = opt(is_not(",*"))(i)?;
 
     // 6. origin Waypoint
     let from_waypoint = opt(preceded(char(','), is_not("*")))(i)?.1;
