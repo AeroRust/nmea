@@ -357,6 +357,7 @@ impl<'a> Nmea {
             | ParseResult::BOD(_)
             | ParseResult::GBS(_)
             | ParseResult::AAM(_)
+            | ParseResult::ALM(_)
             | ParseResult::PGRMZ(_) => return Ok(FixType::Invalid),
 
             ParseResult::Unsupported(_) => {

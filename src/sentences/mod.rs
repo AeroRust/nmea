@@ -22,6 +22,7 @@ mod gnss_type;
 
 pub use {
     aam::{parse_aam, AamData},
+    alm::{parse_alm, AlmData},
     bod::{parse_bod, BodData},
     bwc::{parse_bwc, BwcData},
     faa_mode::{FaaMode, FaaModes},
