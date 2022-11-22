@@ -7,6 +7,7 @@ use nom::{
     sequence::preceded,
     IResult,
 };
+use parse_display::{Display, FromStr};
 
 use crate::{sentences::*, Error, SentenceType};
 
@@ -30,6 +31,8 @@ use crate::{sentences::*, Error, SentenceType};
 pub const SENTENCE_MAX_LEN: usize = 102;
 
 /// A known and parsable Nmea sentence type.
+#[derive(Display)]
+#[display("${talker_id},{message_id},{data}*{checksum}")]
 pub struct NmeaSentence<'a> {
     pub talker_id: &'a str,
     pub message_id: SentenceType,

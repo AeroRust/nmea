@@ -30,6 +30,7 @@ arrayvec = {version = "0.7.2", default-features = false}
 chrono = {version = "0.4.19", default-features = false}
 heapless = "0.7.15"
 nom = {version = "7.1.1", default-features = false}
+parse-display = {version = "0.6.0", default-features = false}
 
 # we include num-traits only when `std` is not enabled
 # because of `fract()` and `trunc()` methods
