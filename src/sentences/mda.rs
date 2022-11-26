@@ -1,12 +1,6 @@
-use nom::{
-    character::complete::{char},
-    combinator::opt,
-    number::complete::float,
-    IResult,
-};
+use nom::{character::complete::char, combinator::opt, number::complete::float, IResult};
 
 use crate::{parse::NmeaSentence, Error, SentenceType};
-
 
 /// MDA - Meterological Composite
 ///
@@ -19,27 +13,27 @@ use crate::{parse::NmeaSentence, Error, SentenceType};
 /// ```
 #[derive(Debug, PartialEq)]
 pub struct MdaData {
-    // Pressure in inches of mercury
+    /// Pressure in inches of mercury
     pressure_in_hg: Option<f32>,
-    // Pressure in bars
+    /// Pressure in bars
     pressure_bar: Option<f32>,
-    // Air temp, deg celsius
+    /// Air temp, deg celsius
     air_temp_deg: Option<f32>,
-    // Water temp, deg celsius
+    /// Water temp, deg celsius
     water_temp_deg: Option<f32>,
-    // Relative humidity, percent
+    /// Relative humidity, percent
     rel_humidity: Option<f32>,
-    // Absolute humidity, percent
+    /// Absolute humidity, percent
     abs_humidity: Option<f32>,
-    // Dew point, degrees celsius
+    /// Dew point, degrees celsius
     dew_point: Option<f32>,
-    // True Wind Direction, NED degrees
+    /// True Wind Direction, NED degrees
     wind_direction_true: Option<f32>,
-    // Magnetic Wind Direction, NED degrees
+    /// Magnetic Wind Direction, NED degrees
     wind_direction_magnetic: Option<f32>,
-    // Wind speed knots
+    /// Wind speed knots
     wind_speed_knots: Option<f32>,
-    // Wind speed meters/second
+    /// Wind speed meters/second
     wind_speed_ms: Option<f32>,
 }
 
@@ -48,7 +42,7 @@ pub struct MdaData {
 /// Information from mda:
 ///
 /// NMEA 0183 standard Wind Speed and Angle, in relation to the vessel’s bow/centerline.
-/// https://gpsd.gitlab.io/gpsd/NMEA.html#_mda_meteorological_composite
+/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_mda_meteorological_composite>
 ///
 /// ## Example (Ignore the line break):
 /// ```text
@@ -157,9 +151,11 @@ mod tests {
 
     #[test]
     fn test_parse_mda() {
-
         // Partial sentence from AirMax 150 model weather station
-        let s = parse_nmea_sentence("$WIMDA,29.7544,I,1.0076,B,35.5,C,,,42.1,,20.6,C,116.4,T,107.7,M,1.2,N,0.6,M*66").unwrap();
+        let s = parse_nmea_sentence(
+            "$WIMDA,29.7544,I,1.0076,B,35.5,C,,,42.1,,20.6,C,116.4,T,107.7,M,1.2,N,0.6,M*66",
+        )
+        .unwrap();
         assert_eq!(s.checksum, s.calc_checksum());
         assert_eq!(s.checksum, 0x66);
         let mda_data = parse_mda(s).unwrap();

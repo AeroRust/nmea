@@ -8,7 +8,6 @@ use nom::{
 
 use crate::{parse::NmeaSentence, Error, SentenceType};
 
-
 /// MWV - Wind Speed and Angle
 ///
 /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_mwv_wind_speed_and_angle>
@@ -24,13 +23,13 @@ pub struct MwvData {
     pub reference: Option<MwvReference>,
     pub wind_speed: Option<f32>,
     pub wind_speed_units: Option<MwvWindSpeedUnits>,
-    pub ok: bool
+    pub data_valid: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MwvReference {
     Relative,
-    Theoretical
+    Theoretical,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -38,7 +37,7 @@ pub enum MwvWindSpeedUnits {
     KilometersPerHour,
     MetersPerSecond,
     Knots,
-    MilesPerHour
+    MilesPerHour,
 }
 
 /// # Parse MWV message
@@ -46,7 +45,7 @@ pub enum MwvWindSpeedUnits {
 /// Information from mwv:
 ///
 /// NMEA 0183 standard Wind Speed and Angle, in relation to the vessel’s bow/centerline.
-/// https://gpsd.gitlab.io/gpsd/NMEA.html#_mwv_wind_speed_and_angle
+/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_mwv_wind_speed_and_angle>
 ///
 /// ## Example (Ignore the line break):
 /// ```text
@@ -88,8 +87,8 @@ fn do_parse_mwv(i: &str) -> IResult<&str, MwvData> {
         'S' => MwvWindSpeedUnits::MilesPerHour,
         _ => unreachable!(),
     });
-    let (i, is_ok) = preceded(char(','), one_of("AV"))(i)?;
-    let is_ok = match is_ok {
+    let (i, is_data_valid) = preceded(char(','), one_of("AV"))(i)?;
+    let is_data_valid = match is_data_valid {
         'A' => true,
         'V' => false,
         _ => unreachable!(),
@@ -102,7 +101,7 @@ fn do_parse_mwv(i: &str) -> IResult<&str, MwvData> {
             reference: reference_type,
             wind_speed: speed,
             wind_speed_units: wind_speed_type,
-            ok: is_ok,
+            data_valid: is_data_valid,
         },
     ))
 }
@@ -123,7 +122,10 @@ mod tests {
         assert_relative_eq!(41.1, wimwv_data.wind_direction.unwrap());
         assert_eq!(MwvReference::Relative, wimwv_data.reference.unwrap());
         assert_relative_eq!(1.0, wimwv_data.wind_speed.unwrap());
-        assert_eq!(MwvWindSpeedUnits::Knots, wimwv_data.wind_speed_units.unwrap());
-        assert_eq!(true, wimwv_data.ok);
+        assert_eq!(
+            MwvWindSpeedUnits::Knots,
+            wimwv_data.wind_speed_units.unwrap()
+        );
+        assert!(wimwv_data.data_valid);
     }
 }
