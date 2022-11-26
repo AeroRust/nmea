@@ -14,27 +14,27 @@ use crate::{parse::NmeaSentence, Error, SentenceType};
 #[derive(Debug, PartialEq)]
 pub struct MdaData {
     /// Pressure in inches of mercury
-    pressure_in_hg: Option<f32>,
+    pub pressure_in_hg: Option<f32>,
     /// Pressure in bars
-    pressure_bar: Option<f32>,
+    pub pressure_bar: Option<f32>,
     /// Air temp, deg celsius
-    air_temp_deg: Option<f32>,
+    pub air_temp_deg: Option<f32>,
     /// Water temp, deg celsius
-    water_temp_deg: Option<f32>,
+    pub water_temp_deg: Option<f32>,
     /// Relative humidity, percent
-    rel_humidity: Option<f32>,
+    pub rel_humidity: Option<f32>,
     /// Absolute humidity, percent
-    abs_humidity: Option<f32>,
+    pub abs_humidity: Option<f32>,
     /// Dew point, degrees celsius
-    dew_point: Option<f32>,
+    pub dew_point: Option<f32>,
     /// True Wind Direction, NED degrees
-    wind_direction_true: Option<f32>,
+    pub wind_direction_true: Option<f32>,
     /// Magnetic Wind Direction, NED degrees
-    wind_direction_magnetic: Option<f32>,
+    pub wind_direction_magnetic: Option<f32>,
     /// Wind speed knots
-    wind_speed_knots: Option<f32>,
+    pub wind_speed_knots: Option<f32>,
     /// Wind speed meters/second
-    wind_speed_ms: Option<f32>,
+    pub wind_speed_ms: Option<f32>,
 }
 
 /// # Parse MDA message
