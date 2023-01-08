@@ -1,8 +1,11 @@
 use core::{fmt::Debug, ops::RangeInclusive, str};
 use nom::{
-    character::{complete::char, streaming::hex_digit1},
+    character::{
+        complete::{char, hex_digit0},
+        streaming::hex_digit1,
+    },
     combinator::{map_res, opt},
-    number::complete::float,
+    number::complete::{float, hex_u32},
     IResult,
 };
 
@@ -130,10 +133,10 @@ fn do_parse_alm(i: &str) -> IResult<&str, AlmData> {
     let (i, mean_anomaly) = opt(map_res(hex_digit1, |s| u32::from_str_radix(s, 16)))(i)?;
     let (i, _) = char(',')(i)?;
     // 14. F0 Clock Parameter
-    let (i, f0_clock_parameter) = opt(map_res(hex_digit1, |s| u16::from_str_radix(s, 16)))(i)?;
+    let (i, f0_clock_parameter) = opt(map_res(hex_digit0, |s| u16::from_str_radix(s, 16)))(i)?;
     let (i, _) = char(',')(i)?;
     // 15. F1 Clock Parameter
-    let (i, f1_clock_parameter) = opt(map_res(hex_digit1, |s| u16::from_str_radix(s, 16)))(i)?;
+    let (i, f1_clock_parameter) = opt(map_res(hex_digit0, |s| u16::from_str_radix(s, 16)))(i)?;
 
     Ok((
         i,
