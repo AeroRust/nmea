@@ -115,12 +115,18 @@ mod tests {
         let gll_data = parse_gll(s).unwrap();
         assert_relative_eq!(gll_data.latitude.unwrap(), 51.0 + (7.0013414 / 60.0));
         assert_relative_eq!(gll_data.longitude.unwrap(), -(114.0 + (2.3279144 / 60.0)));
-        assert_eq!(gll_data.fix_time, NaiveTime::from_hms_milli(20, 54, 12, 0));
+        assert_eq!(
+            gll_data.fix_time,
+            NaiveTime::from_hms_milli_opt(20, 54, 12, 0).unwrap()
+        );
         assert_eq!(gll_data.faa_mode, Some(FaaMode::Autonomous));
 
         let s = parse("$GNGLL,,,,,181604.00,V,N*5E", 0x5e);
         let gll_data = parse_gll(s).unwrap();
-        assert_eq!(NaiveTime::from_hms_milli(18, 16, 4, 0), gll_data.fix_time);
+        assert_eq!(
+            NaiveTime::from_hms_milli_opt(18, 16, 4, 0).unwrap(),
+            gll_data.fix_time
+        );
         assert!(!gll_data.valid);
     }
 }

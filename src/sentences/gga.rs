@@ -118,7 +118,7 @@ mod tests {
             checksum: 0x57,
         })
         .unwrap();
-        assert_eq!(data.fix_time.unwrap(), NaiveTime::from_hms(3, 37, 45));
+        assert_eq!(data.fix_time, NaiveTime::from_hms_opt(3, 37, 45));
         assert_eq!(data.fix_type.unwrap(), FixType::Gps);
         assert_relative_eq!(data.latitude.unwrap(), 56. + 50.82344 / 60.);
         assert_relative_eq!(data.longitude.unwrap(), 35. + 48.9778 / 60.);

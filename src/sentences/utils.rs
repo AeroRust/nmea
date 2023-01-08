@@ -187,16 +187,16 @@ mod tests {
     #[test]
     fn test_parse_date() {
         let (_, date) = parse_date("180283").unwrap();
-        assert_eq!(date, NaiveDate::from_ymd(1983, 2, 18));
+        assert_eq!(date, NaiveDate::from_ymd_opt(1983, 2, 18).unwrap());
 
         let (_, date) = parse_date("180299").unwrap();
-        assert_eq!(date, NaiveDate::from_ymd(1999, 2, 18));
+        assert_eq!(date, NaiveDate::from_ymd_opt(1999, 2, 18).unwrap());
 
         let (_, date) = parse_date("311200").unwrap();
-        assert_eq!(date, NaiveDate::from_ymd(2000, 12, 31));
+        assert_eq!(date, NaiveDate::from_ymd_opt(2000, 12, 31).unwrap());
 
         let (_, date) = parse_date("311282").unwrap();
-        assert_eq!(date, NaiveDate::from_ymd(2082, 12, 31));
+        assert_eq!(date, NaiveDate::from_ymd_opt(2082, 12, 31).unwrap());
     }
 
     #[test]

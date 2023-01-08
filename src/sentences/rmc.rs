@@ -210,13 +210,10 @@ mod tests {
         assert_eq!(s.checksum, 0x2b);
         let rmc_data = parse_rmc(s).unwrap();
         assert_eq!(
-            rmc_data.fix_time.unwrap(),
-            NaiveTime::from_hms_milli(22, 54, 46, 330)
+            rmc_data.fix_time,
+            NaiveTime::from_hms_milli_opt(22, 54, 46, 330)
         );
-        assert_eq!(
-            rmc_data.fix_date.unwrap(),
-            NaiveDate::from_ymd(1994, 11, 19)
-        );
+        assert_eq!(rmc_data.fix_date, NaiveDate::from_ymd_opt(1994, 11, 19));
 
         println!("lat: {}", rmc_data.lat.unwrap());
         assert_relative_eq!(rmc_data.lat.unwrap(), 49.0 + 16.45 / 60.);
@@ -256,10 +253,10 @@ mod tests {
             nav_status,
         } = parse_rmc(s).unwrap();
 
-        assert_eq!(fix_time, Some(NaiveTime::from_hms_milli(22, 54, 46, 330)));
+        assert_eq!(fix_time, NaiveTime::from_hms_milli_opt(22, 54, 46, 330));
         assert_eq!(status_of_fix, RmcStatusOfFix::Autonomous);
 
-        assert_eq!(fix_date, Some(NaiveDate::from_ymd(1994, 11, 19)));
+        assert_eq!(fix_date, NaiveDate::from_ymd_opt(1994, 11, 19));
         println!("lat: {:?}", lat);
         assert_relative_eq!(lat.unwrap(), 49.0 + 16.45 / 60.);
 
@@ -318,8 +315,8 @@ mod tests {
             .map(parse_rmc)
             .unwrap()
             .unwrap();
-        assert_eq!(fix_time.unwrap(), NaiveTime::from_hms_milli(0, 10, 31, 0));
-        assert_eq!(fix_date.unwrap(), NaiveDate::from_ymd(2017, 1, 10));
+        assert_eq!(fix_time, NaiveTime::from_hms_milli_opt(0, 10, 31, 0));
+        assert_eq!(fix_date, NaiveDate::from_ymd_opt(2017, 1, 10));
         assert_eq!(status_of_fix, RmcStatusOfFix::Autonomous);
         assert_relative_eq!(lat.unwrap(), (44. + 4.13993 / 60.));
         assert_relative_eq!(lon.unwrap(), -(121. + 18.86023 / 60.));
@@ -349,8 +346,8 @@ mod tests {
             .map(parse_rmc)
             .unwrap()
             .unwrap();
-        assert_eq!(fix_time.unwrap(), NaiveTime::from_hms_milli(22, 52, 7, 376));
-        assert_eq!(fix_date.unwrap(), NaiveDate::from_ymd(2022, 11, 1));
+        assert_eq!(fix_time, NaiveTime::from_hms_milli_opt(22, 52, 7, 376));
+        assert_eq!(fix_date, NaiveDate::from_ymd_opt(2022, 11, 1));
         assert_eq!(status_of_fix, RmcStatusOfFix::Autonomous);
         assert_relative_eq!(lat.unwrap(), (52. + 32.067 / 60.));
         assert_relative_eq!(lon.unwrap(), (13. + 25.658 / 60.));

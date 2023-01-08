@@ -153,8 +153,8 @@ mod tests {
         assert_eq!(s.checksum, 0x46);
         let gns_data = parse_gns(s).unwrap();
         assert_eq!(
-            gns_data.fix_time.unwrap(),
-            NaiveTime::from_hms_milli(22, 47, 49, 0)
+            gns_data.fix_time,
+            NaiveTime::from_hms_milli_opt(22, 47, 49, 0)
         );
         assert_relative_eq!(33.0 + 33.4268304 / 60., gns_data.lat.unwrap());
         assert_relative_eq!(-(111.0 + 53.3538273 / 60.), gns_data.lon.unwrap());
