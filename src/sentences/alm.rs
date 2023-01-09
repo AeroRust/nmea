@@ -5,7 +5,7 @@ use nom::{
         streaming::hex_digit1,
     },
     combinator::{map_res, opt},
-    number::complete::{float, hex_u32},
+    number::complete::float,
     IResult,
 };
 
