@@ -72,15 +72,18 @@ pub fn parse_alm(sentence: NmeaSentence) -> Result<AlmData, Error> {
     }
 }
 
-fn number_in_range<T>(i: &str, r: RangeInclusive<T>) -> IResult<&str, T>
+fn number_in_range<T>(i: &str, range: RangeInclusive<T>) -> IResult<&str, T>
 where
     T: str::FromStr + PartialOrd + Debug,
 {
-    map_res(number::<T>, |i| {
-        if r.contains(&i) {
-            return Ok(i);
+    map_res(number::<T>, |number_str| {
+        if range.contains(&number_str) {
+            return Ok(number_str);
         }
-        Err(format!("Number {i:?} not in expected range {r:?}"))
+        Err(format!(
+            "Number {:?} not in expected range {:?}",
+            number_str, range
+        ))
     })(i)
 }
 
