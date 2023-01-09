@@ -5,7 +5,6 @@ use nom::{
         streaming::hex_digit1,
     },
     combinator::{map_res, opt},
-    number::complete::float,
     IResult,
 };
 
@@ -27,8 +26,9 @@ use super::utils::number;
 ///  1. Total number of messages
 ///  2. Sentence Number
 ///  3. Satellite PRN number (01 to 32)
-///  4. GPS Week Number
-///  5. SV health, bits 17-24 of each almanac page
+///  4. GPS Week Number (range 0 to 2^13 - 1), where:
+///     - 0 is the week of the GPS Week Number epoch on January 6th 1980;
+///     - 8191 is the week that precedes the next rollover on January 6th 2137;
 ///  6. Eccentricity
 ///  7. Almanac Reference Time
 ///  8. Inclination Angle
@@ -44,10 +44,10 @@ use super::utils::number;
 ///  Fields 5 through 15 are dumped as raw hex.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct AlmData {
-    total_number_of_messages: Option<f32>,
-    sentence_number: Option<f32>,
+    total_number_of_messages: Option<u16>,
+    sentence_number: Option<u16>,
     satellite_prn_number: Option<u8>,
-    gps_week_number: Option<f32>,
+    gps_week_number: Option<u16>,
     sv_health: Option<u8>,
     eccentricity: Option<u16>,
     almanac_reference_time: Option<u8>,
@@ -86,19 +86,19 @@ where
 
 fn do_parse_alm(i: &str) -> IResult<&str, AlmData> {
     // 1. Total number of messages
-    let (i, total_number_of_messages) = opt(float)(i)?;
+    let (i, total_number_of_messages) = opt(number)(i)?;
     let (i, _) = char(',')(i)?;
 
     // 2. Sentence number
-    let (i, sentence_number) = opt(float)(i)?;
+    let (i, sentence_number) = opt(number)(i)?;
     let (i, _) = char(',')(i)?;
 
     //  3. Satellite PRN number (01 to 32)
-    let (i, satellite_prn_number) = opt(|d| number_in_range::<u8>(d, 1u8..=32))(i)?;
+    let (i, satellite_prn_number) = opt(|i| number_in_range::<u8>(i, 1u8..=32))(i)?;
     let (i, _) = char(',')(i)?;
 
     //  4. GPS Week Number
-    let (i, gps_week_number) = opt(float)(i)?;
+    let (i, gps_week_number) = opt(|i| number_in_range::<u16>(i, 0u16..=8191))(i)?;
     let (i, _) = char(',')(i)?;
 
     //  5. SV health, bits 17-24 of each almanac page
@@ -158,4 +158,64 @@ fn do_parse_alm(i: &str) -> IResult<&str, AlmData> {
             f1_clock_parameter,
         },
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{parse_nmea_sentence, sentences::parse_alm};
+
+    #[test]
+    fn test() {
+        let total_number_of_messages = 31;
+        let sentence_number = 1;
+        let satellite_prn_number = 2;
+        let gps_week_number = 1617;
+        let sv_health = 0x00;
+        let eccentricity = 0x50f6;
+        let almanac_reference_time = 0x0f;
+        let inclination_angle = 0xfd98;
+        let rate_of_right_ascension = 0xfd39;
+        let root_of_semi_major_axis = 0xa10cf3;
+        let argument_of_perigee = 0x81389b;
+        let longitude_of_ascension_node = 0x423632;
+        let mean_anomaly = 0xbd913c;
+        let f0_clock_parameter = 0x148;
+        let f1_clock_parameter = 0x001;
+
+        let sentence_string =
+            "$GPALM,31,1,02,1617,00,50F6,0F,FD98,FD39,A10CF3,81389B,423632,BD913C,148,001*3C";
+
+        let sentence = parse_nmea_sentence(sentence_string).unwrap();
+        assert_eq!(sentence.checksum, sentence.calc_checksum());
+        assert_eq!(sentence.checksum, 0x3C);
+
+        let data = parse_alm(sentence).unwrap();
+        assert_eq!(
+            total_number_of_messages,
+            data.total_number_of_messages.unwrap()
+        );
+        assert_eq!(sentence_number, data.sentence_number.unwrap());
+        assert_eq!(satellite_prn_number, data.satellite_prn_number.unwrap());
+        assert_eq!(gps_week_number, data.gps_week_number.unwrap());
+        assert_eq!(sv_health, data.sv_health.unwrap());
+        assert_eq!(eccentricity, data.eccentricity.unwrap());
+        assert_eq!(almanac_reference_time, data.almanac_reference_time.unwrap());
+        assert_eq!(inclination_angle, data.inclination_angle.unwrap());
+        assert_eq!(
+            rate_of_right_ascension,
+            data.rate_of_right_ascension.unwrap()
+        );
+        assert_eq!(
+            root_of_semi_major_axis,
+            data.root_of_semi_major_axis.unwrap()
+        );
+        assert_eq!(argument_of_perigee, data.argument_of_perigee.unwrap());
+        assert_eq!(
+            longitude_of_ascension_node,
+            data.longitude_of_ascension_node.unwrap()
+        );
+        assert_eq!(mean_anomaly, data.mean_anomaly.unwrap());
+        assert_eq!(f0_clock_parameter, data.f0_clock_parameter.unwrap());
+        assert_eq!(f1_clock_parameter, data.f1_clock_parameter.unwrap());
+    }
 }
