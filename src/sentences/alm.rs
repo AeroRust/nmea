@@ -44,21 +44,21 @@ use super::utils::number;
 ///  Fields 5 through 15 are dumped as raw hex.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct AlmData {
-    total_number_of_messages: Option<u16>,
-    sentence_number: Option<u16>,
-    satellite_prn_number: Option<u8>,
-    gps_week_number: Option<u16>,
-    sv_health: Option<u8>,
-    eccentricity: Option<u16>,
-    almanac_reference_time: Option<u8>,
-    inclination_angle: Option<u16>,
-    rate_of_right_ascension: Option<u16>,
-    root_of_semi_major_axis: Option<u32>,
-    argument_of_perigee: Option<u32>,
-    longitude_of_ascension_node: Option<u32>,
-    mean_anomaly: Option<u32>,
-    f0_clock_parameter: Option<u16>,
-    f1_clock_parameter: Option<u16>,
+    pub total_number_of_messages: Option<u16>,
+    pub sentence_number: Option<u16>,
+    pub satellite_prn_number: Option<u8>,
+    pub gps_week_number: Option<u16>,
+    pub sv_health: Option<u8>,
+    pub eccentricity: Option<u16>,
+    pub almanac_reference_time: Option<u8>,
+    pub inclination_angle: Option<u16>,
+    pub rate_of_right_ascension: Option<u16>,
+    pub root_of_semi_major_axis: Option<u32>,
+    pub argument_of_perigee: Option<u32>,
+    pub longitude_of_ascension_node: Option<u32>,
+    pub mean_anomaly: Option<u32>,
+    pub f0_clock_parameter: Option<u16>,
+    pub f1_clock_parameter: Option<u16>,
 }
 
 pub fn parse_alm(sentence: NmeaSentence) -> Result<AlmData, Error> {
