@@ -61,6 +61,13 @@ pub struct AlmData {
     pub f1_clock_parameter: Option<u16>,
 }
 
+impl AlmData {
+    /// Returns the 10-bit representation of the GPS week number (range 0 to 1023)
+    pub fn get_10bit_gps_week_number(&self) -> Option<u16> {
+        self.gps_week_number.map(|n| n % 1024)
+    }
+}
+
 pub fn parse_alm(sentence: NmeaSentence) -> Result<AlmData, Error> {
     if sentence.message_id != SentenceType::ALM {
         Err(Error::WrongSentenceHeader {
