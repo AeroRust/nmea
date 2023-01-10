@@ -29,6 +29,8 @@ use super::utils::number;
 ///  4. GPS Week Number (range 0 to 2^13 - 1), where:
 ///     - 0 is the week of the GPS Week Number epoch on January 6th 1980;
 ///     - 8191 is the week that precedes the next rollover on January 6th 2137;
+///     Note: the legacy representation started at the same epoch, but
+///           the number is 10-bit wide only, with a rollover every 19.7 years.
 ///  6. Eccentricity
 ///  7. Almanac Reference Time
 ///  8. Inclination Angle
@@ -47,6 +49,9 @@ pub struct AlmData {
     pub total_number_of_messages: Option<u16>,
     pub sentence_number: Option<u16>,
     pub satellite_prn_number: Option<u8>,
+    /// This is the modern 13-bit representation of the GPS week number.
+    /// Use [`AlmData::get_10bit_gps_week_number()`] to get the legacy 10-bit
+    /// representation.
     pub gps_week_number: Option<u16>,
     pub sv_health: Option<u8>,
     pub eccentricity: Option<u16>,
@@ -107,7 +112,7 @@ fn do_parse_alm(i: &str) -> IResult<&str, AlmData> {
     let (i, satellite_prn_number) = opt(|i| number_in_range::<u8>(i, 1u8..=32))(i)?;
     let (i, _) = char(',')(i)?;
 
-    //  4. GPS Week Number
+    //  4. GPS Week Number (0 to 8191)
     let (i, gps_week_number) = opt(|i| number_in_range::<u16>(i, 0u16..=8191))(i)?;
     let (i, _) = char(',')(i)?;
 
