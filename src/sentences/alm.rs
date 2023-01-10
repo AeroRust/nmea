@@ -89,13 +89,10 @@ where
     T: str::FromStr + PartialOrd + Debug,
 {
     map_res(number::<T>, |number_str| {
-        if range.contains(&number_str) {
-            return Ok(number_str);
+        if !range.contains(&number_str) {
+            return Err("Parsed number is outside of the expected range");
         }
-        Err(format!(
-            "Number {:?} not in expected range {:?}",
-            number_str, range
-        ))
+        Ok(number_str)
     })(i)
 }
 
