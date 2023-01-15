@@ -185,6 +185,22 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
+    fn test_parse_hms_fail() {
+        use chrono::Timelike;
+        let (_, time) = parse_hms("244519,").unwrap();
+        assert_eq!(time.hour(), 24);
+        assert_eq!(time.minute(), 45);
+        assert_eq!(time.second(), 19);
+        assert_eq!(time.nanosecond(), 0);
+        let (_, time) = parse_hms("244519.5,").unwrap();
+        assert_eq!(time.hour(), 24);
+        assert_eq!(time.minute(), 45);
+        assert_eq!(time.second(), 19);
+        assert_eq!(time.nanosecond(), 500_000_000);
+    }
+
+    #[test]
     fn test_parse_date() {
         let (_, date) = parse_date("180283").unwrap();
         assert_eq!(date, NaiveDate::from_ymd(1983, 2, 18));
