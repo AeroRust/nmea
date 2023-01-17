@@ -154,7 +154,7 @@ mod tests {
         let gns_data = parse_gns(s).unwrap();
         assert_eq!(
             gns_data.fix_time,
-            NaiveTime::from_hms_milli_opt(22, 47, 49, 0)
+            Some(NaiveTime::from_hms_milli_opt(22, 47, 49, 0).expect("invalid time"))
         );
         assert_relative_eq!(33.0 + 33.4268304 / 60., gns_data.lat.unwrap());
         assert_relative_eq!(-(111.0 + 53.3538273 / 60.), gns_data.lon.unwrap());

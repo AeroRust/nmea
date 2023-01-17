@@ -117,14 +117,14 @@ mod tests {
         assert_relative_eq!(gll_data.longitude.unwrap(), -(114.0 + (2.3279144 / 60.0)));
         assert_eq!(
             gll_data.fix_time,
-            NaiveTime::from_hms_milli_opt(20, 54, 12, 0).unwrap()
+            NaiveTime::from_hms_milli_opt(20, 54, 12, 0).expect("invalid time")
         );
         assert_eq!(gll_data.faa_mode, Some(FaaMode::Autonomous));
 
         let s = parse("$GNGLL,,,,,181604.00,V,N*5E", 0x5e);
         let gll_data = parse_gll(s).unwrap();
         assert_eq!(
-            NaiveTime::from_hms_milli_opt(18, 16, 4, 0).unwrap(),
+            NaiveTime::from_hms_milli_opt(18, 16, 4, 0).expect("invalid time"),
             gll_data.fix_time
         );
         assert!(!gll_data.valid);
