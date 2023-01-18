@@ -288,92 +288,92 @@ fn test_nmea_parse_for_fix() {
             (
                 "$GPRMC,123308.2,A,5521.76474,N,03731.92553,E,000.48,071.9,090317,010.2,E,A*3B",
                 FixType::Invalid,
-                Some(NaiveTime::from_hms_milli(12, 33, 8, 200)),
+                Some(NaiveTime::from_hms_milli_opt(12, 33, 8, 200).expect("invalid time")),
             ),
             (
                 "$GPGGA,123308.2,5521.76474,N,03731.92553,E,1,08,2.2,211.5,M,13.1,M,,*52",
                 FixType::Gps,
-                Some(NaiveTime::from_hms_milli(12, 33, 8, 200)),
+                Some(NaiveTime::from_hms_milli_opt(12, 33, 8, 200).expect("invalid time")),
             ),
             (
                 "$GPVTG,071.9,T,061.7,M,000.48,N,0000.88,K,A*10",
                 FixType::Invalid,
-                Some(NaiveTime::from_hms_milli(12, 33, 8, 200)),
+                Some(NaiveTime::from_hms_milli_opt(12, 33, 8, 200).expect("invalid time")),
             ),
             (
                 "$GPRMC,123308.3,A,5521.76474,N,03731.92553,E,000.51,071.9,090317,010.2,E,A*32",
                 FixType::Invalid,
-                Some(NaiveTime::from_hms_milli(12, 33, 8, 300)),
+                Some(NaiveTime::from_hms_milli_opt(12, 33, 8, 300).expect("invalid time")),
             ),
             (
                 "$GPGGA,123308.3,5521.76474,N,03731.92553,E,1,08,2.2,211.5,M,13.1,M,,*53",
                 FixType::Gps,
-                Some(NaiveTime::from_hms_milli(12, 33, 8, 300)),
+                Some(NaiveTime::from_hms_milli_opt(12, 33, 8, 300).expect("invalid time")),
             ),
             (
                 "$GPVTG,071.9,T,061.7,M,000.51,N,0000.94,K,A*15",
                 FixType::Invalid,
-                Some(NaiveTime::from_hms_milli(12, 33, 8, 300)),
+                Some(NaiveTime::from_hms_milli_opt(12, 33, 8, 300).expect("invalid time")),
             ),
             (
                 "$GPRMC,123308.4,A,5521.76474,N,03731.92553,E,000.54,071.9,090317,010.2,E,A*30",
                 FixType::Invalid,
-                Some(NaiveTime::from_hms_milli(12, 33, 8, 400)),
+                Some(NaiveTime::from_hms_milli_opt(12, 33, 8, 400).expect("invalid time")),
             ),
             (
                 "$GPGGA,123308.4,5521.76474,N,03731.92553,E,1,08,2.2,211.5,M,13.1,M,,*54",
                 FixType::Gps,
-                Some(NaiveTime::from_hms_milli(12, 33, 8, 400)),
+                Some(NaiveTime::from_hms_milli_opt(12, 33, 8, 400).expect("invalid time")),
             ),
             (
                 "$GPVTG,071.9,T,061.7,M,000.54,N,0001.00,K,A*1C",
                 FixType::Invalid,
-                Some(NaiveTime::from_hms_milli(12, 33, 8, 400)),
+                Some(NaiveTime::from_hms_milli_opt(12, 33, 8, 400).expect("invalid time")),
             ),
             (
                 "$GPRMC,123308.5,A,5521.76474,N,03731.92553,E,000.57,071.9,090317,010.2,E,A*32",
                 FixType::Invalid,
-                Some(NaiveTime::from_hms_milli(12, 33, 8, 500)),
+                Some(NaiveTime::from_hms_milli_opt(12, 33, 8, 500).expect("invalid time")),
             ),
             (
                 "$GPGGA,123308.5,5521.76474,N,03731.92553,E,1,08,2.2,211.5,M,13.1,M,,*55",
                 FixType::Gps,
-                Some(NaiveTime::from_hms_milli(12, 33, 8, 500)),
+                Some(NaiveTime::from_hms_milli_opt(12, 33, 8, 500).expect("invalid time")),
             ),
             (
                 "$GPVTG,071.9,T,061.7,M,000.57,N,0001.05,K,A*1A",
                 FixType::Invalid,
-                Some(NaiveTime::from_hms_milli(12, 33, 8, 500)),
+                Some(NaiveTime::from_hms_milli_opt(12, 33, 8, 500).expect("invalid time")),
             ),
             (
                 "$GPRMC,123308.6,A,5521.76474,N,03731.92553,E,000.58,071.9,090317,010.2,E,A*3E",
                 FixType::Invalid,
-                Some(NaiveTime::from_hms_milli(12, 33, 8, 600)),
+                Some(NaiveTime::from_hms_milli_opt(12, 33, 8, 600).expect("invalid time")),
             ),
             (
                 "$GPGGA,123308.6,5521.76474,N,03731.92553,E,1,08,2.2,211.5,M,13.1,M,,*56",
                 FixType::Gps,
-                Some(NaiveTime::from_hms_milli(12, 33, 8, 600)),
+                Some(NaiveTime::from_hms_milli_opt(12, 33, 8, 600).expect("invalid time")),
             ),
             (
                 "$GPVTG,071.9,T,061.7,M,000.58,N,0001.08,K,A*18",
                 FixType::Invalid,
-                Some(NaiveTime::from_hms_milli(12, 33, 8, 600)),
+                Some(NaiveTime::from_hms_milli_opt(12, 33, 8, 600).expect("invalid time")),
             ),
             (
                 "$GPRMC,123308.7,A,5521.76474,N,03731.92553,E,000.59,071.9,090317,010.2,E,A*3E",
                 FixType::Invalid,
-                Some(NaiveTime::from_hms_milli(12, 33, 8, 700)),
+                Some(NaiveTime::from_hms_milli_opt(12, 33, 8, 700).expect("invalid time")),
             ),
             (
                 "$GPGGA,123308.7,5521.76474,N,03731.92553,E,1,08,2.2,211.5,M,13.1,M,,*57",
                 FixType::Gps,
-                Some(NaiveTime::from_hms_milli(12, 33, 8, 700)),
+                Some(NaiveTime::from_hms_milli_opt(12, 33, 8, 700).expect("invalid time")),
             ),
             (
                 "$GPVTG,071.9,T,061.7,M,000.59,N,0001.09,K,A*18",
                 FixType::Invalid,
-                Some(NaiveTime::from_hms_milli(12, 33, 8, 700)),
+                Some(NaiveTime::from_hms_milli_opt(12, 33, 8, 700).expect("invalid time")),
             ),
         ];
 
@@ -391,17 +391,17 @@ fn test_nmea_parse_for_fix() {
             (
                 "$GPRMC,123308.2,A,5521.76474,N,03731.92553,E,000.48,071.9,090317,010.2,E,A*3B",
                 FixType::Invalid,
-                Some(NaiveTime::from_hms_milli(12, 33, 8, 200)),
+                Some(NaiveTime::from_hms_milli_opt(12, 33, 8, 200).expect("invalid time")),
             ),
             (
                 "$GPRMC,123308.3,A,5521.76474,N,03731.92553,E,000.51,071.9,090317,010.2,E,A*32",
                 FixType::Invalid,
-                Some(NaiveTime::from_hms_milli(12, 33, 8, 300)),
+                Some(NaiveTime::from_hms_milli_opt(12, 33, 8, 300).expect("invalid time")),
             ),
             (
                 "$GPGGA,123308.3,5521.76474,N,03731.92553,E,1,08,2.2,211.5,M,13.1,M,,*53",
                 FixType::Gps,
-                Some(NaiveTime::from_hms_milli(12, 33, 8, 300)),
+                Some(NaiveTime::from_hms_milli_opt(12, 33, 8, 300).expect("invalid time")),
             ),
         ];
 

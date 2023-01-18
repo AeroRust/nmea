@@ -130,7 +130,10 @@ mod tests {
 
         let data = parse_bwc(sentence).unwrap();
 
-        assert_eq!(data.fix_time.unwrap(), NaiveTime::from_hms(22, 5, 16));
+        assert_eq!(
+            data.fix_time,
+            Some(NaiveTime::from_hms_opt(22, 5, 16).expect("invalid time"))
+        );
         assert_relative_eq!(data.latitude.unwrap(), 51. + 30.02 / 60.);
         assert_relative_eq!(data.longitude.unwrap(), -46.34 / 60.0);
         assert_relative_eq!(data.true_bearing.unwrap(), 213.8);
@@ -149,7 +152,7 @@ mod tests {
 
         assert_eq!(
             BwcData {
-                fix_time: Some(NaiveTime::from_hms(8, 18, 37)),
+                fix_time: Some(NaiveTime::from_hms_opt(8, 18, 37).expect("invalid time")),
                 latitude: None,
                 longitude: None,
                 true_bearing: None,
