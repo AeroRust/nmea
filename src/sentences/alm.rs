@@ -1,4 +1,4 @@
-use core::{fmt::Debug, ops::RangeInclusive, str};
+use crate::sentences::utils::parse_number_in_range;
 use nom::{
     character::{
         complete::{char, hex_digit0},
@@ -84,18 +84,6 @@ pub fn parse_alm(sentence: NmeaSentence) -> Result<AlmData, Error> {
     }
 }
 
-fn number_in_range<T>(i: &str, range: RangeInclusive<T>) -> IResult<&str, T>
-where
-    T: str::FromStr + PartialOrd + Debug,
-{
-    map_res(number::<T>, |number_str| {
-        if !range.contains(&number_str) {
-            return Err("Parsed number is outside of the expected range");
-        }
-        Ok(number_str)
-    })(i)
-}
-
 fn do_parse_alm(i: &str) -> IResult<&str, AlmData> {
     // 1. Total number of messages
     let (i, total_number_of_messages) = opt(number)(i)?;
@@ -106,11 +94,11 @@ fn do_parse_alm(i: &str) -> IResult<&str, AlmData> {
     let (i, _) = char(',')(i)?;
 
     //  3. Satellite PRN number (01 to 32)
-    let (i, satellite_prn_number) = opt(|i| number_in_range::<u8>(i, 1u8..=32))(i)?;
+    let (i, satellite_prn_number) = opt(|i| parse_number_in_range::<u8>(i, 1, 32))(i)?;
     let (i, _) = char(',')(i)?;
 
     //  4. GPS Week Number (0 to 8191)
-    let (i, gps_week_number) = opt(|i| number_in_range::<u16>(i, 0u16..=8191))(i)?;
+    let (i, gps_week_number) = opt(|i| parse_number_in_range::<u16>(i, 0, 8191))(i)?;
     let (i, _) = char(',')(i)?;
 
     //  5. SV health, bits 17-24 of each almanac page

@@ -1,6 +1,7 @@
+use core::str;
+
 use arrayvec::ArrayString;
 use chrono::{NaiveDate, NaiveTime};
-use core::str;
 use nom::{
     branch::alt,
     bytes::complete::{tag, take, take_until},
@@ -142,6 +143,22 @@ pub(crate) fn parse_float_num<T: str::FromStr>(input: &str) -> Result<T, &'stati
 
 pub(crate) fn number<T: str::FromStr>(i: &str) -> IResult<&str, T> {
     map_res(digit1, parse_num)(i)
+}
+
+pub(crate) fn parse_number_in_range<T>(
+    i: &str,
+    lower_bound: T,
+    upper_bound_inclusive: T,
+) -> IResult<&str, T>
+where
+    T: PartialOrd + str::FromStr,
+{
+    map_res(number::<T>, |parsed_num| {
+        if parsed_num < lower_bound || parsed_num > upper_bound_inclusive {
+            return Err("Parsed number is outside of the expected range");
+        }
+        Ok(parsed_num)
+    })(i)
 }
 
 /// Parses a given `&str` slice to an owned `ArrayString` with a given `MAX_LEN`.
