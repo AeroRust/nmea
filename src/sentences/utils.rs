@@ -188,20 +188,6 @@ mod tests {
 
 
     #[test]
-    fn test_parse_hms_fail_2() {
-        
-        
-        
-        //let result = parse_hms(invalid_time).unwrap_err();
-        //assert_eq!(result, Err("Invalid time: hour >= 24"));
-        //assert_eq!(result, Err(Error(Err(Error("Invalid time: hour >= 24")))));
-
-        //assert_eq!(result, nom::Err(nom::error::Error::new("254550,", nom::error("Invalid time: hour >= 24"))));
-             //Err("Invalid time: hour >= 24"));
-        //nom::Err<nom::error::Error<"Invalid time: hour >= 24">>
-    }
-
-    #[test]
     fn test_parse_date() {
         let (_, date) = parse_date("180283").unwrap();
         assert_eq!(date, NaiveDate::from_ymd(1983, 2, 18));
