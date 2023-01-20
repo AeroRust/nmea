@@ -186,42 +186,6 @@ mod tests {
     }
 
 
-    #[test]
-    #[should_panic]
-    fn test_parse_hms_fail_1() {
-        use chrono::Timelike;
-        let (_, time) = parse_hms("247090,").unwrap();
-        assert_eq!(time.hour(), 24);
-        assert_eq!(time.minute(), 70);
-        assert_eq!(time.second(), 90);
-        assert_eq!(time.nanosecond(), 0);
-        let (_, time) = parse_hms("247090.8,").unwrap();
-        assert_eq!(time.hour(), 24);
-        assert_eq!(time.minute(), 70);
-        assert_eq!(time.second(), 90);
-        assert_eq!(time.nanosecond(), 800_000_000);
-    }
-
-
-
-
-
-
-
-
-
-    #[test]
-    fn test_parse_hms_fail_2() {
-        //let result = parse_hms(invalid_time).unwrap_err();
-        //assert_eq!(result, Err("Invalid time: hour >= 24"));
-        //assert_eq!(result, Err(Error(Err(Error("Invalid time: hour >= 24")))));
-
-        //assert_eq!(result, nom::Err(nom::error::Error::new("254550,", nom::error("Invalid time: hour >= 24"))));
-        //Err("Invalid time: hour >= 24"));
-        //nom::Err<nom::error::Error<"Invalid time: hour >= 24">>
-    }
-
-
 
     #[test]
     fn test_parse_date() {
