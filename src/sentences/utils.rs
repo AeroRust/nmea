@@ -10,7 +10,6 @@ use nom::{
     number::complete::{double, float},
     sequence::tuple,
     IResult,
-
 };
 
 #[cfg(not(feature = "std"))]
