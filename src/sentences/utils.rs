@@ -184,7 +184,6 @@ mod tests {
         assert_eq!(time.nanosecond(), 500_000_000);
     }
 
-    
     #[test]
     fn test_parse_date() {
         let (_, date) = parse_date("180283").unwrap();
