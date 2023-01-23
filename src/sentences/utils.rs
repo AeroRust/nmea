@@ -204,17 +204,25 @@ mod tests {
     fn test_parse_hms_fail_2() {
         let invalid_time_hr = "254550,";
         let result_hr = parse_hms(invalid_time_hr);
-        let expected_err_hr = nom::Err::Error(nom::error::Error::new("254550,", nom::error::ErrorKind::MapRes));
+        let expected_err_hr = nom::Err::Error(nom::error::Error::new(
+            "254550,",
+            nom::error::ErrorKind::MapRes,
+        ));
         assert_eq!(result_hr, Err(expected_err_hr));
         let invalid_time_min = "237050,";
         let result_min = parse_hms(invalid_time_min);
-        let expected_err_min = nom::Err::Error(nom::error::Error::new("237050,", nom::error::ErrorKind::MapRes));
+        let expected_err_min = nom::Err::Error(nom::error::Error::new(
+            "237050,",
+            nom::error::ErrorKind::MapRes,
+        ));
         assert_eq!(result_min, Err(expected_err_min));
         let invalid_time_sec = "234570,";
         let result_sec = parse_hms(invalid_time_sec);
-        let expected_err_sec = nom::Err::Error(nom::error::Error::new("234570,", nom::error::ErrorKind::MapRes));
+        let expected_err_sec = nom::Err::Error(nom::error::Error::new(
+            "234570,",
+            nom::error::ErrorKind::MapRes,
+        ));
         assert_eq!(result_sec, Err(expected_err_sec));
-
     }
 
     #[test]
