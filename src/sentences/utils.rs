@@ -145,6 +145,22 @@ pub(crate) fn number<T: str::FromStr>(i: &str) -> IResult<&str, T> {
     map_res(digit1, parse_num)(i)
 }
 
+pub(crate) fn parse_number_in_range<T>(
+    i: &str,
+    lower_bound: T,
+    upper_bound_inclusive: T,
+) -> IResult<&str, T>
+where
+    T: PartialOrd + str::FromStr,
+{
+    map_res(number::<T>, |parsed_num| {
+        if parsed_num < lower_bound || parsed_num > upper_bound_inclusive {
+            return Err("Parsed number is outside of the expected range");
+        }
+        Ok(parsed_num)
+    })(i)
+}
+
 /// Parses a given `&str` slice to an owned `ArrayString` with a given `MAX_LEN`.
 ///
 /// # Errors
@@ -187,16 +203,28 @@ mod tests {
     #[test]
     fn test_parse_date() {
         let (_, date) = parse_date("180283").unwrap();
-        assert_eq!(date, NaiveDate::from_ymd(1983, 2, 18));
+        assert_eq!(
+            date,
+            NaiveDate::from_ymd_opt(1983, 2, 18).expect("invalid time")
+        );
 
         let (_, date) = parse_date("180299").unwrap();
-        assert_eq!(date, NaiveDate::from_ymd(1999, 2, 18));
+        assert_eq!(
+            date,
+            NaiveDate::from_ymd_opt(1999, 2, 18).expect("invalid time")
+        );
 
         let (_, date) = parse_date("311200").unwrap();
-        assert_eq!(date, NaiveDate::from_ymd(2000, 12, 31));
+        assert_eq!(
+            date,
+            NaiveDate::from_ymd_opt(2000, 12, 31).expect("invalid time")
+        );
 
         let (_, date) = parse_date("311282").unwrap();
-        assert_eq!(date, NaiveDate::from_ymd(2082, 12, 31));
+        assert_eq!(
+            date,
+            NaiveDate::from_ymd_opt(2082, 12, 31).expect("invalid time")
+        );
     }
 
     #[test]

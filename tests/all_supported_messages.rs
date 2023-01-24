@@ -7,6 +7,8 @@ fn test_all_supported_messages() {
     let sentences = [
         // AAM
         (SentenceType::AAM, "$GPAAM,A,A,0.10,N,WPTNME*32"),
+        // ALM
+        (SentenceType::ALM, "$GPALM,1,1,15,1159,00,441D,4E,16BE,FD5E,A10C9F,4A2DA4,686E81,58CBE1,0A4,001*77"),
         // BWC
         (SentenceType::BWC, "$GPBWC,220516,5130.02,N,00046.34,W,213.8,T,218.0,M,0004.6,N,EGLM*21"),
         // GGA
