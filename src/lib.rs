@@ -7,16 +7,29 @@
 //! Units used: **degrees**, **knots**, **meters** for altitude
 //!
 //! # Supported sentences:
+//! 
+//! NMEA Standard Sentences
+//! - AAM
+//! - ALM
 //! - BOD (untested, not supported by [`Nmea::parse()`])
 //! - BWC (not supported by `Nmea::parse()`)
 //! - GBS (untested, not supported by [`Nmea::parse()`])
+//! - GGA
+//! - GLL
 //! - GNS
 //! - GSA
 //! - GSV
+//! - MDA
+//! - MWV
 //! - RMC
-//! - TXT
 //! - VTG
 //!
+//! Other Sentences
+//! - TXT
+//! 
+//! Vendor Extensions
+//! - PGRMZ
+//! 
 //! # Crate features
 //!
 //! - `default` features - `std`
