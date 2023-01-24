@@ -27,6 +27,8 @@ fn test_all_supported_messages() {
         (SentenceType::MWV, "$WIMDA,29.7544,I,1.0076,B,35.5,C,,,42.1,,20.6,C,116.4,T,107.7,M,1.2,N,0.6,M*66"),
         // RMC
         (SentenceType::RMC, "$GPRMC,225446.33,A,4916.45,N,12311.12,W,000.5,054.7,191194,020.3,E,A*2B"),
+        // RMZ
+        (SentenceType::RMZ, "$PGRMZ,2282,f,3*21"),
         // TXT
         (SentenceType::TXT, "$GNTXT,01,01,02,u-blox AG - www.u-blox.com*4E"),
         // VTG
