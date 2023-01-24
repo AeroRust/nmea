@@ -1,8 +1,7 @@
 # [NMEA][doc]
 
 [![Version](https://img.shields.io/crates/v/nmea.svg)](https://crates.io/crates/nmea)
-[![Build Status](https://github.com/AeroRust/nmea/workflows/CI/badge.svg)](https://github.com/AeroRust/nmea/actions?query=workflow%3ACI+branch%3Amain)
-[![codecov](https://codecov.io/gh/AeroRust/nmea/branch/main/graph/badge.svg)](https://codecov.io/gh/AeroRust/nmea)
+[![Build Status](https://github.com/AeroRust/nmea/actions/workflows/ci.yml/badge.svg)](https://github.com/AeroRust/nmea/actions/workflows/ci.yml)
 [![License Apache-2](https://img.shields.io/crates/l/nmea.svg)](./LICENSE-APACHE)
 
 [Complete documentation can be found on www.docs.rs/nmea][doc]
