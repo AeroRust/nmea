@@ -108,6 +108,7 @@ pub enum ParseResult {
     GSA(GsaData),
     GSV(GsvData),
     MDA(MdaData),
+    MTW(MtwData),
     MWV(MwvData),
     RMC(RmcData),
     TXT(TxtData),

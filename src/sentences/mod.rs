@@ -11,6 +11,7 @@ mod gns;
 mod gsa;
 mod gsv;
 mod mda;
+mod mtw;
 mod mwv;
 mod rmc;
 mod rmz;
@@ -37,6 +38,7 @@ pub use {
     gsa::{parse_gsa, GsaData},
     gsv::{parse_gsv, GsvData},
     mda::{parse_mda, MdaData},
+    mtw::{parse_mtw, MtwData, MtwUnit},
     mwv::{parse_mwv, MwvData, MwvReference, MwvWindSpeedUnits},
     rmc::{parse_rmc, RmcData, RmcStatusOfFix},
     rmz::{parse_pgrmz, PgrmzData},

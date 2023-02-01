@@ -18,6 +18,7 @@ Supported sentences:
 - GSA
 - GSV
 - MDA
+- MTW
 - MWV
 - RMC
 - TXT
