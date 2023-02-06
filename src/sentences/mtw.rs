@@ -1,7 +1,7 @@
 use nom::{
     character::complete::{char, one_of},
     combinator::opt,
-    number::complete::float,
+    number::complete::double,
     sequence::preceded,
     IResult,
 };
@@ -18,17 +18,16 @@ use crate::{parse::NmeaSentence, Error, SentenceType};
 /// $--MTW,x.x,C*hh<CR><LF>
 /// ```
 /// 1:  Temperature, degrees
-/// 2:  Unit of Measurement, Celsius
+/// 2:  Unit of Measurement, (only) Celsius
 /// 3:  Mandatory NMEA checksum
 #[derive(Debug, PartialEq)]
 pub struct MtwData {
-    pub temperature: Option<f32>,
-    pub temperature_unit: Option<MtwUnit>,
+    pub temperature: Option<f64>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MtwUnit {
-    Celcius,
+    Celsius,
 }
 
 /// # Parse MTW message
@@ -44,7 +43,7 @@ pub enum MtwUnit {
 ///```
 ///
 /// 1:  17.9         Temperature, degrees
-/// 2:  C            Unit of Measurement, Celsius
+/// 2:  C            Unit of Measurement, (only) Celsius
 /// 3:  *16          Mandatory NMEA checksum
 pub fn parse_mtw(sentence: NmeaSentence) -> Result<MtwData, Error> {
     if sentence.message_id != SentenceType::MTW {
@@ -58,18 +57,12 @@ pub fn parse_mtw(sentence: NmeaSentence) -> Result<MtwData, Error> {
 }
 
 fn do_parse_mtw(i: &str) -> IResult<&str, MtwData> {
-    let (i, temperature_value) = opt(float)(i)?;
-    let (i, unit) = opt(preceded(char(','), one_of("C")))(i)?;
-    let unit = unit.map(|ch| match ch {
-        'C' => MtwUnit::Celcius,
-        _ => unreachable!(),
-    });
-
+    let (i, temperature_value) = opt(double)(i)?;
+    preceded(char(','), one_of("C"))(i)?;
     Ok((
         i,
         MtwData {
             temperature: temperature_value,
-            temperature_unit: unit,
         },
     ))
 }
@@ -85,7 +78,6 @@ mod tests {
         assert_eq!(s.checksum, s.calc_checksum());
         assert_eq!(s.checksum, 0x1B);
         let mtw_data = parse_mtw(s).unwrap();
-        assert_eq!(Some(MtwUnit::Celcius), mtw_data.temperature_unit);
         assert_eq!(Some(17.9), mtw_data.temperature);
     }
 
@@ -94,9 +86,7 @@ mod tests {
         let s = parse_nmea_sentence("$INMTW,17.9,x*20").unwrap();
         assert_eq!(s.checksum, s.calc_checksum());
         assert_eq!(s.checksum, 0x20);
-        let mtw_data = parse_mtw(s).unwrap();
-        assert_eq!(Some(17.9), mtw_data.temperature);
-        assert_eq!(None, mtw_data.temperature_unit);
+        assert_eq!(true, parse_mtw(s).is_err());
     }
 
     #[test]
@@ -104,8 +94,6 @@ mod tests {
         let s = parse_nmea_sentence("$INMTW,x.9,C*65").unwrap();
         assert_eq!(s.checksum, s.calc_checksum());
         assert_eq!(s.checksum, 0x65);
-        let mtw_data = parse_mtw(s).unwrap();
-        assert_eq!(None, mtw_data.temperature);
-        assert_eq!(None, mtw_data.temperature_unit);
+        assert_eq!(true, parse_mtw(s).is_err());
     }
 }
