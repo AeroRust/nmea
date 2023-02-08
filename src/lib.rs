@@ -7,7 +7,7 @@
 //! Units used: **degrees**, **knots**, **meters** for altitude
 //!
 //! # Supported sentences:
-//! 
+//!
 //! NMEA Standard Sentences
 //! - AAM
 //! - ALM
@@ -23,10 +23,10 @@
 //! - MWV
 //! - RMC
 //! - VTG
-//! 
+//!
 //! Other Sentences
 //! - TXT
-//! 
+//!
 //! Vendor Extension
 //! - PGRMZ
 //!
