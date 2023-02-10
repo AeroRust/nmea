@@ -22,6 +22,7 @@ NMEA Standard Sentences
 - GSA
 - GSV
 - MDA
+- MTW
 - MWV
 - RMC
 - VTG

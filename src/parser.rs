@@ -359,6 +359,7 @@ impl<'a> Nmea {
             | ParseResult::AAM(_)
             | ParseResult::ALM(_)
             | ParseResult::PGRMZ(_)
+            | ParseResult::MTW(_)
             | ParseResult::MWV(_)
             | ParseResult::MDA(_) => return Ok(FixType::Invalid),
 
