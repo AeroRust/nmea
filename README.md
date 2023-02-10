@@ -9,9 +9,13 @@
 ## NMEA 0183 sentence parser for Rust.
 
 Supported sentences:
-- BOD (untested, not supported by `Nmea::parse()`)
+
+NMEA Standard Sentences
+- AAM
+- ALM
+- BOD (not supported by `Nmea::parse()`)
 - BWC (not supported by `Nmea::parse()`)
-- GBS (untested, not supported by `Nmea::parse()`)
+- GBS (not supported by `Nmea::parse()`)
 - GGA
 - GLL
 - GNS
@@ -20,8 +24,13 @@ Supported sentences:
 - MDA
 - MWV
 - RMC
-- TXT
 - VTG
+
+Other Sentences
+- TXT
+
+Vendor Extensions
+- PGRMZ
 
 ## How to contribute
 
