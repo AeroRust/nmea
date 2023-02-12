@@ -40,6 +40,7 @@ approx = "0.5.1"
 doc-comment = "0.3"
 pretty_assertions = "1"
 quickcheck = { version = "1.0.3", default-features = false }
+# Criterion 0.4 will force us to use MSRV of 1.57!
 criterion = "0.3"
 
 [features]

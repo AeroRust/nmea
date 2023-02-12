@@ -4,11 +4,13 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "v*"
   pull_request:
     branches:
       - main
   schedule:
-    - cron: '00 01 * * *'
+    - cron: "00 01 * * *"
 
 # Stops the running workflow of previous pushes
 concurrency:
@@ -22,33 +24,25 @@ jobs:
     name: Rustfmt & Clippy lints
 
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
+    # strategy:
+    #   fail-fast: false
     env:
       RUSTUP_MAX_RETRIES: 10
       CARGO_NET_RETRY: 10
     steps:
       - uses: actions/checkout@v3
 
+      # use nightly for rustfmt & clippy checks
       - name: Install Rust nightly toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@nightly
         with:
-          toolchain: nightly
-          profile: default
-          override: true
           components: rustfmt, clippy
 
       - name: Rust format
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --check
+        run: cargo fmt --check
 
       - name: Clippy lints
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --no-deps -- -D warnings
+        run: cargo clippy --no-deps -- -D warnings
   test:
     name: Test
 
@@ -65,50 +59,26 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # We need to disable the existing toolchain to avoid updating rust-docs
-      # which takes a long time. The fastest way to do this is to rename the
-      # existing folder, as deleting it takes about as much time as not doing
-      # anything and just updating rust-docs.
-      - name: Rename existing rust toolchain (Windows)
-        if: matrix.os == 'windows-latest'
-        run: Rename-Item C:\Users\runneradmin\.rustup\toolchains\stable-x86_64-pc-windows-msvc C:\Users\runneradmin\.rustup\toolchains\stable-x86_64-pc-windows-msvc.old
-
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: ${{ matrix.rust }}
-          profile: minimal
-          override: true
           components: rust-src
+          toolchain: ${{ matrix.rust }}
 
       - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
+        run: cargo build
 
       - name: Test --no-default-features
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --no-default-features
+        run: cargo test --no-default-features
 
       - name: Test --all-features
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features
+        run: cargo test --all-features
 
       - name: Test (Release)
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --release --no-default-features
-      
+        run: cargo test --release --no-default-features
+
       - name: Test (Release) all-features
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --release --all-features
+        run: cargo test --release --all-features
 
   # Detect cases where documentation links don't resolve and such.
   doc:
@@ -118,37 +88,31 @@ jobs:
       RUSTDOCFLAGS: "-D warnings"
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      # Docs.rs uses nightly, which allows for easier syntax for linking to functions.
+      - uses: dtolnay/rust-toolchain@nightly
         with:
-          profile: minimal
-          # Docs.rs uses nightly, which allows for easier syntax for linking to functions.
-          toolchain: nightly
-          override: true
+          components: rust-docs
 
       - name: Docs --all-features
-        uses: actions-rs/cargo@v1
-        with:
-          command: doc
-          args: --all-features --no-deps
+        run: cargo doc --all-features --no-deps
 
       - name: Docs --no-default-features
-        uses: actions-rs/cargo@v1
-        with:
-          command: doc
-          args: --no-default-features --no-deps
-
+        run: cargo doc --no-default-features --no-deps
   codecov:
     name: Generate code coverage
     runs-on: ubuntu-latest
+    container:
+      image: xd009642/tarpaulin:develop-nightly
+      options: --security-opt seccomp=unconfined
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: Run cargo-tarpaulin
-        uses: actions-rs/tarpaulin@v0.1
+      - name: Generate code coverage
+        run: |
+          cargo +nightly tarpaulin --verbose --all-features --workspace --timeout 120 --out Xml
 
       - name: Upload to codecov.io
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v2
+        with:
+          fail_ci_if_error: true

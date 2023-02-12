@@ -13,25 +13,29 @@ Supported sentences:
 NMEA Standard Sentences
 - AAM
 - ALM
-- BOD (not supported by `Nmea::parse()`)
-- BWC (not supported by `Nmea::parse()`)
-- GBS (not supported by `Nmea::parse()`)
-- GGA
-- GLL
-- GNS
-- GSA
-- GSV
+- BOD
+- BWC
+- GBS
+- GGA *
+- GLL *
+- GNS *
+- GSA *
+- GSV *
 - MDA
 - MTW
 - MWV
-- RMC
-- VTG
+- RMC *
+- VTG *
 
 Other Sentences
-- TXT
+- TXT *
 
 Vendor Extensions
 - PGRMZ
+
+**\* [`Nmea::parse()`] supported sentences**
+
+[`Nmea::parse()`]: https://docs.rs/nmea/latest/nmea/struct.Nmea.html#method.parse
 
 ## How to contribute
 
@@ -60,7 +64,7 @@ Add the `nmea` dependency in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nmea = "0.3"
+nmea = "0.4"
 ```
 
 ### For `no_std`
@@ -70,7 +74,7 @@ just add the `nmea` crate without the default features:
 
 ```toml
 [dependencies]
-nmea = {version = "0.3", default-features = false}
+nmea = {version = "0.4", default-features = false}
 ```
 
 ### For Rust edition 2015
