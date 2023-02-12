@@ -4,31 +4,34 @@
 //! to preserve state between receiving new NMEA sentence,
 //! and [`parse_str()`] or [`parse_bytes()`] to parse sentences without state.
 //!
-//! Units used: **degrees**, **knots**, **meters** for altitude
+//! Units used: **celsius**, **degrees**, **knots**, **meters** for altitude
 //!
 //! # Supported sentences:
 //!
 //! NMEA Standard Sentences
 //! - AAM
 //! - ALM
-//! - BOD (not supported by [`Nmea::parse()`])
-//! - BWC (not supported by `Nmea::parse()`)
-//! - GBS (not supported by [`Nmea::parse()`])
-//! - GGA
-//! - GLL
-//! - GNS
-//! - GSA
-//! - GSV
+//! - BOD
+//! - BWC
+//! - GBS
+//! - GGA *
+//! - GLL *
+//! - GNS *
+//! - GSA *
+//! - GSV *
 //! - MDA
 //! - MWV
-//! - RMC
-//! - VTG
+//! - RMC *
+//! - VTG *
 //!
 //! Other Sentences
-//! - TXT
+//! - TXT *
 //!
 //! Vendor Extension
 //! - PGRMZ
+//!
+//! **\* [`Nmea::parse()`] supported sentences**
+//!
 //!
 //! # Crate features
 //!
