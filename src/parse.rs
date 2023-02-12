@@ -118,6 +118,31 @@ pub enum ParseResult {
     Unsupported(SentenceType),
 }
 
+impl From<&ParseResult> for SentenceType {
+    fn from(parse_result: &ParseResult) -> Self {
+        match parse_result {
+            ParseResult::AAM(_) => SentenceType::AAM,
+            ParseResult::ALM(_) => SentenceType::ALM,
+            ParseResult::BOD(_) => SentenceType::BOD,
+            ParseResult::BWC(_) => SentenceType::BWC,
+            ParseResult::GBS(_) => SentenceType::GBS,
+            ParseResult::GGA(_) => SentenceType::GGA,
+            ParseResult::GLL(_) => SentenceType::GLL,
+            ParseResult::GNS(_) => SentenceType::GNS,
+            ParseResult::GSA(_) => SentenceType::GSA,
+            ParseResult::GSV(_) => SentenceType::GSV,
+            ParseResult::MDA(_) => SentenceType::MDA,
+            ParseResult::MTW(_) => SentenceType::MTW,
+            ParseResult::MWV(_) => SentenceType::MWV,
+            ParseResult::RMC(_) => SentenceType::RMC,
+            ParseResult::TXT(_) => SentenceType::TXT,
+            ParseResult::VTG(_) => SentenceType::VTG,
+            ParseResult::PGRMZ(_) => SentenceType::RMZ,
+            ParseResult::Unsupported(sentence_type) => *sentence_type,
+        }
+    }
+}
+
 /// Parse a NMEA 0183 sentence from bytes and extract data from it.
 ///
 /// # Errors

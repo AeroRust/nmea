@@ -29,7 +29,7 @@ pub enum PgrmzFixType {
 /// 4. Checksum
 ///
 /// Example: `$PGRMZ,2282,f,3*21`
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PgrmzData {
     /// Current altitude in feet
     pub altitude: u32,
