@@ -22,8 +22,8 @@ jobs:
     name: Rustfmt & Clippy lints
 
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
+    # strategy:
+    #   fail-fast: false
     env:
       RUSTUP_MAX_RETRIES: 10
       CARGO_NET_RETRY: 10
@@ -137,18 +137,18 @@ jobs:
           command: doc
           args: --no-default-features --no-deps
 
-  codecov:
-    name: Generate code coverage
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+  # codecov:
+  #   name: Generate code coverage
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: actions-rs/toolchain@v1
+  #       with:
+  #         toolchain: stable
+  #         override: true
 
-      - name: Run cargo-tarpaulin
-        uses: actions-rs/tarpaulin@v0.1
+  #     - name: Run cargo-tarpaulin
+  #       uses: actions-rs/tarpaulin@v0.1
 
-      - name: Upload to codecov.io
-        uses: codecov/codecov-action@v1
+  #     - name: Upload to codecov.io
+  #       uses: codecov/codecov-action@v1
