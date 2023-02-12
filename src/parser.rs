@@ -262,11 +262,10 @@ impl<'a> Nmea {
                 self.merge_txt_data(txt);
                 Ok(SentenceType::TXT)
             }
-            // ParseResult::BWC(_) | ParseResult::BOD(_) | ParseResult::GBS(_) => {
-            //     Err(Error::Unsupported(SentenceType::BWC))
-            // }
             ParseResult::Unsupported(sentence_type) => Err(Error::Unsupported(sentence_type)),
-            _ => Err(Error::Unsupported(SentenceType::BWC)),
+            // any other implemented sentence which is not part of the `Nmea` parsing is unsupported
+            // at this time being
+            ref parse_result => Err(Error::Unsupported(parse_result.into())),
         }
     }
 
