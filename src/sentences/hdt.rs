@@ -17,6 +17,9 @@ use crate::{Error, NmeaSentence, SentenceType};
 ///        |   | |
 /// $--HDT,x.x,T*hh<CR><LF>
 /// ```
+/// 1. Heading, degrees True
+/// 2. T = True
+/// 3. Checksum
 #[derive(Debug, PartialEq)]
 pub struct HdtData {
     /// Heading, degrees True

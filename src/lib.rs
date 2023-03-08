@@ -19,6 +19,7 @@
 //! - GNS *
 //! - GSA *
 //! - GSV *
+//! - HDT
 //! - MDA
 //! - MWV
 //! - RMC *
