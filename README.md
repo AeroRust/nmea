@@ -21,6 +21,7 @@ NMEA Standard Sentences
 - GNS *
 - GSA *
 - GSV *
+- HDT
 - MDA
 - MTW
 - MWV
