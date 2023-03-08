@@ -8,11 +8,6 @@ use nom::{
 use super::utils::parse_float_num;
 use crate::{Error, NmeaSentence, SentenceType};
 
-#[derive(Debug, PartialEq)]
-pub struct HdtData {
-    pub heading: Option<f32>,
-}
-
 /// HDT - Heading - True
 ///
 /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_hdt_heading_true>
@@ -22,6 +17,25 @@ pub struct HdtData {
 ///        |   | |
 /// $--HDT,x.x,T*hh<CR><LF>
 /// ```
+#[derive(Debug, PartialEq)]
+pub struct HdtData {
+    /// Heading, degrees True
+    pub heading: Option<f32>,
+}
+
+/// # Parse HDT message
+///
+/// From gpsd/driver_nmea0183.c
+///
+/// ```text
+/// $HEHDT,341.8,T*21
+/// 
+/// HDT,x.x*hh<cr><lf>
+/// ```
+///
+/// The only data field is true heading in degrees.
+/// The following field is required to be 'T' indicating a true heading.
+/// It is followed by a mandatory nmea_checksum.
 pub fn parse_hdt(sentence: NmeaSentence) -> Result<HdtData, Error> {
     if sentence.message_id != SentenceType::HDT {
         Err(Error::WrongSentenceHeader {
