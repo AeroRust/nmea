@@ -21,6 +21,8 @@ fn test_all_supported_messages() {
         (SentenceType::GSA, "$GPGSA,A,3,23,31,22,16,03,07,,,,,,,1.8,1.1,1.4*3E"),
         // GSV
         (SentenceType::GSV, "$GPGSV,3,1,12,01,49,196,41,03,71,278,32,06,02,323,27,11,21,196,39*72"),
+        // HDT
+        (SentenceType::HDT, "$GPHDT,274.07,T*03"),
         // MDA
         (SentenceType::MDA, "$WIMWV,041.1,R,01.0,N,A*16"),
         // MWV
