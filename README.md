@@ -101,7 +101,7 @@ fn main() {
 
 ## Supported Rust Versions
 
-The Minimum supported Rust version (or MSRV) is **1.56**.
+The Minimum supported Rust version (or MSRV) is **1.59**.
 
 ## Unsafe-free crate
 
