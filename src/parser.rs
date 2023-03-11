@@ -357,6 +357,7 @@ impl<'a> Nmea {
             | ParseResult::GBS(_)
             | ParseResult::AAM(_)
             | ParseResult::ALM(_)
+            | ParseResult::HDT(_)
             | ParseResult::PGRMZ(_)
             | ParseResult::MTW(_)
             | ParseResult::MWV(_)

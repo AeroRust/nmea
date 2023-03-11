@@ -10,6 +10,7 @@ mod gll;
 mod gns;
 mod gsa;
 mod gsv;
+mod hdt;
 mod mda;
 mod mtw;
 mod mwv;
@@ -37,6 +38,7 @@ pub use {
     gnss_type::GnssType,
     gsa::{parse_gsa, GsaData},
     gsv::{parse_gsv, GsvData},
+    hdt::{parse_hdt, HdtData},
     mda::{parse_mda, MdaData},
     mtw::{parse_mtw, MtwData, MtwUnit},
     mwv::{parse_mwv, MwvData, MwvReference, MwvWindSpeedUnits},
