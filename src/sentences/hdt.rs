@@ -32,7 +32,7 @@ pub struct HdtData {
 ///
 /// ```text
 /// $HEHDT,341.8,T*21
-/// 
+///
 /// HDT,x.x*hh<cr><lf>
 /// ```
 ///
