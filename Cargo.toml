@@ -19,7 +19,7 @@ repository = "https://github.com/AeroRust/nmea"
 readme = "README.md"
 
 edition = "2021"
-rust-version = "1.56"
+rust-version = "1.59"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -40,8 +40,7 @@ approx = "0.5.1"
 doc-comment = "0.3"
 pretty_assertions = "1"
 quickcheck = { version = "1.0.3", default-features = false }
-# Criterion 0.4 will force us to use MSRV of 1.57!
-criterion = "0.3"
+criterion = "0.4"
 
 [features]
 default = ["std"]
