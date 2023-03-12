@@ -47,6 +47,7 @@ pub use {
     rmz::{parse_pgrmz, PgrmzData},
     txt::{parse_txt, TxtData},
     vtg::{parse_vtg, VtgData},
+    zda::{parse_zda, ZdaData},
 };
 
 pub(crate) fn nom_parse_failure(inp: &str) -> nom::Err<nom::error::Error<&str>> {
