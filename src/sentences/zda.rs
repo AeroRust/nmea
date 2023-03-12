@@ -256,5 +256,67 @@ mod tests {
                 FixedOffset::east_opt(-1 * 60 * 60).unwrap()
             ))
         );
+
+        assert_eq!(
+            ZdaData {
+                utc_time: None,
+                day: None,
+                month: None,
+                year: None,
+                local_zone_hours: None,
+                local_zone_minutes: None,
+            }
+            .utc_date(),
+            None,
+        );
+
+        assert_eq!(
+            ZdaData {
+                utc_time: None,
+                day: None,
+                month: None,
+                year: None,
+                local_zone_hours: None,
+                local_zone_minutes: None,
+            }
+            .offset(),
+            None
+        );
+        assert_eq!(
+            ZdaData {
+                utc_time: None,
+                day: None,
+                month: None,
+                year: None,
+                local_zone_hours: Some(9),
+                local_zone_minutes: None,
+            }
+            .offset(),
+            Some(FixedOffset::east_opt(9 * 60 * 60).unwrap()),
+        );
+        assert_eq!(
+            ZdaData {
+                utc_time: None,
+                day: None,
+                month: None,
+                year: None,
+                local_zone_hours: None,
+                local_zone_minutes: Some(20),
+            }
+            .offset(),
+            Some(FixedOffset::east_opt(20 * 60).unwrap()),
+        );
+        assert_eq!(
+            ZdaData {
+                utc_time: None,
+                day: None,
+                month: None,
+                year: None,
+                local_zone_hours: Some(9),
+                local_zone_minutes: Some(20),
+            }
+            .offset(),
+            Some(FixedOffset::east_opt((9 * 60 + 20) * 60).unwrap()),
+        );
     }
 }
