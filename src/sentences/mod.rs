@@ -19,6 +19,7 @@ mod rmz;
 mod txt;
 mod utils;
 mod vtg;
+mod zda;
 
 pub(crate) mod faa_mode;
 mod fix_type;
