@@ -39,7 +39,7 @@ pub struct ZdaData {
 
 impl ZdaData {
     /// Get UTC date by `day`, `month` and `year` fields.
-    /// Returns `None` if any field is `None.
+    /// Returns `None` if any field is `None`.
     pub fn utc_date(&self) -> Option<NaiveDate> {
         if let Some(((day, month), year)) = self.day.zip(self.month).zip(self.year) {
             NaiveDate::from_ymd_opt(year.into(), month.into(), day.into())
@@ -49,7 +49,7 @@ impl ZdaData {
     }
 
     /// Get UTC date time by `utc_time`, `day`, `month`, and `year` fields.
-    /// Returns `None` if any field is `None.
+    /// Returns `None` if any field is `None`.
     pub fn utc_date_time(&self) -> Option<NaiveDateTime> {
         self.utc_time.and_then(|utc_time| {
             self.utc_date()
@@ -71,7 +71,7 @@ impl ZdaData {
     }
 
     /// Caluculate local datetime
-    /// Returns `None` if any field is `None.
+    /// Returns `None` if any field is `None`.
     pub fn local_date_time(&self) -> Option<DateTime<FixedOffset>> {
         self.utc_date_time()
             .zip(self.offset())
