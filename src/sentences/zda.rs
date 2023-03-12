@@ -209,6 +209,23 @@ mod tests {
     }
 
     #[test]
+    fn test_wrong_sentence() {
+        let invalid_aam_sentence = NmeaSentence {
+            message_id: SentenceType::AAM,
+            data: "",
+            talker_id: "GP",
+            checksum: 0,
+        };
+        assert_eq!(
+            Err(Error::WrongSentenceHeader {
+                expected: SentenceType::ZDA,
+                found: SentenceType::AAM
+            }),
+            parse_zda(invalid_aam_sentence)
+        );
+    }
+
+    #[test]
     fn test_parse_zda_datetime() {
         let s = parse_nmea_sentence("$GPZDA,160012.71,11,03,2004,-1,00*7D").unwrap();
         assert_eq!(s.checksum, s.calc_checksum());
