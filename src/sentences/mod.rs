@@ -18,6 +18,7 @@ mod rmc;
 mod rmz;
 mod txt;
 mod utils;
+mod vhw;
 mod vtg;
 
 pub(crate) mod faa_mode;
@@ -45,6 +46,7 @@ pub use {
     rmc::{parse_rmc, RmcData, RmcStatusOfFix},
     rmz::{parse_pgrmz, PgrmzData},
     txt::{parse_txt, TxtData},
+    vhw::{parse_vhw, VhwData},
     vtg::{parse_vtg, VtgData},
 };
 
