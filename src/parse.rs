@@ -113,6 +113,7 @@ pub enum ParseResult {
     MWV(MwvData),
     RMC(RmcData),
     TXT(TxtData),
+    VHW(VhwData),
     VTG(VtgData),
     PGRMZ(PgrmzData),
     /// A message that is not supported by the crate and cannot be parsed.
@@ -138,6 +139,7 @@ impl From<&ParseResult> for SentenceType {
             ParseResult::MWV(_) => SentenceType::MWV,
             ParseResult::RMC(_) => SentenceType::RMC,
             ParseResult::TXT(_) => SentenceType::TXT,
+            ParseResult::VHW(_) => SentenceType::VHW,
             ParseResult::VTG(_) => SentenceType::VTG,
             ParseResult::PGRMZ(_) => SentenceType::RMZ,
             ParseResult::Unsupported(sentence_type) => *sentence_type,
@@ -184,6 +186,7 @@ pub fn parse_str(sentence_input: &str) -> Result<ParseResult, Error> {
             SentenceType::RMC => parse_rmc(nmea_sentence).map(ParseResult::RMC),
             SentenceType::GSA => parse_gsa(nmea_sentence).map(ParseResult::GSA),
             SentenceType::VTG => parse_vtg(nmea_sentence).map(ParseResult::VTG),
+            SentenceType::VHW => parse_vhw(nmea_sentence).map(ParseResult::VHW),
             SentenceType::GLL => parse_gll(nmea_sentence).map(ParseResult::GLL),
             SentenceType::TXT => parse_txt(nmea_sentence).map(ParseResult::TXT),
             SentenceType::GNS => parse_gns(nmea_sentence).map(ParseResult::GNS),
