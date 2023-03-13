@@ -1,4 +1,13 @@
-use crate::{Error, NmeaSentence};
+use nom::{
+    bytes::complete::take_until,
+    character::streaming::char,
+    combinator::{map_res, opt},
+    IResult,
+};
+
+use crate::{Error, NmeaSentence, SentenceType};
+
+use super::utils::parse_float_num;
 
 /// VHW - Water speed and heading
 ///
@@ -39,8 +48,132 @@ pub struct VhwData {
 /// ```text
 /// ```
 pub fn parse_vhw(sentence: NmeaSentence) -> Result<VhwData, Error> {
-    todo!()
+    if sentence.message_id == SentenceType::VHW {
+        Ok(do_parse_vhw(sentence.data)?.1)
+    } else {
+        Err(Error::WrongSentenceHeader {
+            expected: SentenceType::VHW,
+            found: sentence.message_id,
+        })
+    }
+}
+
+fn do_parse_vhw(i: &str) -> IResult<&str, VhwData> {
+    let comma = char(',');
+
+    let (i, heading_true) = opt(map_res(take_until(","), parse_float_num))(i)?;
+    let (i, _) = comma(i)?;
+    let (i, _) = char('T')(i)?;
+    let (i, _) = comma(i)?;
+
+    let (i, heading_magnetic) = opt(map_res(take_until(","), parse_float_num))(i)?;
+    let (i, _) = comma(i)?;
+    let (i, _) = char('M')(i)?;
+    let (i, _) = comma(i)?;
+
+    let (i, relative_speed_knots) = opt(map_res(take_until(","), parse_float_num))(i)?;
+    let (i, _) = comma(i)?;
+    let (i, _) = char('N')(i)?;
+    let (i, _) = comma(i)?;
+
+    let (i, relative_speed_kmph) = opt(map_res(take_until(","), parse_float_num))(i)?;
+    let (i, _) = comma(i)?;
+    let (i, _) = char('K')(i)?;
+
+    Ok((
+        i,
+        VhwData {
+            heading_true,
+            heading_magnetic,
+            relative_speed_knots,
+            relative_speed_kmph,
+        },
+    ))
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use approx::assert_relative_eq;
+
+    use super::*;
+    use crate::parse::parse_nmea_sentence;
+
+    #[test]
+    fn test_parse_vhw() {
+        let s = NmeaSentence {
+            message_id: SentenceType::VHW,
+            talker_id: "GP",
+            data: "100.5,T,105.5,M,10.5,N,19.4,K",
+            checksum: 0x4f,
+        };
+        let vhw_data = parse_vhw(s).unwrap();
+        assert_relative_eq!(vhw_data.heading_true.unwrap(), 100.5);
+        assert_relative_eq!(vhw_data.heading_magnetic.unwrap(), 105.5);
+        assert_relative_eq!(vhw_data.relative_speed_knots.unwrap(), 10.5);
+        assert_relative_eq!(vhw_data.relative_speed_kmph.unwrap(), 19.4);
+
+        let s = parse_nmea_sentence("$GPVHW,100.5,T,105.5,M,10.5,N,19.4,K*4F").unwrap();
+        assert_eq!(s.checksum, s.calc_checksum());
+        assert_eq!(s.checksum, 0x4F);
+
+        let vhw_data = parse_vhw(s).unwrap();
+        assert_relative_eq!(vhw_data.heading_true.unwrap(), 100.5);
+        assert_relative_eq!(vhw_data.heading_magnetic.unwrap(), 105.5);
+        assert_relative_eq!(vhw_data.relative_speed_knots.unwrap(), 10.5);
+        assert_relative_eq!(vhw_data.relative_speed_kmph.unwrap(), 19.4);
+    }
+
+    #[test]
+    fn test_parse_incomplete_vhw() {
+        // Pattern with all single letter alphabetical fields filled, but all numeric fields blank.
+        let s = NmeaSentence {
+            message_id: SentenceType::VHW,
+            talker_id: "GP",
+            data: ",T,,M,,N,,K",
+            checksum: 0,
+        };
+        assert_eq!(
+            parse_vhw(s),
+            Ok(VhwData {
+                heading_true: None,
+                heading_magnetic: None,
+                relative_speed_knots: None,
+                relative_speed_kmph: None,
+            })
+        );
+
+        // Pattern with all single letter alphabetical fields filled and some numerical fields filled.
+        let s = NmeaSentence {
+            message_id: SentenceType::VHW,
+            talker_id: "GP",
+            data: ",T,,M,10.5,N,20.0,K",
+            checksum: 0,
+        };
+        assert_eq!(
+            parse_vhw(s),
+            Ok(VhwData {
+                heading_true: None,
+                heading_magnetic: None,
+                relative_speed_knots: Some(10.5),
+                relative_speed_kmph: Some(20.0),
+            })
+        );
+
+        // Pattern with all fields missing
+        let s = NmeaSentence {
+            message_id: SentenceType::VHW,
+            talker_id: "GP",
+            data: ",,,,,,,",
+            checksum: 0,
+        };
+        assert_eq!(
+            parse_vhw(s),
+            Ok(VhwData {
+                heading_true: None,
+                heading_magnetic: None,
+                relative_speed_knots: None,
+                relative_speed_kmph: None
+            })
+        );
+    }
+}
