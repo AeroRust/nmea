@@ -1,6 +1,6 @@
 use nom::{
     bytes::complete::take_until,
-    character::streaming::char,
+    character::complete::char,
     combinator::{map_res, opt},
     IResult,
 };
@@ -46,7 +46,20 @@ pub struct VhwData {
 /// # Parse VHW message
 ///
 /// ```text
+/// $GPVHW,100.5,T,105.5,M,10.5,N,19.4,K*4F
 /// ```
+/// 1. 100.5 Heading True
+/// 2. T
+/// 3. 105.5 Heading Magnetic
+/// 4. M
+/// 5. 10.5 Speed relative to water, knots
+/// 6. N
+/// 7. 19.4 Speed relative to water, km/hr
+/// 8. K
+///
+/// Each is considered as a pair of a float value and a single character,
+/// and if the float value exists but the single character is not correct, it is treated as `None`.
+/// For example, if 1 is "100.5" and 2 is not "T", then heading_true is `None`.
 pub fn parse_vhw(sentence: NmeaSentence) -> Result<VhwData, Error> {
     if sentence.message_id == SentenceType::VHW {
         Ok(do_parse_vhw(sentence.data)?.1)
@@ -58,27 +71,28 @@ pub fn parse_vhw(sentence: NmeaSentence) -> Result<VhwData, Error> {
     }
 }
 
+/// Parses a float value
+/// and returns `None` if the float value can be parsed but the next field does not match the specified character.
+fn do_parse_float_with_char(c: char, i: &str) -> IResult<&str, Option<f64>> {
+    let (i, value) = opt(map_res(take_until(","), parse_float_num::<f64>))(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, tag) = opt(char(c))(i)?;
+    Ok((i, tag.and(value)))
+}
+
 fn do_parse_vhw(i: &str) -> IResult<&str, VhwData> {
     let comma = char(',');
 
-    let (i, heading_true) = opt(map_res(take_until(","), parse_float_num))(i)?;
-    let (i, _) = comma(i)?;
-    let (i, _) = char('T')(i)?;
+    let (i, heading_true) = do_parse_float_with_char('T', i)?;
     let (i, _) = comma(i)?;
 
-    let (i, heading_magnetic) = opt(map_res(take_until(","), parse_float_num))(i)?;
-    let (i, _) = comma(i)?;
-    let (i, _) = char('M')(i)?;
+    let (i, heading_magnetic) = do_parse_float_with_char('M', i)?;
     let (i, _) = comma(i)?;
 
-    let (i, relative_speed_knots) = opt(map_res(take_until(","), parse_float_num))(i)?;
-    let (i, _) = comma(i)?;
-    let (i, _) = char('N')(i)?;
+    let (i, relative_speed_knots) = do_parse_float_with_char('N', i)?;
     let (i, _) = comma(i)?;
 
-    let (i, relative_speed_kmph) = opt(map_res(take_until(","), parse_float_num))(i)?;
-    let (i, _) = comma(i)?;
-    let (i, _) = char('K')(i)?;
+    let (i, relative_speed_kmph) = do_parse_float_with_char('K', i)?;
 
     Ok((
         i,
@@ -97,6 +111,13 @@ mod tests {
 
     use super::*;
     use crate::parse::parse_nmea_sentence;
+
+    #[test]
+    fn test_do_parse_float_with_char() {
+        assert_eq!(do_parse_float_with_char('T', "1.5,T"), Ok(("", Some(1.5))));
+        assert_eq!(do_parse_float_with_char('T', "1.5,"), Ok(("", None)));
+        assert_eq!(do_parse_float_with_char('T', ","), Ok(("", None)));
+    }
 
     #[test]
     fn test_parse_vhw() {

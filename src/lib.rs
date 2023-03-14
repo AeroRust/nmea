@@ -23,6 +23,7 @@
 //! - MDA
 //! - MWV
 //! - RMC *
+//! - VHW
 //! - VTG *
 //!
 //! Other Sentences

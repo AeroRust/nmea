@@ -33,6 +33,8 @@ fn test_all_supported_messages() {
         (SentenceType::RMZ, "$PGRMZ,2282,f,3*21"),
         // TXT
         (SentenceType::TXT, "$GNTXT,01,01,02,u-blox AG - www.u-blox.com*4E"),
+        // VHW
+        (SentenceType::VHW, "$GPVHW,100.5,T,105.5,M,10.5,N,19.4,K*4F"),
         // VTG
         (SentenceType::VTG, "$GPVTG,360.0,T,348.7,M,000.0,N,000.0,K*43"),
     ]

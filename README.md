@@ -26,6 +26,7 @@ NMEA Standard Sentences
 - MTW
 - MWV
 - RMC *
+- VHW
 - VTG *
 
 Other Sentences
