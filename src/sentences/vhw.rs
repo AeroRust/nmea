@@ -120,6 +120,23 @@ mod tests {
     }
 
     #[test]
+    fn test_wrong_sentence() {
+        let invalid_aam_sentence = NmeaSentence {
+            message_id: SentenceType::AAM,
+            data: "",
+            talker_id: "GP",
+            checksum: 0,
+        };
+        assert_eq!(
+            Err(Error::WrongSentenceHeader {
+                expected: SentenceType::VHW,
+                found: SentenceType::AAM
+            }),
+            parse_vhw(invalid_aam_sentence)
+        );
+    }
+
+    #[test]
     fn test_parse_vhw() {
         let s = NmeaSentence {
             message_id: SentenceType::VHW,
