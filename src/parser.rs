@@ -354,6 +354,7 @@ impl<'a> Nmea {
             }
             ParseResult::BWC(_)
             | ParseResult::BOD(_)
+            | ParseResult::DBK(_)
             | ParseResult::GBS(_)
             | ParseResult::AAM(_)
             | ParseResult::ALM(_)
