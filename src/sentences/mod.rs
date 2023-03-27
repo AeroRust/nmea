@@ -19,6 +19,7 @@ mod rmz;
 mod txt;
 mod utils;
 mod vtg;
+mod zda;
 
 pub(crate) mod faa_mode;
 mod fix_type;
@@ -46,6 +47,7 @@ pub use {
     rmz::{parse_pgrmz, PgrmzData},
     txt::{parse_txt, TxtData},
     vtg::{parse_vtg, VtgData},
+    zda::{parse_zda, ZdaData},
 };
 
 pub(crate) fn nom_parse_failure(inp: &str) -> nom::Err<nom::error::Error<&str>> {
