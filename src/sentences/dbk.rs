@@ -92,8 +92,8 @@ mod tests {
         assert_eq!(s.checksum, 0x2E);
         let dbk_data = parse_dbk(s).unwrap();
         assert_eq!(Some(1330.5), dbk_data.depth_feet);
-        assert_eq!(Some(0405.5), dbk_data.depth_meters);
-        assert_eq!(Some(0221.6), dbk_data.depth_fathoms);
+        assert_eq!(Some(405.5), dbk_data.depth_meters);
+        assert_eq!(Some(221.6), dbk_data.depth_fathoms);
     }
     #[test]
     fn test_parse_dbk_invalid_depth_feet_value() {
