@@ -28,6 +28,7 @@ NMEA Standard Sentences
 - RMC *
 - VHW
 - VTG *
+- ZDA
 
 Other Sentences
 - TXT *

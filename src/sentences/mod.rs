@@ -20,6 +20,7 @@ mod txt;
 mod utils;
 mod vhw;
 mod vtg;
+mod zda;
 
 pub(crate) mod faa_mode;
 mod fix_type;
@@ -48,6 +49,7 @@ pub use {
     txt::{parse_txt, TxtData},
     vhw::{parse_vhw, VhwData},
     vtg::{parse_vtg, VtgData},
+    zda::{parse_zda, ZdaData},
 };
 
 pub(crate) fn nom_parse_failure(inp: &str) -> nom::Err<nom::error::Error<&str>> {
