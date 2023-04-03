@@ -24,6 +24,7 @@
 //! - MWV
 //! - RMC *
 //! - VTG *
+//! - ZDA
 //!
 //! Other Sentences
 //! - TXT *

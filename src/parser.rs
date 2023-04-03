@@ -362,7 +362,8 @@ impl<'a> Nmea {
             | ParseResult::PGRMZ(_)
             | ParseResult::MTW(_)
             | ParseResult::MWV(_)
-            | ParseResult::MDA(_) => return Ok(FixType::Invalid),
+            | ParseResult::MDA(_)
+            | ParseResult::ZDA(_) => return Ok(FixType::Invalid),
 
             ParseResult::Unsupported(_) => {
                 return Ok(FixType::Invalid);
