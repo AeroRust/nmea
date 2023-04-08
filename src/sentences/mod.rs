@@ -4,6 +4,7 @@ mod aam;
 mod alm;
 mod bod;
 mod bwc;
+mod bww;
 mod dbk;
 mod gbs;
 mod gga;
@@ -31,6 +32,7 @@ pub use {
     alm::{parse_alm, AlmData},
     bod::{parse_bod, BodData},
     bwc::{parse_bwc, BwcData},
+    bww::{parse_bww, BwwData},
     dbk::{parse_dbk, DbkData},
     faa_mode::{FaaMode, FaaModes},
     fix_type::FixType,

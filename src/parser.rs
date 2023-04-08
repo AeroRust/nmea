@@ -353,6 +353,7 @@ impl<'a> Nmea {
                 return Ok(FixType::Invalid);
             }
             ParseResult::BWC(_)
+            | ParseResult::BWW(_)
             | ParseResult::BOD(_)
             | ParseResult::DBK(_)
             | ParseResult::GBS(_)
