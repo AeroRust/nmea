@@ -119,6 +119,7 @@ pub enum ParseResult {
     VTG(VtgData),
     ZDA(ZdaData),
     ZFO(ZfoData),
+    ZTG(ZtgData),
     PGRMZ(PgrmzData),
     /// A message that is not supported by the crate and cannot be parsed.
     Unsupported(SentenceType),
@@ -148,6 +149,7 @@ impl From<&ParseResult> for SentenceType {
             ParseResult::VHW(_) => SentenceType::VHW,
             ParseResult::VTG(_) => SentenceType::VTG,
             ParseResult::ZFO(_) => SentenceType::ZFO,
+            ParseResult::ZTG(_) => SentenceType::ZTG,
             ParseResult::PGRMZ(_) => SentenceType::RMZ,
             ParseResult::ZDA(_) => SentenceType::ZDA,
             ParseResult::Unsupported(sentence_type) => *sentence_type,

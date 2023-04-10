@@ -1,7 +1,7 @@
 use core::str;
 
 use arrayvec::ArrayString;
-use chrono::{NaiveDate, NaiveTime, Duration};
+use chrono::{Duration, NaiveDate, NaiveTime};
 use nom::{
     branch::alt,
     bytes::complete::{tag, take, take_until},
@@ -56,7 +56,6 @@ const MILLISECS_PER_MINUTE: i64 = 60000;
 /// The number of milliseconds in a hour.
 const MILLISECS_PER_HOUR: i64 = 3600000;
 
-
 pub(crate) fn parse_duration_hms(i: &str) -> IResult<&str, Duration> {
     map_res(
         tuple((
@@ -77,13 +76,12 @@ pub(crate) fn parse_duration_hms(i: &str) -> IResult<&str, Duration> {
             if sec >= 60. {
                 return Err("Invalid time: sec >= 60");
             }
-            Ok(
-                Duration::milliseconds(
-                    hour * MILLISECS_PER_HOUR
+            Ok(Duration::milliseconds(
+                hour * MILLISECS_PER_HOUR
                     + minutes * MILLISECS_PER_MINUTE
                     + (sec.trunc() as i64) * MILLISECS_PER_SECOND
-                    + (sec.fract() * 1_000f64).round() as i64)
-            )
+                    + (sec.fract() * 1_000f64).round() as i64,
+            ))
         },
     )(i)
 }
@@ -244,13 +242,19 @@ mod tests {
         let (_, time) = parse_duration_hms("125619,").unwrap();
         assert_eq!(time.num_hours(), 12);
         assert_eq!(time.num_minutes(), 12 * 60 + 56);
-        assert_eq!(time.num_seconds(), 12 * 60*60 + 56 * 60 + 19);
-        assert_eq!(time.num_nanoseconds().unwrap(), (12 * 60 * 60 + 56 * 60 + 19) * 1_000_000_000);
+        assert_eq!(time.num_seconds(), 12 * 60 * 60 + 56 * 60 + 19);
+        assert_eq!(
+            time.num_nanoseconds().unwrap(),
+            (12 * 60 * 60 + 56 * 60 + 19) * 1_000_000_000
+        );
         let (_, time) = parse_duration_hms("125619.5,").unwrap();
         assert_eq!(time.num_hours(), 12);
         assert_eq!(time.num_minutes(), 12 * 60 + 56);
         assert_eq!(time.num_seconds(), 12 * 60 * 60 + 56 * 60 + 19);
-        assert_eq!(time.num_nanoseconds().unwrap(), (12 * 60 * 60 + 56 * 60 + 19) * 1_000_000_000 + 500_000_000);
+        assert_eq!(
+            time.num_nanoseconds().unwrap(),
+            (12 * 60 * 60 + 56 * 60 + 19) * 1_000_000_000 + 500_000_000
+        );
     }
 
     #[test]

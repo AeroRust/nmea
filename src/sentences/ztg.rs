@@ -10,25 +10,25 @@ use crate::{
 
 const MAX_LEN: usize = 64;
 
-/// ZFO - UTC & Time from origin Waypoint
+/// ZTG - UTC & Time to Destination Waypoint
 ///```text
 ///        1         2         3    4
 ///        |         |         |    |
-/// $--ZFO,hhmmss.ss,hhmmss.ss,c--c*hh<CR><LF>
+/// $--ZTG,hhmmss.ss,hhmmss.ss,c--c*hh<CR><LF>
 ///```
 /// Field Number:
-/// 1. Universal Time Coordinated (UTC) hh is hours, mm is minutes, ss.ss is seconds.
-/// 2. Elapsed Time
-/// 3. Origin Waypoint ID
+/// 1. UTC of observation hh is hours, mm is minutes, ss.ss is seconds.
+/// 2. Time Remaining
+/// 3. Destination Waypoint ID
 /// 4. Checksum
 #[derive(Debug, PartialEq)]
-pub struct ZfoData {
+pub struct ZtgData {
     pub fix_time: Option<NaiveTime>,
     pub fix_duration: Option<Duration>,
     pub waypoint_id: Option<ArrayString<MAX_LEN>>,
 }
 
-fn do_parse_zfo(i: &str) -> Result<ZfoData, Error> {
+fn do_parse_ztg(i: &str) -> Result<ZtgData, Error> {
     // 1. UTC Time or observation
     let (i, fix_time) = opt(parse_hms)(i)?;
     let (i, _) = char(',')(i)?;
@@ -48,24 +48,24 @@ fn do_parse_zfo(i: &str) -> Result<ZfoData, Error> {
         None
     };
 
-    Ok(ZfoData {
+    Ok(ZtgData {
         fix_time,
         fix_duration,
         waypoint_id,
     })
 }
 
-/// # Parse ZFO message
+/// # Parse ZTG message
 ///
-/// See: <https://gpsd.gitlab.io/gpsd/NMEA.html#_zfo_utc_time_from_origin_waypoint>
-pub fn parse_zfo(sentence: NmeaSentence) -> Result<ZfoData, Error> {
-    if sentence.message_id != SentenceType::ZFO {
+/// See: <https://gpsd.gitlab.io/gpsd/NMEA.html#_ztg_utc_time_to_destination_waypoint>
+pub fn parse_ztg(sentence: NmeaSentence) -> Result<ZtgData, Error> {
+    if sentence.message_id != SentenceType::ZTG {
         Err(Error::WrongSentenceHeader {
-            expected: SentenceType::ZFO,
+            expected: SentenceType::ZTG,
             found: sentence.message_id,
         })
     } else {
-        Ok(do_parse_zfo(sentence.data)?)
+        Ok(do_parse_ztg(sentence.data)?)
     }
 }
 
@@ -74,16 +74,16 @@ mod tests {
     use super::*;
     use crate::{parse::parse_nmea_sentence, Error};
 
-    fn run_parse_zfo(line: &str) -> Result<ZfoData, Error> {
-        let s = parse_nmea_sentence(line).expect("ZFO sentence initial parse failed");
+    fn run_parse_ztg(line: &str) -> Result<ZtgData, Error> {
+        let s = parse_nmea_sentence(line).expect("ZTG sentence initial parse failed");
         assert_eq!(s.checksum, s.calc_checksum());
-        parse_zfo(s)
+        parse_ztg(s)
     }
 
     #[test]
-    fn test_parse_zfo() {
+    fn test_parse_ztg() {
         assert_eq!(
-            ZfoData {
+            ZtgData {
                 fix_duration: Some(
                     Duration::hours(4)
                         + Duration::minutes(23)
@@ -93,18 +93,18 @@ mod tests {
                 fix_time: NaiveTime::from_hms_milli_opt(14, 58, 32, 120),
                 waypoint_id: Some(ArrayString::from("WPT").unwrap()),
             },
-            run_parse_zfo("$GPZFO,145832.12,042359.17,WPT*3E").unwrap()
+            run_parse_ztg("$GPZTG,145832.12,042359.17,WPT*24").unwrap()
         );
         assert_eq!(
-            ZfoData {
+            ZtgData {
                 fix_duration: None,
                 fix_time: None,
                 waypoint_id: None,
             },
-            run_parse_zfo("$GPZFO,,,*68").unwrap()
+            run_parse_ztg("$GPZTG,,,*72").unwrap()
         );
         assert_eq!(
-            ZfoData {
+            ZtgData {
                 fix_duration: Some(
                     Duration::hours(4)
                         + Duration::minutes(23)
@@ -114,7 +114,7 @@ mod tests {
                 fix_time: None,
                 waypoint_id: None,
             },
-            run_parse_zfo("$GPZFO,,042359.17,*49").unwrap()
+            run_parse_ztg("$GPZTG,,042359.17,*53").unwrap()
         );
     }
 }

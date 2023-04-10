@@ -41,6 +41,10 @@ fn test_all_supported_messages() {
         (SentenceType::VTG, "$GPVTG,360.0,T,348.7,M,000.0,N,000.0,K*43"),
         // ZDA
         (SentenceType::ZDA, "$GPZDA,160012.71,11,03,2004,-1,00*7D"),
+        // ZFO
+        (SentenceType::ZFO, "$GPZFO,145832.12,042359.17,WPT*3E"),
+        // ZTG
+        (SentenceType::ZTG, "$GPZTG,145832.12,042359.17,WPT*24"),
     ]
     .into_iter()
     .collect::<HashMap<_, _>>();

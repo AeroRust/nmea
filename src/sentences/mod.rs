@@ -24,6 +24,7 @@ mod vhw;
 mod vtg;
 mod zda;
 mod zfo;
+mod ztg;
 
 pub(crate) mod faa_mode;
 mod fix_type;
@@ -56,6 +57,7 @@ pub use {
     vtg::{parse_vtg, VtgData},
     zda::{parse_zda, ZdaData},
     zfo::{parse_zfo, ZfoData},
+    ztg::{parse_ztg, ZtgData},
 };
 
 pub(crate) fn nom_parse_failure(inp: &str) -> nom::Err<nom::error::Error<&str>> {
