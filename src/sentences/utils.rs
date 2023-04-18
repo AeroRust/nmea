@@ -201,6 +201,80 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
+    fn test_parse_hms_fail_1() {
+        use chrono::Timelike;
+        let (_, time) = parse_hms("247090,").unwrap();
+        assert_eq!(time.hour(), 24);
+        assert_eq!(time.minute(), 70);
+        assert_eq!(time.second(), 90);
+        assert_eq!(time.nanosecond(), 0);
+        let (_, time) = parse_hms("247090.8,").unwrap();
+        assert_eq!(time.hour(), 24);
+        assert_eq!(time.minute(), 70);
+        assert_eq!(time.second(), 90);
+        assert_eq!(time.nanosecond(), 800_000_000);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_parse_hms_hr_fail() {
+        use chrono::Timelike;
+        let (_, time) = parse_hms("244550,").unwrap();
+        assert_eq!(time.hour(), 24);
+        assert_eq!(time.minute(), 45);
+        assert_eq!(time.second(), 50);
+        assert_eq!(time.nanosecond(), 0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_parse_hms_min_fail() {
+        use chrono::Timelike; 
+        let (_, time) = parse_hms("237050,").unwrap();
+        assert_eq!(time.hour(), 23);
+        assert_eq!(time.minute(), 70);
+        assert_eq!(time.second(), 50);
+        assert_eq!(time.nanosecond(), 0);
+    }
+    #[test]
+    #[should_panic]
+    fn test_parse_hms_sec_fail() {
+        use chrono::Timelike; 
+        let (_, time) = parse_hms("234590,").unwrap();
+        assert_eq!(time.hour(), 23);
+        assert_eq!(time.minute(), 45);
+        assert_eq!(time.second(), 90);
+        assert_eq!(time.nanosecond(), 0);
+    }
+
+
+    #[test]
+    fn test_parse_hms_fail_2() {
+        let invalid_time_hr = "254550,";
+        let result_hr = parse_hms(invalid_time_hr);
+        let expected_err_hr = nom::Err::Error(nom::error::Error::new(
+            "254550,",
+            nom::error::ErrorKind::MapRes,
+        ));
+        assert_eq!(result_hr, Err(expected_err_hr));
+        let invalid_time_min = "237050,";
+        let result_min = parse_hms(invalid_time_min);
+        let expected_err_min = nom::Err::Error(nom::error::Error::new(
+            "237050,",
+            nom::error::ErrorKind::MapRes,
+        ));
+        assert_eq!(result_min, Err(expected_err_min));
+        let invalid_time_sec = "234570,";
+        let result_sec = parse_hms(invalid_time_sec);
+        let expected_err_sec = nom::Err::Error(nom::error::Error::new(
+            "234570,",
+            nom::error::ErrorKind::MapRes,
+        ));
+        assert_eq!(result_sec, Err(expected_err_sec));
+    }
+
+    #[test]
     fn test_parse_date() {
         let (_, date) = parse_date("180283").unwrap();
         assert_eq!(
