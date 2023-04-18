@@ -230,7 +230,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_parse_hms_min_fail() {
-        use chrono::Timelike; 
+        use chrono::Timelike;
         let (_, time) = parse_hms("237050,").unwrap();
         assert_eq!(time.hour(), 23);
         assert_eq!(time.minute(), 70);
@@ -240,14 +240,13 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_parse_hms_sec_fail() {
-        use chrono::Timelike; 
+        use chrono::Timelike;
         let (_, time) = parse_hms("234590,").unwrap();
         assert_eq!(time.hour(), 23);
         assert_eq!(time.minute(), 45);
         assert_eq!(time.second(), 90);
         assert_eq!(time.nanosecond(), 0);
     }
-
 
     #[test]
     fn test_parse_hms_fail_2() {
