@@ -54,8 +54,10 @@ fn do_parse_bww(i: &str) -> Result<BwwData, Error> {
 
     let to_waypoint_id = if let Some(to_waypoint_id) = to_waypoint_id {
         Some(
-            ArrayString::from(to_waypoint_id)
-                .map_err(|_e| Error::SentenceLength(to_waypoint_id.len()))?,
+            ArrayString::from(to_waypoint_id).map_err(|_e| Error::ParameterLength {
+                max_length: MAX_LEN,
+                parameter_length: to_waypoint_id.len(),
+            })?,
         )
     } else {
         None
@@ -67,8 +69,10 @@ fn do_parse_bww(i: &str) -> Result<BwwData, Error> {
 
     let from_waypoint_id = if let Some(from_waypoint_id) = from_waypoint_id {
         Some(
-            ArrayString::from(from_waypoint_id)
-                .map_err(|_e| Error::SentenceLength(from_waypoint_id.len()))?,
+            ArrayString::from(from_waypoint_id).map_err(|_e| Error::ParameterLength {
+                max_length: MAX_LEN,
+                parameter_length: from_waypoint_id.len(),
+            })?,
         )
     } else {
         None
