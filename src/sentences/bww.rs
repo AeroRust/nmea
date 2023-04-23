@@ -139,4 +139,43 @@ mod tests {
             data
         );
     }
+
+    #[test]
+    fn test_parse_bww_with_wrong_sentence() {
+        let sentence = parse_nmea_sentence("$GPAAM,,T,,M,,*4C").unwrap();
+
+        assert_eq!(
+            parse_bww(sentence).unwrap_err(),
+            Error::WrongSentenceHeader {
+                expected: SentenceType::BWW,
+                found: SentenceType::AAM,
+            }
+        );
+    }
+
+    #[test]
+    fn test_parse_bww_with_too_long_to_waypoint_parameter() {
+        let sentence = parse_nmea_sentence("$GPBWW,,T,,M,ABCDEFGHIJKLMNOPQRSTUWXYZABCDEFGHIJKLMNOPQRSTUWXYZABCDEFGHIJKLMNOPQRSTUWXYZ,*4C").unwrap();
+
+        assert_eq!(
+            parse_bww(sentence).unwrap_err(),
+            Error::ParameterLength {
+                max_length: 64,
+                parameter_length: 75
+            }
+        );
+    }
+
+    #[test]
+    fn test_parse_bww_with_too_long_from_waypoint_parameter() {
+        let sentence = parse_nmea_sentence("$GPBWW,,T,,M,,ABCDEFGHIJKLMNOPQRSTUWXYZABCDEFGHIJKLMNOPQRSTUWXYZABCDEFGHIJKLMNOPQRSTUWXYZ*4C").unwrap();
+
+        assert_eq!(
+            parse_bww(sentence).unwrap_err(),
+            Error::ParameterLength {
+                max_length: 64,
+                parameter_length: 75
+            }
+        );
+    }
 }
