@@ -47,7 +47,7 @@ pub use {
     mtw::{parse_mtw, MtwData, MtwUnit},
     mwv::{parse_mwv, MwvData, MwvReference, MwvWindSpeedUnits},
     rmc::{parse_rmc, RmcData, RmcNavigationStatus, RmcStatusOfFix},
-    rmz::{parse_pgrmz, PgrmzData},
+    rmz::{parse_pgrmz, PgrmzData, PgrmzFixType},
     txt::{parse_txt, TxtData},
     vhw::{parse_vhw, VhwData},
     vtg::{parse_vtg, VtgData},
