@@ -40,7 +40,7 @@ pub use {
     gll::{parse_gll, GllData},
     gns::{parse_gns, GnsData, NavigationStatus},
     gnss_type::GnssType,
-    gsa::{parse_gsa, GsaData},
+    gsa::{parse_gsa, GsaData, GsaMode1, GsaMode2},
     gsv::{parse_gsv, GsvData},
     hdt::{parse_hdt, HdtData},
     mda::{parse_mda, MdaData},
