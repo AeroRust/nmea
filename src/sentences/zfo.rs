@@ -41,8 +41,10 @@ fn do_parse_zfo(i: &str) -> Result<ZfoData, Error> {
 
     let waypoint_id = if let Some(waypoint_id) = waypoint_id {
         Some(
-            ArrayString::from(waypoint_id)
-                .map_err(|_e| Error::SentenceLength(waypoint_id.len()))?,
+            ArrayString::from(waypoint_id).map_err(|_e| Error::ParameterLength {
+                max_length: MAX_LEN,
+                parameter_length: waypoint_id.len(),
+            })?,
         )
     } else {
         None
