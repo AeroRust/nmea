@@ -59,28 +59,34 @@ const MILLISECS_PER_HOUR: i64 = 3600000;
 pub(crate) fn parse_duration_hms(i: &str) -> IResult<&str, Duration> {
     map_res(
         tuple((
-            map_res(take(2usize), parse_num::<i64>),
-            map_res(take(2usize), parse_num::<i64>),
-            map_parser(take_until(","), double),
+            map_res(take(2usize), parse_num::<u8>),
+            map_res(take(2usize), parse_num::<u8>),
+            map_parser(take_until(","), float),
         )),
-        |(hour, minutes, sec)| -> core::result::Result<Duration, &'static str> {
-            if sec.is_sign_negative() {
-                return Err("Invalid time: second is negative");
-            }
-            if hour >= 24 {
-                return Err("Invalid time: hour >= 24");
+        |(hours, minutes, seconds)| -> core::result::Result<Duration, &'static str> {
+            if hours >= 24 {
+                return Err("Invalid time: hours >= 24");
             }
             if minutes >= 60 {
-                return Err("Invalid time: min >= 60");
+                return Err("Invalid time: minutes >= 60");
             }
-            if sec >= 60. {
-                return Err("Invalid time: sec >= 60");
+            if !seconds.is_finite() {
+                return Err("Invalid time: seconds is not finite");
             }
+            if seconds < 0.0 {
+                return Err("Invalid time: seconds is negative");
+            }
+            if seconds >= 60. {
+                return Err("Invalid time: seconds >= 60");
+            }
+
+            // We don't have to use checked operations as above checks limits number of milliseconds
+            // to value within i64 bounds.
             Ok(Duration::milliseconds(
-                hour * MILLISECS_PER_HOUR
-                    + minutes * MILLISECS_PER_MINUTE
-                    + (sec.trunc() as i64) * MILLISECS_PER_SECOND
-                    + (sec.fract() * 1_000f64).round() as i64,
+                i64::from(hours) * MILLISECS_PER_HOUR
+                    + i64::from(minutes) * MILLISECS_PER_MINUTE
+                    + (seconds.trunc() as i64) * MILLISECS_PER_SECOND
+                    + (seconds.fract() * 1_000f32).round() as i64,
             ))
         },
     )(i)
