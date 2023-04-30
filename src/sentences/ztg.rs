@@ -119,4 +119,11 @@ mod tests {
             run_parse_ztg("$GPZTG,,042359.17,*53").unwrap()
         );
     }
+    #[test]
+    fn test_parse_ztg_with_too_long_waypoint() {
+        assert_eq!(
+            Error::ParameterLength { max_length: 64, parameter_length: 72 },
+            run_parse_ztg("$GPZTG,145832.12,042359.17,ABCDEFGHIJKLMNOPRSTUWXYZABCDEFGHIJKLMNOPRSTUWXYZABCDEFGHIJKLMNOPRSTUWXYZ*6B").unwrap_err()
+        );
+    }
 }

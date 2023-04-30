@@ -119,4 +119,12 @@ mod tests {
             run_parse_zfo("$GPZFO,,042359.17,*49").unwrap()
         );
     }
+
+    #[test]
+    fn test_parse_zfo_with_too_long_waypoint() {
+        assert_eq!(
+            Error::ParameterLength { max_length: 64, parameter_length: 72 },
+            run_parse_zfo("$GPZFO,145832.12,042359.17,ABCDEFGHIJKLMNOPRSTUWXYZABCDEFGHIJKLMNOPRSTUWXYZABCDEFGHIJKLMNOPRSTUWXYZ*71").unwrap_err()
+        );
+    }
 }

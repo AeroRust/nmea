@@ -50,11 +50,11 @@ pub(crate) fn parse_hms(i: &str) -> IResult<&str, NaiveTime> {
 }
 
 /// The number of milliseconds in a second.
-const MILLISECS_PER_SECOND: i64 = 1000;
+const MILLISECS_PER_SECOND: u32 = 1000;
 /// The number of milliseconds in a minute.
-const MILLISECS_PER_MINUTE: i64 = 60000;
+const MILLISECS_PER_MINUTE: u32 = 60000;
 /// The number of milliseconds in a hour.
-const MILLISECS_PER_HOUR: i64 = 3600000;
+const MILLISECS_PER_HOUR: u32 = 3600000;
 
 pub(crate) fn parse_duration_hms(i: &str) -> IResult<&str, Duration> {
     map_res(
@@ -83,9 +83,9 @@ pub(crate) fn parse_duration_hms(i: &str) -> IResult<&str, Duration> {
             // We don't have to use checked operations as above checks limits number of milliseconds
             // to value within i64 bounds.
             Ok(Duration::milliseconds(
-                i64::from(hours) * MILLISECS_PER_HOUR
-                    + i64::from(minutes) * MILLISECS_PER_MINUTE
-                    + (seconds.trunc() as i64) * MILLISECS_PER_SECOND
+                i64::from(hours) * i64::from(MILLISECS_PER_HOUR)
+                    + i64::from(minutes) * i64::from(MILLISECS_PER_MINUTE)
+                    + (seconds.trunc() as i64) * i64::from(MILLISECS_PER_SECOND)
                     + (seconds.fract() * 1_000f32).round() as i64,
             ))
         },
