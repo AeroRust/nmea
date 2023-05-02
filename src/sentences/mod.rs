@@ -1,33 +1,33 @@
 //! All the supported sentence type data and parsers.
 
-mod aam;
-mod alm;
-mod bod;
-mod bwc;
-mod dbk;
-mod gbs;
-mod gga;
-mod gll;
-mod gns;
-mod gsa;
-mod gsv;
-mod hdt;
-mod mda;
-mod mtw;
-mod mwv;
-mod rmc;
-mod rmz;
-mod txt;
-mod utils;
-mod vhw;
-mod vtg;
-mod zda;
+pub mod aam;
+pub mod alm;
+pub mod bod;
+pub mod bwc;
+pub mod dbk;
+pub mod gbs;
+pub mod gga;
+pub mod gll;
+pub mod gns;
+pub mod gsa;
+pub mod gsv;
+pub mod hdt;
+pub mod mda;
+pub mod mtw;
+pub mod mwv;
+pub mod rmc;
+pub mod rmz;
+pub mod txt;
+pub mod utils;
+pub mod vhw;
+pub mod vtg;
+pub mod zda;
 
-pub(crate) mod faa_mode;
-mod fix_type;
-mod gnss_type;
+pub mod faa_mode;
+pub mod fix_type;
+pub mod gnss_type;
 
-pub use {
+pub(crate) use {
     aam::{parse_aam, AamData},
     alm::{parse_alm, AlmData},
     bod::{parse_bod, BodData},
@@ -38,16 +38,16 @@ pub use {
     gbs::{parse_gbs, GbsData},
     gga::{parse_gga, GgaData},
     gll::{parse_gll, GllData},
-    gns::{parse_gns, GnsData, NavigationStatus},
+    gns::{parse_gns, GnsData},
     gnss_type::GnssType,
-    gsa::{parse_gsa, GsaData, GsaMode1, GsaMode2},
+    gsa::{parse_gsa, GsaData},
     gsv::{parse_gsv, GsvData},
     hdt::{parse_hdt, HdtData},
     mda::{parse_mda, MdaData},
-    mtw::{parse_mtw, MtwData, MtwUnit},
-    mwv::{parse_mwv, MwvData, MwvReference, MwvWindSpeedUnits},
-    rmc::{parse_rmc, RmcData, RmcNavigationStatus, RmcStatusOfFix},
-    rmz::{parse_pgrmz, PgrmzData, PgrmzFixType},
+    mtw::{parse_mtw, MtwData},
+    mwv::{parse_mwv, MwvData},
+    rmc::{parse_rmc, RmcData, RmcStatusOfFix},
+    rmz::{parse_pgrmz, PgrmzData},
     txt::{parse_txt, TxtData},
     vhw::{parse_vhw, VhwData},
     vtg::{parse_vtg, VtgData},
