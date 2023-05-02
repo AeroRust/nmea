@@ -22,6 +22,11 @@ pub enum Error<'a> {
     ParsingError(nom::Err<nom::error::Error<&'a str>>),
     /// The sentence was too long to be parsed, our current limit is `SENTENCE_MAX_LEN` characters.
     SentenceLength(usize),
+    /// Parameter was too long to fit into fixed ArrayString.
+    ParameterLength {
+        max_length: usize,
+        parameter_length: usize,
+    },
     /// The sentence is recognized but it is not supported by the crate.
     Unsupported(SentenceType),
     /// The sentence type is unknown for this crate.
@@ -68,6 +73,14 @@ impl<'a> fmt::Display for Error<'a> {
                 f,
                 "The sentence was too long to be parsed, current limit is {} characters",
                 size
+            ),
+            Error::ParameterLength {
+                max_length,
+                parameter_length: _,
+            } => write!(
+                f,
+                "Parameter was too long to fit into string, max length is {}",
+                max_length
             ),
             Error::Unsupported(sentence) => {
                 write!(f, "Unsupported NMEA sentence '{}'", sentence)

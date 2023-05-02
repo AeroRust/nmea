@@ -27,7 +27,7 @@ pub enum GsaMode2 {
 
 /// GSA - GPS DOP and active satellites
 ///
-/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_bod_bearing_waypoint_to_waypoint>
+/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gsa_gps_dop_and_active_satellites>
 ///
 /// ```text
 ///        1 2 3                        14 15  16  17  18

@@ -14,7 +14,7 @@ use crate::{
 
 /// GLL - Geographic Position - Latitude/Longitude
 ///
-/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_bwc_bearing_distance_to_waypoint_great_circle>
+/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gll_geographic_position_latitudelongitude>
 ///
 /// ```text
 ///         1       2 3        4 5         6 7

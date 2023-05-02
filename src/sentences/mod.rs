@@ -4,6 +4,7 @@ pub mod aam;
 pub mod alm;
 pub mod bod;
 pub mod bwc;
+pub mod bww;
 pub mod dbk;
 pub mod gbs;
 pub mod gga;
@@ -32,6 +33,7 @@ pub(crate) use {
     alm::{parse_alm, AlmData},
     bod::{parse_bod, BodData},
     bwc::{parse_bwc, BwcData},
+    bww::{parse_bww, BwwData},
     dbk::{parse_dbk, DbkData},
     faa_mode::{FaaMode, FaaModes},
     fix_type::FixType,

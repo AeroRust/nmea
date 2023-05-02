@@ -15,6 +15,7 @@ NMEA Standard Sentences
 - ALM
 - BOD
 - BWC
+- BWW
 - DBK
 - GBS
 - GGA *
