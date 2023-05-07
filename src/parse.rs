@@ -205,6 +205,8 @@ pub fn parse_str(sentence_input: &str) -> Result<ParseResult, Error> {
             SentenceType::MWV => parse_mwv(nmea_sentence).map(ParseResult::MWV),
             SentenceType::RMZ => parse_pgrmz(nmea_sentence).map(ParseResult::PGRMZ),
             SentenceType::ZDA => parse_zda(nmea_sentence).map(ParseResult::ZDA),
+            SentenceType::ZFO => parse_zfo(nmea_sentence).map(ParseResult::ZFO),
+            SentenceType::ZTG => parse_ztg(nmea_sentence).map(ParseResult::ZTG),
             sentence_type => Ok(ParseResult::Unsupported(sentence_type)),
         }
     } else {
