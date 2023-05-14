@@ -1,3 +1,5 @@
+use crate::parse::TEXT_PARAMETER_MAX_LEN;
+
 use arrayvec::ArrayString;
 use nom::{
     bytes::complete::is_not,
@@ -7,8 +9,6 @@ use nom::{
 };
 
 use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, SentenceType};
-
-const MAX_LEN: usize = 64;
 
 /// AAM - Waypoint Arrival Alarm
 ///
@@ -36,7 +36,7 @@ pub struct AamData {
     pub perpendicular_passed: Option<bool>,
     pub arrival_circle_radius: Option<f32>,
     pub radius_units: Option<char>,
-    pub waypoint_id: Option<ArrayString<MAX_LEN>>,
+    pub waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 
 /// Parse AAM message
@@ -81,7 +81,9 @@ fn do_parse_aam(i: &str) -> Result<AamData, Error> {
         perpendicular_passed,
         arrival_circle_radius,
         radius_units,
-        waypoint_id: waypoint_id.map(array_string::<MAX_LEN>).transpose()?,
+        waypoint_id: waypoint_id
+            .map(array_string::<TEXT_PARAMETER_MAX_LEN>)
+            .transpose()?,
     })
 }
 

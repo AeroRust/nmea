@@ -3,12 +3,12 @@ use chrono::{Duration, NaiveTime};
 use nom::{bytes::complete::is_not, character::complete::char, combinator::opt};
 
 use crate::{
-    parse::NmeaSentence,
+    parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
     sentences::utils::{parse_duration_hms, parse_hms},
     Error, SentenceType,
 };
 
-const MAX_LEN: usize = 64;
+use super::utils::array_string;
 
 /// ZTG - UTC & Time to Destination Waypoint
 ///```text
@@ -25,7 +25,7 @@ const MAX_LEN: usize = 64;
 pub struct ZtgData {
     pub fix_time: Option<NaiveTime>,
     pub fix_duration: Option<Duration>,
-    pub waypoint_id: Option<ArrayString<MAX_LEN>>,
+    pub waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 
 fn do_parse_ztg(i: &str) -> Result<ZtgData, Error> {
@@ -39,16 +39,9 @@ fn do_parse_ztg(i: &str) -> Result<ZtgData, Error> {
     // 12. Waypoint ID
     let (_i, waypoint_id) = opt(is_not(",*"))(i)?;
 
-    let waypoint_id = if let Some(waypoint_id) = waypoint_id {
-        Some(
-            ArrayString::from(waypoint_id).map_err(|_e| Error::ParameterLength {
-                max_length: MAX_LEN,
-                parameter_length: waypoint_id.len(),
-            })?,
-        )
-    } else {
-        None
-    };
+    let waypoint_id = waypoint_id
+        .map(array_string::<TEXT_PARAMETER_MAX_LEN>)
+        .transpose()?;
 
     Ok(ZtgData {
         fix_time,

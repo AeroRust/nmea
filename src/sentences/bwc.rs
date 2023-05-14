@@ -5,12 +5,10 @@ use nom::{
 };
 
 use crate::{
-    parse::NmeaSentence,
+    parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
     sentences::utils::{parse_hms, parse_lat_lon},
     Error, SentenceType,
 };
-
-const MAX_LEN: usize = 64;
 
 /// BWC - Bearing & Distance to Waypoint - Great Circle
 ///
@@ -30,7 +28,7 @@ pub struct BwcData {
     pub true_bearing: Option<f32>,
     pub magnetic_bearing: Option<f32>,
     pub distance: Option<f32>,
-    pub waypoint_id: Option<ArrayString<MAX_LEN>>,
+    pub waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 
 /// BWC - Bearing & Distance to Waypoint - Great Circle

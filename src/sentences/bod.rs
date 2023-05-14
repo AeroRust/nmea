@@ -9,8 +9,6 @@ use nom::{
     sequence::preceded,
 };
 
-const MAX_LEN: usize = 64;
-
 /// BOD - Bearing - Waypoint to Waypoint
 ///
 /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_bod_bearing_waypoint_to_waypoint>
@@ -24,8 +22,8 @@ const MAX_LEN: usize = 64;
 pub struct BodData {
     pub bearing_true: Option<f32>,
     pub bearing_magnetic: Option<f32>,
-    pub to_waypoint: Option<ArrayString<MAX_LEN>>,
-    pub from_waypoint: Option<ArrayString<MAX_LEN>>,
+    pub to_waypoint: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
+    pub from_waypoint: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 
 /// BOD - Bearing - Waypoint to Waypoint
@@ -63,8 +61,12 @@ fn do_parse_bod(i: &str) -> Result<BodData, Error> {
     Ok(BodData {
         bearing_true,
         bearing_magnetic,
-        to_waypoint: to_waypoint.map(array_string::<MAX_LEN>).transpose()?,
-        from_waypoint: from_waypoint.map(array_string::<MAX_LEN>).transpose()?,
+        to_waypoint: to_waypoint
+            .map(array_string::<TEXT_PARAMETER_MAX_LEN>)
+            .transpose()?,
+        from_waypoint: from_waypoint
+            .map(array_string::<TEXT_PARAMETER_MAX_LEN>)
+            .transpose()?,
     })
 }
 
