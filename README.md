@@ -31,6 +31,8 @@ NMEA Standard Sentences
 - VHW
 - VTG *
 - ZDA
+- ZFO
+- ZTG
 
 Other Sentences
 - TXT *

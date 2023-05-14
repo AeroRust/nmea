@@ -1,7 +1,7 @@
 use core::str;
 
 use arrayvec::ArrayString;
-use chrono::{NaiveDate, NaiveTime};
+use chrono::{Duration, NaiveDate, NaiveTime};
 use nom::{
     branch::alt,
     bytes::complete::{tag, take, take_until},
@@ -45,6 +45,49 @@ pub(crate) fn parse_hms(i: &str) -> IResult<&str, NaiveTime> {
                 (sec.fract() * 1_000_000_000f64).round() as u32,
             )
             .ok_or("Invalid time")
+        },
+    )(i)
+}
+
+/// The number of milliseconds in a second.
+const MILLISECS_PER_SECOND: u32 = 1000;
+/// The number of milliseconds in a minute.
+const MILLISECS_PER_MINUTE: u32 = 60000;
+/// The number of milliseconds in a hour.
+const MILLISECS_PER_HOUR: u32 = 3600000;
+
+pub(crate) fn parse_duration_hms(i: &str) -> IResult<&str, Duration> {
+    map_res(
+        tuple((
+            map_res(take(2usize), parse_num::<u8>),
+            map_res(take(2usize), parse_num::<u8>),
+            map_parser(take_until(","), float),
+        )),
+        |(hours, minutes, seconds)| -> core::result::Result<Duration, &'static str> {
+            if hours >= 24 {
+                return Err("Invalid time: hours >= 24");
+            }
+            if minutes >= 60 {
+                return Err("Invalid time: minutes >= 60");
+            }
+            if !seconds.is_finite() {
+                return Err("Invalid time: seconds is not finite");
+            }
+            if seconds < 0.0 {
+                return Err("Invalid time: seconds is negative");
+            }
+            if seconds >= 60. {
+                return Err("Invalid time: seconds >= 60");
+            }
+
+            // We don't have to use checked operations as above checks limits number of milliseconds
+            // to value within i64 bounds.
+            Ok(Duration::milliseconds(
+                i64::from(hours) * i64::from(MILLISECS_PER_HOUR)
+                    + i64::from(minutes) * i64::from(MILLISECS_PER_MINUTE)
+                    + (seconds.trunc() as i64) * i64::from(MILLISECS_PER_SECOND)
+                    + (seconds.fract() * 1_000f32).round() as i64,
+            ))
         },
     )(i)
 }
@@ -198,6 +241,26 @@ mod tests {
         assert_eq!(time.minute(), 56);
         assert_eq!(time.second(), 19);
         assert_eq!(time.nanosecond(), 500_000_000);
+    }
+
+    #[test]
+    fn test_parse_duration_hms() {
+        let (_, time) = parse_duration_hms("125619,").unwrap();
+        assert_eq!(time.num_hours(), 12);
+        assert_eq!(time.num_minutes(), 12 * 60 + 56);
+        assert_eq!(time.num_seconds(), 12 * 60 * 60 + 56 * 60 + 19);
+        assert_eq!(
+            time.num_nanoseconds().unwrap(),
+            (12 * 60 * 60 + 56 * 60 + 19) * 1_000_000_000
+        );
+        let (_, time) = parse_duration_hms("125619.5,").unwrap();
+        assert_eq!(time.num_hours(), 12);
+        assert_eq!(time.num_minutes(), 12 * 60 + 56);
+        assert_eq!(time.num_seconds(), 12 * 60 * 60 + 56 * 60 + 19);
+        assert_eq!(
+            time.num_nanoseconds().unwrap(),
+            (12 * 60 * 60 + 56 * 60 + 19) * 1_000_000_000 + 500_000_000
+        );
     }
 
     #[test]
