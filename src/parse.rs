@@ -186,9 +186,11 @@ pub fn parse_str(sentence_input: &str) -> Result<ParseResult, Error> {
 
     if nmea_sentence.checksum == calculated_checksum {
         match nmea_sentence.message_id {
+            SentenceType::AAM => parse_aam(nmea_sentence).map(ParseResult::AAM),
             SentenceType::ALM => parse_alm(nmea_sentence).map(ParseResult::ALM),
             SentenceType::BOD => parse_bod(nmea_sentence).map(ParseResult::BOD),
             SentenceType::BWC => parse_bwc(nmea_sentence).map(ParseResult::BWC),
+            SentenceType::DBK => parse_dbk(nmea_sentence).map(ParseResult::DBK),
             SentenceType::BWW => parse_bww(nmea_sentence).map(ParseResult::BWW),
             SentenceType::GBS => parse_gbs(nmea_sentence).map(ParseResult::GBS),
             SentenceType::GGA => parse_gga(nmea_sentence).map(ParseResult::GGA),
@@ -202,6 +204,7 @@ pub fn parse_str(sentence_input: &str) -> Result<ParseResult, Error> {
             SentenceType::TXT => parse_txt(nmea_sentence).map(ParseResult::TXT),
             SentenceType::GNS => parse_gns(nmea_sentence).map(ParseResult::GNS),
             SentenceType::MDA => parse_mda(nmea_sentence).map(ParseResult::MDA),
+            SentenceType::MTW => parse_mtw(nmea_sentence).map(ParseResult::MTW),
             SentenceType::MWV => parse_mwv(nmea_sentence).map(ParseResult::MWV),
             SentenceType::RMZ => parse_pgrmz(nmea_sentence).map(ParseResult::PGRMZ),
             SentenceType::ZDA => parse_zda(nmea_sentence).map(ParseResult::ZDA),
