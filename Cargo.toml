@@ -35,6 +35,8 @@ nom = { version = "7.1.1", default-features = false }
 # because of `fract()` and `trunc()` methods
 num-traits = { version = "0.2", default-features = false }
 
+cfg-if = "1"
+
 [dev-dependencies]
 approx = "0.5.1"
 doc-comment = "0.3"
@@ -43,8 +45,111 @@ quickcheck = { version = "1.0.3", default-features = false }
 criterion = "0.4"
 
 [features]
-default = ["std"]
+default = ["std", "all-sentences"]
 std = ["nom/std", "chrono/std", "arrayvec/std"]
+
+
+all-sentences = ["GNSS", "waypoint", "maritime", "water", "vendor-specific", "other"]
+# GNSS specific sentences related to the possition or speed relative to the ground
+GNSS = ["ALM", "GBS", "GGA", "GLL", "GNS", "GSA", "GSV", "RMC", "VTG"]
+
+waypoint = ["AAM", "BOD", "BWC", "BWW", "ZFO", "ZTG"]
+maritime = ["waypoint", "water"]
+water = ["DBK", "MTW", "VHW"]
+vendor-specific = ["RMZ"]
+other = ["HDT", "MDA", "MWV", "TXT", "ZDA"]
+
+# AAM - Waypoint Arrival Alarm
+# feature: waypoint
+AAM = []
+
+# ALM - GPS Almanac Data
+# feature: GNSS
+ALM = []
+
+# BOD - Bearing - Waypoint to Waypoint
+# feature: waypoint
+BOD = []
+
+# BWC - Bearing & Distance to Waypoint - Great Circle
+# feature: waypoint
+BWC = []
+
+# BWW - Bearing - Waypoint to Waypoint
+# feature: waypoint
+BWW = []
+
+# DBK - Depth Below Keel
+# feature: water
+DBK = []
+
+# GBS - GPS Satellite Fault Detection
+# feature: GNSS
+GBS = []
+
+# GGA - Global Positioning System Fix Data
+# feature: GNSS
+GGA = []
+
+# GLL - Geographic Position - Latitude/Longitude
+# feature: GNSS
+GLL = []
+
+# GNS - Fix data
+# feature: GNSS
+GNS = []
+
+# GSA - GPS DOP and active satellites
+# feature: GNSS
+GSA = []
+
+# GSV - Satellites in view
+# feature: GNSS
+GSV = []
+
+# HDT - Heading - True
+HDT = []
+
+# MDA - Meterological Composite
+MDA = []
+
+# MTW - Mean Temperature of Water
+# feature: water
+MTW = []
+
+# MWV - Wind Speed and Angle
+MWV = []
+
+# RMC - Recommended Minimum Navigation Information
+# feature: GNSS
+RMC = []
+
+# PGRMZ - Garmin Altitude (Vendor specific)
+# feature: vendor-specific
+RMZ = []
+
+# TXT - Text message
+TXT = []
+
+# VHW - Water speed and heading
+# feature: water
+VHW = []
+
+# VTG - Track made good and Ground speed
+# feature: GNSS
+VTG = []
+
+# ZDA - Time & Date - UTC, day, month, year and local time zone
+ZDA = []
+
+# ZFO - UTC & Time from origin Waypoint
+# feature: waypoint
+ZFO = []
+
+# ZTG - UTC & Time to Destination Waypoint
+# feature: waypoint
+ZTG = []
+
 
 [[bench]]
 name = "nom_parsing"
