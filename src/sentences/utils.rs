@@ -18,7 +18,7 @@ use num_traits::float::FloatCore;
 
 use crate::Error;
 
-pub(crate) fn parse_hms(i: &str) -> IResult<&str, NaiveTime> {
+pub fn parse_hms(i: &str) -> IResult<&str, NaiveTime> {
     map_res(
         tuple((
             map_res(take(2usize), parse_num::<u32>),
@@ -56,7 +56,8 @@ const MILLISECS_PER_MINUTE: u32 = 60000;
 /// The number of milliseconds in a hour.
 const MILLISECS_PER_HOUR: u32 = 3600000;
 
-pub(crate) fn parse_duration_hms(i: &str) -> IResult<&str, Duration> {
+/// Parses values like `125619,` and `125619.5,` to [`Duration`]
+pub fn parse_duration_hms(i: &str) -> IResult<&str, Duration> {
     map_res(
         tuple((
             map_res(take(2usize), parse_num::<u8>),
