@@ -3,12 +3,10 @@ use chrono::{Duration, NaiveTime};
 use nom::{bytes::complete::is_not, character::complete::char, combinator::opt};
 
 use crate::{
-    parse::NmeaSentence,
-    sentences::utils::{parse_duration_hms, parse_hms},
+    parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
+    sentences::utils::{array_string, parse_duration_hms, parse_hms},
     Error, SentenceType,
 };
-
-const MAX_LEN: usize = 64;
 
 /// ZFO - UTC & Time from origin Waypoint
 ///```text
@@ -25,7 +23,7 @@ const MAX_LEN: usize = 64;
 pub struct ZfoData {
     pub fix_time: Option<NaiveTime>,
     pub fix_duration: Option<Duration>,
-    pub waypoint_id: Option<ArrayString<MAX_LEN>>,
+    pub waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 
 fn do_parse_zfo(i: &str) -> Result<ZfoData, Error> {
@@ -39,16 +37,9 @@ fn do_parse_zfo(i: &str) -> Result<ZfoData, Error> {
     // 12. Waypoint ID
     let (_i, waypoint_id) = opt(is_not(",*"))(i)?;
 
-    let waypoint_id = if let Some(waypoint_id) = waypoint_id {
-        Some(
-            ArrayString::from(waypoint_id).map_err(|_e| Error::ParameterLength {
-                max_length: MAX_LEN,
-                parameter_length: waypoint_id.len(),
-            })?,
-        )
-    } else {
-        None
-    };
+    let waypoint_id = waypoint_id
+        .map(array_string::<TEXT_PARAMETER_MAX_LEN>)
+        .transpose()?;
 
     Ok(ZfoData {
         fix_time,

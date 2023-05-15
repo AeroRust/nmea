@@ -29,6 +29,9 @@ use crate::{sentences::*, Error, SentenceType};
 /// a 100-character PSTI message.
 pub const SENTENCE_MAX_LEN: usize = 102;
 
+/// Maximum length of a single waypoint id data in sentence
+pub const TEXT_PARAMETER_MAX_LEN: usize = 64;
+
 /// A known and parsable Nmea sentence type.
 pub struct NmeaSentence<'a> {
     pub talker_id: &'a str,

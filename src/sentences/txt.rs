@@ -2,9 +2,10 @@ use arrayvec::ArrayString;
 use nom::{bytes::complete::take_while, character::complete::char, IResult};
 
 use super::utils::number;
-use crate::{parse::NmeaSentence, Error, SentenceType};
-
-const MAX_LEN: usize = 64;
+use crate::{
+    parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
+    Error, SentenceType,
+};
 
 /// Parse TXT message from u-blox device
 ///
@@ -24,7 +25,10 @@ pub fn parse_txt(s: NmeaSentence) -> Result<TxtData, Error> {
 
     let ret = do_parse_txt(s.data).map_err(Error::ParsingError)?.1;
 
-    let text = ArrayString::from(ret.text).map_err(|_e| Error::SentenceLength(ret.text.len()))?;
+    let text = ArrayString::from(ret.text).map_err(|_e| Error::ParameterLength {
+        max_length: TEXT_PARAMETER_MAX_LEN,
+        parameter_length: ret.text.len(),
+    })?;
 
     Ok(TxtData {
         count: ret.count,
@@ -64,7 +68,7 @@ pub struct TxtData {
     pub count: u8,
     pub seq: u8,
     pub text_ident: u8,
-    pub text: ArrayString<MAX_LEN>,
+    pub text: ArrayString<TEXT_PARAMETER_MAX_LEN>,
 }
 
 struct TxtData0<'a> {

@@ -3,9 +3,12 @@ use nom::{
     bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
 };
 
-use crate::{parse::NmeaSentence, Error, SentenceType};
+use crate::{
+    parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
+    Error, SentenceType,
+};
 
-const MAX_LEN: usize = 64;
+use super::utils::array_string;
 
 /// BWW - Bearing - Waypoint to Waypoint
 ///
@@ -30,8 +33,8 @@ const MAX_LEN: usize = 64;
 pub struct BwwData {
     pub true_bearing: Option<f32>,
     pub magnetic_bearing: Option<f32>,
-    pub to_waypoint_id: Option<ArrayString<MAX_LEN>>,
-    pub from_waypoint_id: Option<ArrayString<MAX_LEN>>,
+    pub to_waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
+    pub from_waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 
 fn do_parse_bww(i: &str) -> Result<BwwData, Error> {
@@ -52,31 +55,17 @@ fn do_parse_bww(i: &str) -> Result<BwwData, Error> {
     // 5. TO Waypoint ID
     let (i, to_waypoint_id) = opt(is_not(","))(i)?;
 
-    let to_waypoint_id = if let Some(to_waypoint_id) = to_waypoint_id {
-        Some(
-            ArrayString::from(to_waypoint_id).map_err(|_e| Error::ParameterLength {
-                max_length: MAX_LEN,
-                parameter_length: to_waypoint_id.len(),
-            })?,
-        )
-    } else {
-        None
-    };
+    let to_waypoint_id = to_waypoint_id
+        .map(array_string::<TEXT_PARAMETER_MAX_LEN>)
+        .transpose()?;
 
     // 6. FROM Waypoint ID
     let (i, _) = char(',')(i)?;
     let (_i, from_waypoint_id) = opt(is_not(",*"))(i)?;
 
-    let from_waypoint_id = if let Some(from_waypoint_id) = from_waypoint_id {
-        Some(
-            ArrayString::from(from_waypoint_id).map_err(|_e| Error::ParameterLength {
-                max_length: MAX_LEN,
-                parameter_length: from_waypoint_id.len(),
-            })?,
-        )
-    } else {
-        None
-    };
+    let from_waypoint_id = from_waypoint_id
+        .map(array_string::<TEXT_PARAMETER_MAX_LEN>)
+        .transpose()?;
 
     Ok(BwwData {
         true_bearing,
