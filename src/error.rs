@@ -37,6 +37,9 @@ pub enum Error<'a> {
     InvalidGsvSentenceNum,
     /// An unknown talker ID was found in the NMEA message.
     UnknownTalkerId { expected: &'a str, found: &'a str },
+    /// The current sentences is parsable but the feature has been disabled.
+    // TODO: Add sentences and data?!
+    DisabledSentence,
 }
 
 impl<'a> From<nom::Err<nom::error::Error<&'a str>>> for Error<'a> {
@@ -94,13 +97,16 @@ impl<'a> fmt::Display for Error<'a> {
             ),
             Error::InvalidGsvSentenceNum => write!(
                 f,
-                "Invalid senetence number field in nmea sentence of type GSV"
+                "Invalid sentence number field in nmea sentence of type GSV"
             ),
             Error::UnknownTalkerId { expected, found } => write!(
                 f,
                 "Unknown Talker ID (expected = '{}', found = '{}')",
                 expected, found
             ),
+            Error::DisabledSentence => {
+                write!(f, "Sentence is parsable but it's feature is disabled",)
+            }
         }
     }
 }

@@ -8,6 +8,8 @@ use nom::{
     IResult,
 };
 
+use cfg_if::cfg_if;
+
 use crate::{sentences::*, Error, SentenceType};
 
 /// The maximum message length parsable by the crate.
@@ -185,31 +187,224 @@ pub fn parse_str(sentence_input: &str) -> Result<ParseResult, Error> {
     let calculated_checksum = nmea_sentence.calc_checksum();
 
     if nmea_sentence.checksum == calculated_checksum {
+        // Ordered alphabetically
         match nmea_sentence.message_id {
-            SentenceType::AAM => parse_aam(nmea_sentence).map(ParseResult::AAM),
-            SentenceType::ALM => parse_alm(nmea_sentence).map(ParseResult::ALM),
-            SentenceType::BOD => parse_bod(nmea_sentence).map(ParseResult::BOD),
-            SentenceType::BWC => parse_bwc(nmea_sentence).map(ParseResult::BWC),
-            SentenceType::DBK => parse_dbk(nmea_sentence).map(ParseResult::DBK),
-            SentenceType::BWW => parse_bww(nmea_sentence).map(ParseResult::BWW),
-            SentenceType::GBS => parse_gbs(nmea_sentence).map(ParseResult::GBS),
-            SentenceType::GGA => parse_gga(nmea_sentence).map(ParseResult::GGA),
-            SentenceType::GSV => parse_gsv(nmea_sentence).map(ParseResult::GSV),
-            SentenceType::HDT => parse_hdt(nmea_sentence).map(ParseResult::HDT),
-            SentenceType::RMC => parse_rmc(nmea_sentence).map(ParseResult::RMC),
-            SentenceType::GSA => parse_gsa(nmea_sentence).map(ParseResult::GSA),
-            SentenceType::VTG => parse_vtg(nmea_sentence).map(ParseResult::VTG),
-            SentenceType::VHW => parse_vhw(nmea_sentence).map(ParseResult::VHW),
-            SentenceType::GLL => parse_gll(nmea_sentence).map(ParseResult::GLL),
-            SentenceType::TXT => parse_txt(nmea_sentence).map(ParseResult::TXT),
-            SentenceType::GNS => parse_gns(nmea_sentence).map(ParseResult::GNS),
-            SentenceType::MDA => parse_mda(nmea_sentence).map(ParseResult::MDA),
-            SentenceType::MTW => parse_mtw(nmea_sentence).map(ParseResult::MTW),
-            SentenceType::MWV => parse_mwv(nmea_sentence).map(ParseResult::MWV),
-            SentenceType::RMZ => parse_pgrmz(nmea_sentence).map(ParseResult::PGRMZ),
-            SentenceType::ZDA => parse_zda(nmea_sentence).map(ParseResult::ZDA),
-            SentenceType::ZFO => parse_zfo(nmea_sentence).map(ParseResult::ZFO),
-            SentenceType::ZTG => parse_ztg(nmea_sentence).map(ParseResult::ZTG),
+            SentenceType::AAM => {
+                cfg_if! {
+                    if #[cfg(feature = "AAM")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                        parse_aam(nmea_sentence).map(ParseResult::AAM)
+                    }
+                }
+            }
+            SentenceType::ALM => {
+                cfg_if! {
+                    if #[cfg(feature = "ALM")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                        parse_alm(nmea_sentence).map(ParseResult::ALM)
+                    }
+                }
+            }
+            SentenceType::BOD => {
+                cfg_if! {
+                    if #[cfg(feature = "BOD")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                parse_bod(nmea_sentence).map(ParseResult::BOD)
+                    }
+                }
+            }
+            SentenceType::BWC => {
+                cfg_if! {
+                    if #[cfg(feature = "BWC")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                    parse_bwc(nmea_sentence).map(ParseResult::BWC)
+                    }
+                }
+            }
+            SentenceType::BWW => {
+                cfg_if! {
+                    if #[cfg(feature = "BWW")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                        parse_bww(nmea_sentence).map(ParseResult::BWW)
+                    }
+                }
+            }
+            SentenceType::DBK => {
+                cfg_if! {
+                    if #[cfg(feature = "DBK")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                        parse_dbk(nmea_sentence).map(Into::into)
+                    }
+                }
+            }
+            SentenceType::GBS => {
+                cfg_if! {
+                    if #[cfg(feature = "GBS")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                        parse_gbs(nmea_sentence).map(ParseResult::GBS)
+                    }
+                }
+            }
+            SentenceType::GGA => {
+                cfg_if! {
+                    if #[cfg(feature = "GGA")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                        parse_gga(nmea_sentence).map(ParseResult::GGA)
+                    }
+                }
+            }
+            SentenceType::GLL => {
+                cfg_if! {
+                    if #[cfg(feature = "GLL")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                        parse_gll(nmea_sentence).map(ParseResult::GLL)
+                    }
+                }
+            }
+            SentenceType::GNS => {
+                cfg_if! {
+                    if #[cfg(feature = "GNS")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                        parse_gns(nmea_sentence).map(ParseResult::GNS)
+                    }
+                }
+            }
+            SentenceType::GSA => {
+                cfg_if! {
+                    if #[cfg(feature = "GSA")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                        parse_gsa(nmea_sentence).map(ParseResult::GSA)
+                    }
+                }
+            }
+            SentenceType::GSV => {
+                cfg_if! {
+                    if #[cfg(feature = "GSV")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                        parse_gsv(nmea_sentence).map(ParseResult::GSV)
+                    }
+                }
+            }
+            SentenceType::HDT => {
+                cfg_if! {
+                    if #[cfg(feature = "HDT")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                        parse_hdt(nmea_sentence).map(ParseResult::HDT)
+                    }
+                }
+            }
+            SentenceType::MDA => {
+                cfg_if! {
+                    if #[cfg(feature = "MDA")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                        parse_mda(nmea_sentence).map(ParseResult::MDA)
+                    }
+                }
+            }
+            SentenceType::MTW => {
+                cfg_if! {
+                    if #[cfg(feature = "MTW")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                        parse_mtw(nmea_sentence).map(ParseResult::MTW)
+                    }
+                }
+            }
+            SentenceType::MWV => {
+                cfg_if! {
+                    if #[cfg(feature = "MWV")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                        parse_mwv(nmea_sentence).map(ParseResult::MWV)
+                    }
+                }
+            }
+            SentenceType::RMC => {
+                cfg_if! {
+                    if #[cfg(feature = "RMC")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                        parse_rmc(nmea_sentence).map(ParseResult::RMC)
+                    }
+                }
+            }
+            SentenceType::RMZ => {
+                cfg_if! {
+                    if #[cfg(feature = "RMZ")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                        parse_pgrmz(nmea_sentence).map(ParseResult::PGRMZ)
+                    }
+                }
+            }
+            SentenceType::TXT => {
+                cfg_if! {
+                    if #[cfg(feature = "TXT")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                        parse_txt(nmea_sentence).map(ParseResult::TXT)
+                    }
+                }
+            }
+            SentenceType::VHW => {
+                cfg_if! {
+                    if #[cfg(feature = "VHW")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                        parse_vhw(nmea_sentence).map(ParseResult::VHW)
+                    }
+                }
+            }
+            SentenceType::VTG => {
+                cfg_if! {
+                    if #[cfg(feature = "VTG")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                        parse_vtg(nmea_sentence).map(ParseResult::VTG)
+                    }
+                }
+            }
+            SentenceType::ZDA => {
+                cfg_if! {
+                    if #[cfg(feature = "ZDA")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                        parse_zda(nmea_sentence).map(ParseResult::ZDA)
+                    }
+                }
+            }
+            SentenceType::ZFO => {
+                cfg_if! {
+                    if #[cfg(feature = "ZFO")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                        parse_zfo(nmea_sentence).map(ParseResult::ZFO)
+                    }
+                }
+            }
+            SentenceType::ZTG => {
+                cfg_if! {
+                    if #[cfg(feature = "ZTG")] {
+                        return Err(Error::DisabledSentence);
+                    } else {
+                        parse_ztg(nmea_sentence).map(ParseResult::ZTG)
+                    }
+                }
+            }
             sentence_type => Ok(ParseResult::Unsupported(sentence_type)),
         }
     } else {
