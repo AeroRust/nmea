@@ -5,7 +5,11 @@ use core::{fmt, mem, ops::BitOr};
 use chrono::{NaiveDate, NaiveTime};
 use heapless::{Deque, Vec};
 
-use crate::{parse_str, sentences::*, Error, ParseResult};
+use crate::{
+    parse_str,
+    sentences::{rmc::RmcStatusOfFix, *},
+    Error, ParseResult,
+};
 
 /// NMEA parser
 ///
