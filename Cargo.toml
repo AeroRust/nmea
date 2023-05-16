@@ -150,6 +150,17 @@ ZFO = []
 # feature: waypoint
 ZTG = []
 
+[[test]]
+name = "all_supported_messages"
+required-features = ["all-sentences"]
+
+[[test]]
+name = "file_log_parser"
+required-features = ["all-sentences"]
+
+[[test]]
+name = "functional_tests"
+required-features = ["all-sentences"]
 
 [[bench]]
 name = "nom_parsing"

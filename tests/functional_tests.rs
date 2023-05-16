@@ -414,7 +414,8 @@ fn test_nmea_parse_for_fix() {
 }
 
 #[test]
-fn test_some_reciever() {
+#[cfg(all(feature = "RMC", feature = "GGA", feature = "GSA", feature = "ZDA"))]
+fn test_some_receiver() {
     let lines = [
         "$GPRMC,171724.000,A,6847.2474,N,03245.8351,E,0.26,140.74,250317,,*02",
         "$GPGGA,171725.000,6847.2473,N,03245.8351,E,1,08,1.0,87.7,M,18.5,M,,0000*66",
