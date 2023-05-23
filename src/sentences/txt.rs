@@ -1,5 +1,6 @@
 use arrayvec::ArrayString;
 use nom::{bytes::complete::take_while, character::complete::char, IResult};
+use serde::Serialize;
 
 use super::utils::number;
 use crate::{
@@ -63,7 +64,7 @@ fn do_parse_txt(i: &str) -> IResult<&str, TxtData0<'_>> {
 }
 
 /// TXT - Text
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Serialize, Clone, Copy, Debug, PartialEq, Eq)]
 pub struct TxtData {
     pub count: u8,
     pub seq: u8,

@@ -2,11 +2,12 @@ use nom::{
     character::complete::{char, one_of},
     IResult,
 };
+use serde::Serialize;
 
 use crate::sentences::utils::number;
 use crate::{parse::NmeaSentence, Error, SentenceType};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PgrmzFixType {
     NoFix,
     TwoDimensional,
@@ -29,7 +30,7 @@ pub enum PgrmzFixType {
 /// 4. Checksum
 ///
 /// Example: `$PGRMZ,2282,f,3*21`
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PgrmzData {
     /// Current altitude in feet
     pub altitude: u32,

@@ -5,6 +5,7 @@ use nom::{
     number::complete::float,
     IResult,
 };
+use serde::Serialize;
 
 use crate::{
     parse::NmeaSentence,
@@ -14,14 +15,14 @@ use crate::{
 
 use super::{faa_mode::parse_faa_mode, utils::parse_magnetic_variation, FaaMode};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RmcStatusOfFix {
     Autonomous,
     Differential,
     Invalid,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RmcNavigationStatus {
     Autonomous,
     Differential,
@@ -72,7 +73,7 @@ pub enum RmcNavigationStatus {
 /// 13. Nav Status (NMEA 4.1 and later)
 ///     `A` = autonomous, `D` = differential, `E` = Estimated,
 ///     `M` = Manual input mode, `N` = not valid, `S` = Simulator, `V` = Valid
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Serialize, Debug, Clone, Copy, PartialEq)]
 pub struct RmcData {
     pub fix_time: Option<NaiveTime>,
     pub fix_date: Option<NaiveDate>,

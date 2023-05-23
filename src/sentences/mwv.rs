@@ -5,6 +5,7 @@ use nom::{
     sequence::preceded,
     IResult,
 };
+use serde::Serialize;
 
 use crate::{parse::NmeaSentence, Error, SentenceType};
 
@@ -17,7 +18,7 @@ use crate::{parse::NmeaSentence, Error, SentenceType};
 ///        |   | |   | |
 /// $--MWV,x.x,a,x.x,a*hh<CR><LF>
 /// ```
-#[derive(Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct MwvData {
     pub wind_direction: Option<f32>,
     pub reference: Option<MwvReference>,
@@ -26,13 +27,13 @@ pub struct MwvData {
     pub data_valid: bool,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MwvReference {
     Relative,
     Theoretical,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MwvWindSpeedUnits {
     KilometersPerHour,
     MetersPerSecond,

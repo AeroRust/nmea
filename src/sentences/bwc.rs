@@ -3,6 +3,7 @@ use chrono::NaiveTime;
 use nom::{
     bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
 };
+use serde::Serialize;
 
 use crate::{
     parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
@@ -20,7 +21,7 @@ use crate::{
 ///         |         |       | |        | |   | |   | |   | |    |   |
 /// $--BWC,hhmmss.ss,llll.ll,a,yyyyy.yy,a,x.x,T,x.x,M,x.x,N,c--c,m,*hh<CR><LF>
 /// ```
-#[derive(Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct BwcData {
     pub fix_time: Option<NaiveTime>,
     pub latitude: Option<f64>,

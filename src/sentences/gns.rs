@@ -7,6 +7,7 @@ use nom::{
     sequence::preceded,
     IResult,
 };
+use serde::Serialize;
 
 use super::{
     faa_mode::parse_faa_modes,
@@ -24,7 +25,7 @@ use crate::{parse::NmeaSentence, Error, SentenceType};
 ///        |         |       | |        | |    |  |   |   |   |   |   |
 /// $--GNS,hhmmss.ss,ddmm.mm,a,dddmm.mm,a,c--c,xx,x.x,x.x,x.x,x.x,x.x*hh
 /// ```
-#[derive(Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct GnsData {
     pub fix_time: Option<NaiveTime>,
     pub lat: Option<f64>,
@@ -37,7 +38,7 @@ pub struct GnsData {
     pub nav_status: Option<NavigationStatus>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Serialize, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum NavigationStatus {
     Safe,
     Caution,

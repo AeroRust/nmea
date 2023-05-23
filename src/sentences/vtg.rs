@@ -1,4 +1,5 @@
 use nom::{character::complete::char, combinator::opt, number::complete::float, IResult};
+use serde::Serialize;
 
 use crate::{parse::NmeaSentence, Error, SentenceType};
 
@@ -17,7 +18,7 @@ use crate::{parse::NmeaSentence, Error, SentenceType};
 /// ```text
 ///  $--VTG,x.x,T,x.x,M,x.x,N,x.x,K,m*hh<CR><LF>
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Serialize, Debug, Clone, Copy, PartialEq)]
 pub struct VtgData {
     pub true_course: Option<f32>,
     pub speed_over_ground: Option<f32>,

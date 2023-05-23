@@ -1,6 +1,6 @@
-use core::fmt;
-
 use crate::count_tts;
+use core::fmt;
+use serde::Serialize;
 
 macro_rules! define_enum_with_count {
     (
@@ -11,7 +11,7 @@ macro_rules! define_enum_with_count {
         ),* $(,)* }
     ) => {
         $(#[$outer])*
-        #[derive(PartialEq, Debug, Hash, Eq, Clone, Copy)]
+        #[derive(Serialize,PartialEq, Debug, Hash, Eq, Clone, Copy)]
         #[repr(u8)]
         pub enum $Name {
             $($Variant),*

@@ -9,16 +9,17 @@ use nom::{
     sequence::terminated,
     Err, IResult, InputLength, Parser,
 };
+use serde::Serialize;
 
 use crate::{parse::NmeaSentence, sentences::utils::number, Error, SentenceType};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GsaMode1 {
     Manual,
     Automatic,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GsaMode2 {
     NoFix,
     Fix2D,
@@ -34,7 +35,7 @@ pub enum GsaMode2 {
 ///        | | |                         |  |   |   |   |
 /// $--GSA,a,a,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x.x,x.x,x.x*hh<CR><LF>
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Serialize, Debug, Clone, PartialEq)]
 pub struct GsaData {
     pub mode1: GsaMode1,
     pub mode2: GsaMode2,

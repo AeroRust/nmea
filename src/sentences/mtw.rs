@@ -5,6 +5,7 @@ use nom::{
     sequence::preceded,
     IResult,
 };
+use serde::Serialize;
 
 use crate::{parse::NmeaSentence, Error, SentenceType};
 
@@ -20,12 +21,12 @@ use crate::{parse::NmeaSentence, Error, SentenceType};
 /// 1:  Temperature, degrees
 /// 2:  Unit of Measurement, (only) Celsius
 /// 3:  Mandatory NMEA checksum
-#[derive(Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct MtwData {
     pub temperature: Option<f64>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MtwUnit {
     Celsius,
 }

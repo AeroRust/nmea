@@ -7,6 +7,7 @@ use nom::{
     combinator::opt,
     number::complete::float,
 };
+use serde::Serialize;
 
 use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, SentenceType};
 
@@ -30,7 +31,7 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 /// Example: $GPAAM,A,A,0.10,N,WPTNME*43
 /// WPTNME is the waypoint name.
 /// ```
-#[derive(Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct AamData {
     pub arrival_circle_entered: Option<bool>,
     pub perpendicular_passed: Option<bool>,

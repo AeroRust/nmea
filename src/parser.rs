@@ -4,6 +4,7 @@ use core::{fmt, mem, ops::BitOr};
 
 use chrono::{NaiveDate, NaiveTime};
 use heapless::{Deque, Vec};
+use serde::Serialize;
 
 use crate::{parse_str, sentences::*, Error, ParseResult};
 
@@ -434,7 +435,7 @@ struct SatsPack {
     max_len: usize,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Serialize, Clone, PartialEq)]
 /// Satellite information
 pub struct Satellite {
     pub(crate) gnss_type: GnssType,
@@ -696,7 +697,7 @@ define_sentence_type_enum! {
     /// ### Vendor extensions
     ///
     /// - [`SentenceType::RMZ`]
-    #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
+    #[derive( Debug, Serialize, Hash, PartialEq, Eq, Clone, Copy)]
     #[repr(u32)]
     #[allow(rustdoc::bare_urls)]
     pub enum SentenceType {
@@ -1179,7 +1180,7 @@ define_sentence_type_enum! {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
+#[derive(Serialize, Copy, Clone, PartialEq, Eq, Debug, Default)]
 pub struct SentenceMask {
     mask: u128,
 }

@@ -7,6 +7,7 @@ use nom::{
     combinator::{map_res, opt},
     IResult,
 };
+use serde::Serialize;
 
 use crate::{Error, NmeaSentence, SentenceType};
 
@@ -44,7 +45,7 @@ use super::utils::number;
 /// 16. Checksum
 ///  
 ///  Fields 5 through 15 are dumped as raw hex.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AlmData {
     pub total_number_of_messages: Option<u16>,
     pub sentence_number: Option<u16>,

@@ -30,7 +30,7 @@ pub mod faa_mode;
 pub mod fix_type;
 pub mod gnss_type;
 
-pub(crate) use {
+pub use {
     aam::{parse_aam, AamData},
     alm::{parse_alm, AlmData},
     bod::{parse_bod, BodData},

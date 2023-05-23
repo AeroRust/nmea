@@ -1,5 +1,7 @@
+use serde::Serialize;
+
 /// Fix type
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Serialize, Copy, Clone, PartialEq, Eq, Debug)]
 pub enum FixType {
     Invalid,
     Gps,

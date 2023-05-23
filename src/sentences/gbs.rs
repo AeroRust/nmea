@@ -1,5 +1,6 @@
 use chrono::NaiveTime;
 use nom::{character::complete::char, combinator::opt, number::complete::float, IResult};
+use serde::Serialize;
 
 use crate::{
     parse::NmeaSentence,
@@ -16,7 +17,7 @@ use crate::{
 /// |      |   |   |   |   |   |   |   |
 /// $--GBS,hhmmss.ss,x.x,x.x,x.x,x.x,x.x,x.x,x.x*hh<CR><LF>
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Serialize, Debug, Clone, Copy, PartialEq)]
 pub struct GbsData {
     pub time: Option<NaiveTime>,
     pub lat_error: Option<f64>,

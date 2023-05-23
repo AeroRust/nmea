@@ -8,6 +8,7 @@ use nom::{
     number::complete::float,
     sequence::preceded,
 };
+use serde::Serialize;
 
 /// BOD - Bearing - Waypoint to Waypoint
 ///
@@ -18,7 +19,7 @@ use nom::{
 ///        |   | |   | |    |    |
 /// $--BOD,x.x,T,x.x,M,c--c,c--c*hh<CR><LF>
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Serialize, Debug, Clone, Copy, PartialEq)]
 pub struct BodData {
     pub bearing_true: Option<f32>,
     pub bearing_magnetic: Option<f32>,

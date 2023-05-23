@@ -4,6 +4,7 @@ use nom::{
     combinator::{map_res, opt},
     IResult,
 };
+use serde::Serialize;
 
 use super::utils::parse_float_num;
 use crate::{Error, NmeaSentence, SentenceType};
@@ -20,7 +21,7 @@ use crate::{Error, NmeaSentence, SentenceType};
 /// 1. Heading, degrees True
 /// 2. T = True
 /// 3. Checksum
-#[derive(Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct HdtData {
     /// Heading, degrees True
     pub heading: Option<f32>,

@@ -4,6 +4,7 @@ use nom::{
     combinator::{cond, opt, rest_len},
     IResult,
 };
+use serde::Serialize;
 
 use crate::{
     parse::NmeaSentence,
@@ -20,7 +21,7 @@ use crate::{
 ///        | | | | | | |     |
 /// $--GSV,x,x,x,x,x,x,x,...*hh<CR><LF>
 /// ```
-#[derive(Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct GsvData {
     pub gnss_type: GnssType,
     pub number_of_sentences: u16,
