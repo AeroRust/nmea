@@ -1,6 +1,6 @@
 [package]
 name = "nmea"
-version = "0.4.0"
+version = "0.4.1"
 
 authors = [
   "Felix Obenhuber <felix@obenhuber.de>",
@@ -33,7 +33,7 @@ nom = { version = "7.1.1", default-features = false }
 
 # we include num-traits only when `std` is not enabled
 # because of `fract()` and `trunc()` methods
-num-traits = { version = "0.2", default-features = false }
+num-traits = { version = "0.2", default-features = false, features = ["libm"]}
 
 [dev-dependencies]
 approx = "0.5.1"
