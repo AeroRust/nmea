@@ -6,7 +6,7 @@ use nom::{
     IResult,
 };
 
-use crate::{parse::NmeaSentence, Error, SentenceType};
+use crate::{parse::NmeaSentence, Error, ParseResult, SentenceType};
 
 /// DBK - Depth Below Keel
 ///
@@ -29,6 +29,12 @@ pub struct DbkData {
     pub depth_feet: Option<f64>,
     pub depth_meters: Option<f64>,
     pub depth_fathoms: Option<f64>,
+}
+
+impl From<DbkData> for ParseResult {
+    fn from(value: DbkData) -> Self {
+        ParseResult::DBK(value)
+    }
 }
 
 /// # Parse DBK message
