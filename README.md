@@ -71,7 +71,7 @@ Add the `nmea` dependency in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nmea = "0.4"
+nmea = "0.5"
 ```
 
 ### For `no_std`
@@ -81,7 +81,7 @@ just add the `nmea` crate without the default features:
 
 ```toml
 [dependencies]
-nmea = {version = "0.4", default-features = false}
+nmea = { version = "0.5", default-features = false }
 ```
 
 ### For Rust edition 2015
@@ -112,7 +112,7 @@ fn main() {
 
 ## Supported Rust Versions
 
-The Minimum supported Rust version (or MSRV) is **1.59**.
+The Minimum supported Rust version (or MSRV) is **1.60**.
 
 ## Unsafe-free crate
 
