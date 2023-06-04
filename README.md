@@ -84,13 +84,7 @@ just add the `nmea` crate without the default features:
 nmea = { version = "0.5", default-features = false }
 ```
 
-### For Rust edition 2015
-
-For Rust 2015 edition you should put this in your crate's `lib.rs` or `main.rs`:
-
-```rust
-extern crate nmea;
-```
+### Parse
 
 To use the NMEA parser create a `Nmea` struct and feed it with NMEA sentences (only supports `GNSS` messages, otherwise use the `parse_str()` and `parse_bytes()`):
 
