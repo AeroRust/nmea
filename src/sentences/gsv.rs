@@ -13,7 +13,7 @@ use crate::{
 
 /// GSV - Satellites in view
 ///
-/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gga_global_positioning_system_fix_data>
+/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gsv_satellites_in_view>
 ///
 /// ```text
 ///        1 2 3 4 5 6 7     n
