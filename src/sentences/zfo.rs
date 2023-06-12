@@ -1,7 +1,9 @@
 use arrayvec::ArrayString;
 use chrono::{Duration, NaiveTime};
 use nom::{bytes::complete::is_not, character::complete::char, combinator::opt};
-use serde::Serialize;
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 use crate::{
     parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
@@ -20,11 +22,12 @@ use crate::{
 /// 2. Elapsed Time
 /// 3. Origin Waypoint ID
 /// 4. Checksum
-#[serde_with::serde_as]
-#[derive(Serialize, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", serde_with::serde_as)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, PartialEq)]
 pub struct ZfoData {
     pub fix_time: Option<NaiveTime>,
-    #[serde_as(as = "Option<serde_with::DurationSeconds<i64>>")]
+    #[cfg_attr(feature = "serde", serde_as(as = "Option<serde_with::DurationSeconds<i64>>"))]
     pub fix_duration: Option<Duration>,
     pub waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }

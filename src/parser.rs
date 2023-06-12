@@ -4,7 +4,11 @@ use core::{fmt, mem, ops::BitOr};
 
 use chrono::{NaiveDate, NaiveTime};
 use heapless::{Deque, Vec};
-use serde::Serialize;
+
+#[cfg(feature = "serde")]
+use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Serialize};
+#[cfg(feature = "serde")]
+use std::marker::PhantomData;
 
 use crate::{parse_str, sentences::*, Error, ParseResult};
 
@@ -24,6 +28,7 @@ use crate::{parse_str, sentences::*, Error, ParseResult};
 /// nmea.parse(gga).unwrap();
 /// println!("{}", nmea);
 /// ```
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, Default)]
 pub struct Nmea {
     pub fix_time: Option<NaiveTime>,
@@ -423,6 +428,7 @@ impl fmt::Display for Nmea {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, Default)]
 struct SatsPack {
     /// max number of visible GNSS satellites per hemisphere, assuming global coverage
@@ -431,11 +437,70 @@ struct SatsPack {
     /// BeiDou: 12 + 3 IGSO + 3 GEO
     /// Galileo: 12
     /// => 58 total Satellites => max 15 rows of data
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_deque"))]
+    #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_deque"))]
     data: Deque<Vec<Option<Satellite>, 4>, 15>,
     max_len: usize,
 }
 
-#[derive(Serialize, Clone, PartialEq)]
+#[cfg(feature = "serde")]
+fn serialize_deque<S>(v: &Deque<Vec<Option<Satellite>, 4>, 15>, s: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    let mut seq = s.serialize_seq(Some(15))?;
+    for e in v.iter() {
+        seq.serialize_element(e)?;
+    }
+    seq.end()
+}
+
+#[cfg(feature = "serde")]
+struct DequeVisitor {
+    marker: PhantomData<fn() -> Deque<Vec<Option<Satellite>, 4>, 15>>,
+}
+
+#[cfg(feature = "serde")]
+impl DequeVisitor {
+    fn new() -> Self {
+        Self {
+            marker: PhantomData,
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> Visitor<'de> for DequeVisitor {
+    type Value = Deque<Vec<Option<Satellite>, 4>, 15>;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("deque")
+    }
+
+    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+    where
+        A: serde::de::SeqAccess<'de>,
+    {
+        let mut deq: Deque<Vec<Option<Satellite>, 4>, 15> = Deque::new();
+
+        while let Some(v) = seq.next_element()? {
+            deq.push_back(v).expect("Cannot deserialize");
+        }
+
+        Ok(deq)
+    }
+}
+
+#[cfg(feature = "serde")]
+fn deserialize_deque<'de, D>(d: D) -> Result<Deque<Vec<Option<Satellite>, 4>, 15>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    d.deserialize_seq(DequeVisitor::new())
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, PartialEq)]
 /// Satellite information
 pub struct Satellite {
     pub(crate) gnss_type: GnssType,
@@ -697,7 +762,8 @@ define_sentence_type_enum! {
     /// ### Vendor extensions
     ///
     /// - [`SentenceType::RMZ`]
-    #[derive( Debug, Serialize, Hash, PartialEq, Eq, Clone, Copy)]
+    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+    #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
     #[repr(u32)]
     #[allow(rustdoc::bare_urls)]
     pub enum SentenceType {
@@ -1180,7 +1246,8 @@ define_sentence_type_enum! {
     }
 }
 
-#[derive(Serialize, Copy, Clone, PartialEq, Eq, Debug, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
 pub struct SentenceMask {
     mask: u128,
 }

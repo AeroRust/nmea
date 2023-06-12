@@ -5,7 +5,9 @@ use nom::{
     sequence::preceded,
     IResult,
 };
-use serde::Serialize;
+
+#[cfg(feature = "serde")]
+use serde::{Serialize, Deserialize};
 
 use crate::{parse::NmeaSentence, Error, SentenceType};
 
@@ -25,7 +27,8 @@ use crate::{parse::NmeaSentence, Error, SentenceType};
 /// 5:    Depth, Fathoms
 /// 6:    F = Fathoms
 /// 7:    Mandatory NMEA checksum
-#[derive(Serialize, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, PartialEq)]
 pub struct DbkData {
     pub depth_feet: Option<f64>,
     pub depth_meters: Option<f64>,

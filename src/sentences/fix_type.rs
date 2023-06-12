@@ -1,7 +1,9 @@
-use serde::Serialize;
+#[cfg(feature = "serde")]
+use serde::{Serialize, Deserialize};
 
 /// Fix type
-#[derive(Serialize, Copy, Clone, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum FixType {
     Invalid,
     Gps,

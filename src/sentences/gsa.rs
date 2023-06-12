@@ -9,17 +9,21 @@ use nom::{
     sequence::terminated,
     Err, IResult, InputLength, Parser,
 };
-use serde::Serialize;
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 use crate::{parse::NmeaSentence, sentences::utils::number, Error, SentenceType};
 
-#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GsaMode1 {
     Manual,
     Automatic,
 }
 
-#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GsaMode2 {
     NoFix,
     Fix2D,
@@ -35,7 +39,8 @@ pub enum GsaMode2 {
 ///        | | |                         |  |   |   |   |
 /// $--GSA,a,a,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x.x,x.x,x.x*hh<CR><LF>
 /// ```
-#[derive(Serialize, Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GsaData {
     pub mode1: GsaMode1,
     pub mode2: GsaMode2,

@@ -1,10 +1,13 @@
 use nom::{character::complete::anychar, combinator::opt, IResult};
-use serde::Serialize;
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 use super::{nom_parse_failure, FixType};
 
 /// for now let's handle only two GPS and GLONASS
-#[derive(Serialize, Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct FaaModes {
     sys_state0: FaaMode,
     sys_state1: Option<FaaMode>,
@@ -25,7 +28,8 @@ impl From<FaaModes> for FixType {
     }
 }
 
-#[derive(Serialize, Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FaaMode {
     /// A - Autonomous mode
     Autonomous,

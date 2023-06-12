@@ -4,7 +4,9 @@ use nom::{
     combinator::opt,
     IResult,
 };
-use serde::Serialize;
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 use super::{faa_mode::parse_faa_mode, nom_parse_failure, FaaMode};
 use crate::{
@@ -29,7 +31,9 @@ use crate::{
 ///         |       | |        | |         | |
 ///  $--GLL,ddmm.mm,a,dddmm.mm,a,hhmmss.ss,a,m*hh<CR><LF>
 /// ```
-#[derive(Serialize, Debug, PartialEq)]
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, PartialEq)]
 pub struct GllData {
     pub latitude: Option<f64>,
     pub longitude: Option<f64>,

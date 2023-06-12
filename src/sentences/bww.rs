@@ -2,7 +2,9 @@ use arrayvec::ArrayString;
 use nom::{
     bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
 };
-use serde::Serialize;
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 use crate::{
     parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
@@ -30,7 +32,8 @@ use super::utils::array_string;
 /// 6. FROM Waypoint ID
 /// 7. Checksum
 
-#[derive(Serialize, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, PartialEq)]
 pub struct BwwData {
     pub true_bearing: Option<f32>,
     pub magnetic_bearing: Option<f32>,

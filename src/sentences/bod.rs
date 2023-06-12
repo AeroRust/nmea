@@ -8,7 +8,9 @@ use nom::{
     number::complete::float,
     sequence::preceded,
 };
-use serde::Serialize;
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 /// BOD - Bearing - Waypoint to Waypoint
 ///
@@ -19,7 +21,8 @@ use serde::Serialize;
 ///        |   | |   | |    |    |
 /// $--BOD,x.x,T,x.x,M,c--c,c--c*hh<CR><LF>
 /// ```
-#[derive(Serialize, Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BodData {
     pub bearing_true: Option<f32>,
     pub bearing_magnetic: Option<f32>,

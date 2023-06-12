@@ -6,7 +6,9 @@ use nom::{
     number::complete::float,
     IResult,
 };
-use serde::Serialize;
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 use crate::{
     parse::NmeaSentence,
@@ -27,7 +29,8 @@ use crate::{
 ///         |         |       | |        | | |  |   |   | |   | |   |    |
 ///  $--GGA,hhmmss.ss,ddmm.mm,a,ddmm.mm,a,x,xx,x.x,x.x,M,x.x,M,x.x,xxxx*hh<CR><LF>
 /// ```
-#[derive(Serialize, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, PartialEq)]
 pub struct GgaData {
     pub fix_time: Option<NaiveTime>,
     pub fix_type: Option<FixType>,

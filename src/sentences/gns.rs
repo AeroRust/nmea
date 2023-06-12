@@ -7,7 +7,9 @@ use nom::{
     sequence::preceded,
     IResult,
 };
-use serde::Serialize;
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 use super::{
     faa_mode::parse_faa_modes,
@@ -25,7 +27,8 @@ use crate::{parse::NmeaSentence, Error, SentenceType};
 ///        |         |       | |        | |    |  |   |   |   |   |   |
 /// $--GNS,hhmmss.ss,ddmm.mm,a,dddmm.mm,a,c--c,xx,x.x,x.x,x.x,x.x,x.x*hh
 /// ```
-#[derive(Serialize, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, PartialEq)]
 pub struct GnsData {
     pub fix_time: Option<NaiveTime>,
     pub lat: Option<f64>,
@@ -38,7 +41,8 @@ pub struct GnsData {
     pub nav_status: Option<NavigationStatus>,
 }
 
-#[derive(Serialize, Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum NavigationStatus {
     Safe,
     Caution,
