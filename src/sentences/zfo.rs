@@ -5,6 +5,9 @@ use nom::{bytes::complete::is_not, character::complete::char, combinator::opt};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "serde")]
+use serde_with::{As};
+
 use crate::{
     parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
     sentences::utils::{array_string, parse_duration_hms, parse_hms},
@@ -22,12 +25,11 @@ use crate::{
 /// 2. Elapsed Time
 /// 3. Origin Waypoint ID
 /// 4. Checksum
-#[cfg_attr(feature = "serde", serde_with::serde_as)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq)]
 pub struct ZfoData {
     pub fix_time: Option<NaiveTime>,
-    #[cfg_attr(feature = "serde", serde_as(as = "Option<serde_with::DurationSeconds<i64>>"))]
+    #[cfg_attr(feature = "serde", serde(with = "As::<Option<serde_with::DurationSeconds<i64>>>"))]
     pub fix_duration: Option<Duration>,
     pub waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
