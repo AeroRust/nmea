@@ -26,16 +26,16 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-arrayvec = { version = "0.7.2", default-features = false, features = ["serde"]}
-chrono = { version = "0.4.19", default-features = false, features = ["serde"] }
-heapless = { version ="0.7.15", features = ["serde"]}
+arrayvec = { version = "0.7.2", default-features = false}
+chrono = { version = "0.4.19", default-features = false }
+heapless = { version ="0.7.15"}
 nom = { version = "7.1.1", default-features = false }
 
 # we include num-traits only when `std` is not enabled
 # because of `fract()` and `trunc()` methods
 num-traits = { version = "0.2", default-features = false }
-serde = { version = "1.0.163", features = ["derive"], default-features = false }
-serde_with = { version = "3.0.0", default-features = false, features = ["macros", "chrono"] }
+serde = { version = "1.0.163",  default-features = false, optional = true }
+serde_with = { version = "3.0.0", default-features = false,  optional = true }
 
 [dev-dependencies]
 approx = "0.5.1"
@@ -47,6 +47,14 @@ criterion = "0.4"
 [features]
 default = ["std"]
 std = ["nom/std", "chrono/std", "arrayvec/std"]
+serde = [
+    "serde/derive", 
+    "serde_with/macros", 
+    "serde_with/chrono_0_4", 
+    "heapless/serde", 
+    "chrono/serde", 
+    "arrayvec/serde"
+]
 
 [[bench]]
 name = "nom_parsing"
