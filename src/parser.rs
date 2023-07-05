@@ -5,12 +5,16 @@ use core::{fmt, mem, ops::BitOr};
 use chrono::{NaiveDate, NaiveTime};
 use heapless::{Deque, Vec};
 
+use crate::{
+    parse_str,
+    sentences::{rmc::RmcStatusOfFix, *},
+    Error, ParseResult,
+};
+
 #[cfg(feature = "serde")]
 use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Serialize};
 #[cfg(feature = "serde")]
 use std::marker::PhantomData;
-
-use crate::{parse_str, sentences::*, Error, ParseResult};
 
 /// NMEA parser
 ///
@@ -24,9 +28,13 @@ use crate::{parse_str, sentences::*, Error, ParseResult};
 ///
 /// let mut nmea = Nmea::default();
 /// let gga = "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76";
-///
+/// # #[cfg(feature = "GGA")]
+/// # {
+/// // feature `GGA` should be enabled to parse this sentence.
 /// nmea.parse(gga).unwrap();
 /// println!("{}", nmea);
+/// # }
+
 /// ```
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, Default)]
@@ -64,8 +72,12 @@ impl<'a> Nmea {
     ///
     /// let mut nmea = Nmea::create_for_navigation(&[SentenceType::RMC, SentenceType::GGA]).unwrap();
     /// let gga = "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76";
+    /// # #[cfg(feature = "GGA")]
+    /// # {
+    /// // feature `GGA` should be enabled to parse this sentence.
     /// nmea.parse(gga).unwrap();
     /// println!("{}", nmea);
+    /// # }
     /// ```
     pub fn create_for_navigation(
         required_sentences_for_nav: &[SentenceType],
@@ -1317,6 +1329,7 @@ mod tests {
         let cs = checksum(s.as_bytes()[1..s.len() - 1].iter());
         s.push_str(&format!("{:02X}", cs));
         nmea.parse(&s).unwrap();
+
         let (new_lat, new_lon) = (nmea.latitude.unwrap(), nmea.longitude.unwrap());
         const MAX_COOR_DIFF: f64 = 1e-7;
         TestResult::from_bool(
@@ -1358,6 +1371,8 @@ mod tests {
     }
 
     #[test]
+    // FIXME: remove dependency on GGA and instead use quickcheck for `do_parse_lat_lon` parser
+    #[cfg(feature = "GGA")]
     fn test_parsing_lat_lon_in_gga() {
         // regressions found by quickcheck,
         // explicit because of quickcheck use random gen

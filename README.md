@@ -71,7 +71,7 @@ Add the `nmea` dependency in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nmea = "0.4"
+nmea = "0.5"
 ```
 
 ### For `no_std`
@@ -81,16 +81,10 @@ just add the `nmea` crate without the default features:
 
 ```toml
 [dependencies]
-nmea = {version = "0.4", default-features = false}
+nmea = { version = "0.5", default-features = false }
 ```
 
-### For Rust edition 2015
-
-For Rust 2015 edition you should put this in your crate's `lib.rs` or `main.rs`:
-
-```rust
-extern crate nmea;
-```
+### Parse
 
 To use the NMEA parser create a `Nmea` struct and feed it with NMEA sentences (only supports `GNSS` messages, otherwise use the `parse_str()` and `parse_bytes()`):
 
@@ -101,14 +95,18 @@ fn main() {
     let mut nmea = Nmea::default();
     let gga = "$GPGGA,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*76";
 
-    nmea.parse(gga).unwrap();
-    println!("{}", nmea);
+    // feature `GGA` should be enabled to parse this sentence.
+    #[cfg(feature = "GGA")]
+    {
+        nmea.parse(gga).unwrap();
+        println!("{}", nmea);
+    }
 }
 ```
 
 ## Supported Rust Versions
 
-The Minimum supported Rust version (or MSRV) is **1.59**.
+The Minimum supported Rust version (or MSRV) is **1.60**.
 
 ## Unsafe-free crate
 

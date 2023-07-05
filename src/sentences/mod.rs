@@ -30,6 +30,7 @@ pub mod faa_mode;
 pub mod fix_type;
 pub mod gnss_type;
 
+#[doc(inline)]
 pub use {
     aam::{parse_aam, AamData},
     alm::{parse_alm, AlmData},
@@ -50,7 +51,7 @@ pub use {
     mda::{parse_mda, MdaData},
     mtw::{parse_mtw, MtwData},
     mwv::{parse_mwv, MwvData},
-    rmc::{parse_rmc, RmcData, RmcStatusOfFix},
+    rmc::{parse_rmc, RmcData},
     rmz::{parse_pgrmz, PgrmzData},
     txt::{parse_txt, TxtData},
     vhw::{parse_vhw, VhwData},

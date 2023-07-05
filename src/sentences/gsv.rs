@@ -16,7 +16,7 @@ use crate::{
 
 /// GSV - Satellites in view
 ///
-/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gga_global_positioning_system_fix_data>
+/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gsv_satellites_in_view>
 ///
 /// ```text
 ///        1 2 3 4 5 6 7     n
@@ -29,7 +29,7 @@ pub struct GsvData {
     pub gnss_type: GnssType,
     pub number_of_sentences: u16,
     pub sentence_num: u16,
-    pub _sats_in_view: u16,
+    pub sats_in_view: u16,
     // see SatPack in lib.rs
     pub sats_info: Vec<Option<Satellite>, 4>,
 }
@@ -60,7 +60,7 @@ fn do_parse_gsv(i: &str) -> IResult<&str, GsvData> {
     let (i, _) = char(',')(i)?;
     let (i, sentence_num) = number::<u16>(i)?;
     let (i, _) = char(',')(i)?;
-    let (i, _sats_in_view) = number::<u16>(i)?;
+    let (i, sats_in_view) = number::<u16>(i)?;
     let (i, _) = char(',')(i)?;
     let sats = Vec::<Option<Satellite>, 4>::new();
 
@@ -79,7 +79,7 @@ fn do_parse_gsv(i: &str) -> IResult<&str, GsvData> {
             gnss_type: GnssType::Galileo,
             number_of_sentences,
             sentence_num,
-            _sats_in_view,
+            sats_in_view,
             sats_info: sats,
         },
     ))
@@ -158,7 +158,7 @@ mod tests {
         assert_eq!(data.gnss_type, GnssType::Gps);
         assert_eq!(data.number_of_sentences, 2);
         assert_eq!(data.sentence_num, 1);
-        assert_eq!(data._sats_in_view, 8);
+        assert_eq!(data.sats_in_view, 8);
         assert_eq!(
             data.sats_info[0].clone().unwrap(),
             Satellite {
@@ -210,6 +210,6 @@ mod tests {
         assert_eq!(data.gnss_type, GnssType::Glonass);
         assert_eq!(data.number_of_sentences, 3);
         assert_eq!(data.sentence_num, 3);
-        assert_eq!(data._sats_in_view, 10);
+        assert_eq!(data.sats_in_view, 10);
     }
 }

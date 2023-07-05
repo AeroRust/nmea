@@ -13,16 +13,16 @@
 // limitations under the License.
 //
 
-extern crate nmea;
-
 use std::{
     env,
     fs::File,
     io::{BufRead, BufReader},
 };
 
+use nmea::Nmea;
+
 fn main() {
-    let mut nmea = nmea::Nmea::default();
+    let mut nmea = Nmea::default();
 
     let file = env::args().nth(1).unwrap();
     let mut input = BufReader::new(File::open(file).unwrap());

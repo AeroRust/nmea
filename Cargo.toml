@@ -1,6 +1,6 @@
 [package]
 name = "nmea"
-version = "0.4.0"
+version = "0.5.0"
 
 authors = [
   "Felix Obenhuber <felix@obenhuber.de>",
@@ -33,7 +33,8 @@ nom = { version = "7.1.1", default-features = false }
 
 # we include num-traits only when `std` is not enabled
 # because of `fract()` and `trunc()` methods
-num-traits = { version = "0.2", default-features = false }
+num-traits = { version = "0.2", default-features = false, features = ["libm"]}
+cfg-if = "1"
 serde = { version = "1.0.163",  default-features = false, optional = true }
 serde_with = { version = "3.0.0", default-features = false,  optional = true }
 
@@ -45,7 +46,7 @@ quickcheck = { version = "1.0.3", default-features = false }
 criterion = "0.4"
 
 [features]
-default = ["std"]
+default = ["std", "all-sentences"]
 std = ["nom/std", "chrono/std", "arrayvec/std"]
 serde = [
     "serde/derive", 
@@ -55,6 +56,120 @@ serde = [
     "chrono/serde", 
     "arrayvec/serde"
 ]
+
+
+all-sentences = ["GNSS", "waypoint", "maritime", "water", "vendor-specific", "other"]
+# GNSS specific sentences related to the possition or speed relative to the ground
+GNSS = ["ALM", "GBS", "GGA", "GLL", "GNS", "GSA", "GSV", "RMC", "VTG"]
+
+waypoint = ["AAM", "BOD", "BWC", "BWW", "ZFO", "ZTG"]
+maritime = ["waypoint", "water"]
+water = ["DBK", "MTW", "VHW"]
+vendor-specific = ["RMZ"]
+other = ["HDT", "MDA", "MWV", "TXT", "ZDA"]
+
+# AAM - Waypoint Arrival Alarm
+# feature: waypoint
+AAM = []
+
+# ALM - GPS Almanac Data
+# feature: GNSS
+ALM = []
+
+# BOD - Bearing - Waypoint to Waypoint
+# feature: waypoint
+BOD = []
+
+# BWC - Bearing & Distance to Waypoint - Great Circle
+# feature: waypoint
+BWC = []
+
+# BWW - Bearing - Waypoint to Waypoint
+# feature: waypoint
+BWW = []
+
+# DBK - Depth Below Keel
+# feature: water
+DBK = []
+
+# GBS - GPS Satellite Fault Detection
+# feature: GNSS
+GBS = []
+
+# GGA - Global Positioning System Fix Data
+# feature: GNSS
+GGA = []
+
+# GLL - Geographic Position - Latitude/Longitude
+# feature: GNSS
+GLL = []
+
+# GNS - Fix data
+# feature: GNSS
+GNS = []
+
+# GSA - GPS DOP and active satellites
+# feature: GNSS
+GSA = []
+
+# GSV - Satellites in view
+# feature: GNSS
+GSV = []
+
+# HDT - Heading - True
+HDT = []
+
+# MDA - Meterological Composite
+MDA = []
+
+# MTW - Mean Temperature of Water
+# feature: water
+MTW = []
+
+# MWV - Wind Speed and Angle
+MWV = []
+
+# RMC - Recommended Minimum Navigation Information
+# feature: GNSS
+RMC = []
+
+# PGRMZ - Garmin Altitude (Vendor specific)
+# feature: vendor-specific
+RMZ = []
+
+# TXT - Text message
+TXT = []
+
+# VHW - Water speed and heading
+# feature: water
+VHW = []
+
+# VTG - Track made good and Ground speed
+# feature: GNSS
+VTG = []
+
+# ZDA - Time & Date - UTC, day, month, year and local time zone
+ZDA = []
+
+# ZFO - UTC & Time from origin Waypoint
+# feature: waypoint
+ZFO = []
+
+# ZTG - UTC & Time to Destination Waypoint
+# feature: waypoint
+ZTG = []
+
+[[test]]
+name = "all_supported_messages"
+required-features = ["all-sentences"]
+
+[[test]]
+name = "file_log_parser"
+required-features = ["all-sentences"]
+
+[[test]]
+name = "functional_tests"
+required-features = ["all-sentences"]
 
 [[bench]]
 name = "nom_parsing"
