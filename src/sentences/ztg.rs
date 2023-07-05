@@ -31,7 +31,10 @@ use super::utils::array_string;
 #[derive(Debug, PartialEq)]
 pub struct ZtgData {
     pub fix_time: Option<NaiveTime>,
-    #[cfg_attr(feature = "serde", serde(with = "As::<Option<serde_with::DurationSeconds<i64>>>"))]
+    #[cfg_attr(
+        feature = "serde",
+        serde(with = "As::<Option<serde_with::DurationSeconds<i64>>>")
+    )]
     pub fix_duration: Option<Duration>,
     pub waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }

@@ -1,5 +1,5 @@
 #[cfg(feature = "serde")]
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// Fix type
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
