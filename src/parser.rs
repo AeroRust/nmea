@@ -1,6 +1,6 @@
 //! The [`Nmea`] parser.
 
-use core::{fmt, marker::PhantomData, mem, ops::BitOr};
+use core::{fmt, mem, ops::BitOr};
 
 use chrono::{NaiveDate, NaiveTime};
 use heapless::{Deque, Vec};
@@ -13,6 +13,9 @@ use crate::{
 
 #[cfg(feature = "serde")]
 use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Serialize};
+
+#[cfg(feature = "serde")]
+use core::marker::PhantomData;
 
 /// NMEA parser
 ///
