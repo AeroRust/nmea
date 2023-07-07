@@ -14,9 +14,6 @@ use crate::{
 #[cfg(feature = "serde")]
 use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Serialize};
 
-#[cfg(feature = "serde")]
-use core::marker::PhantomData;
-
 /// NMEA parser
 ///
 /// This struct parses NMEA sentences, including checksum checks and sentence
@@ -469,18 +466,7 @@ where
 }
 
 #[cfg(feature = "serde")]
-struct DequeVisitor {
-    marker: PhantomData<fn() -> Deque<Vec<Option<Satellite>, 4>, 15>>,
-}
-
-#[cfg(feature = "serde")]
-impl DequeVisitor {
-    fn new() -> Self {
-        Self {
-            marker: PhantomData,
-        }
-    }
-}
+struct DequeVisitor;
 
 #[cfg(feature = "serde")]
 impl<'de> Visitor<'de> for DequeVisitor {
@@ -509,7 +495,7 @@ fn deserialize_deque<'de, D>(d: D) -> Result<Deque<Vec<Option<Satellite>, 4>, 15
 where
     D: serde::Deserializer<'de>,
 {
-    d.deserialize_seq(DequeVisitor::new())
+    d.deserialize_seq(DequeVisitor)
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
