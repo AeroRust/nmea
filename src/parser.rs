@@ -1,6 +1,6 @@
 //! The [`Nmea`] parser.
 
-use core::{fmt, mem, ops::BitOr};
+use core::{fmt, marker::PhantomData, mem, ops::BitOr};
 
 use chrono::{NaiveDate, NaiveTime};
 use heapless::{Deque, Vec};
@@ -13,8 +13,6 @@ use crate::{
 
 #[cfg(feature = "serde")]
 use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Serialize};
-#[cfg(feature = "serde")]
-use std::marker::PhantomData;
 
 /// NMEA parser
 ///
@@ -485,7 +483,7 @@ impl DequeVisitor {
 impl<'de> Visitor<'de> for DequeVisitor {
     type Value = Deque<Vec<Option<Satellite>, 4>, 15>;
 
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("deque")
     }
 

@@ -46,7 +46,7 @@ quickcheck = { version = "1.0.3", default-features = false }
 criterion = "0.4"
 
 [features]
-default = ["std", "all-sentences"]
+default = ["std", "all-sentences", "serde"]
 std = ["nom/std", "chrono/std", "arrayvec/std"]
 serde = [
     "serde/derive", 
