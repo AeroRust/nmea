@@ -447,55 +447,56 @@ struct SatsPack {
     /// BeiDou: 12 + 3 IGSO + 3 GEO
     /// Galileo: 12
     /// => 58 total Satellites => max 15 rows of data
-    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_deque"))]
-    #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_deque"))]
+    #[cfg_attr(feature = "serde", serde(with = "serde_deq"))]
     data: Deque<Vec<Option<Satellite>, 4>, 15>,
     max_len: usize,
 }
 
 #[cfg(feature = "serde")]
-fn serialize_deque<S>(v: &Deque<Vec<Option<Satellite>, 4>, 15>, s: S) -> Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-{
-    let mut seq = s.serialize_seq(Some(15))?;
-    for e in v.iter() {
-        seq.serialize_element(e)?;
-    }
-    seq.end()
-}
+mod serde_deq {
+    use super::*;
 
-#[cfg(feature = "serde")]
-struct DequeVisitor;
-
-#[cfg(feature = "serde")]
-impl<'de> Visitor<'de> for DequeVisitor {
-    type Value = Deque<Vec<Option<Satellite>, 4>, 15>;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("deque")
-    }
-
-    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+    pub fn serialize<S>(v: &Deque<Vec<Option<Satellite>, 4>, 15>, s: S) -> Result<S::Ok, S::Error>
     where
-        A: serde::de::SeqAccess<'de>,
+        S: serde::Serializer,
     {
-        let mut deq: Deque<Vec<Option<Satellite>, 4>, 15> = Deque::new();
+        let mut seq = s.serialize_seq(Some(15))?;
+        for e in v.iter() {
+            seq.serialize_element(e)?;
+        }
+        seq.end()
+    }
 
-        while let Some(v) = seq.next_element()? {
-            deq.push_back(v).expect("Cannot deserialize");
+    struct DequeVisitor;
+
+    impl<'de> Visitor<'de> for DequeVisitor {
+        type Value = Deque<Vec<Option<Satellite>, 4>, 15>;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("deque of vectors containing optional Satellite structs")
         }
 
-        Ok(deq)
-    }
-}
+        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+        where
+            A: serde::de::SeqAccess<'de>,
+        {
+            let mut deq: Deque<Vec<Option<Satellite>, 4>, 15> = Deque::new();
 
-#[cfg(feature = "serde")]
-fn deserialize_deque<'de, D>(d: D) -> Result<Deque<Vec<Option<Satellite>, 4>, 15>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    d.deserialize_seq(DequeVisitor)
+            while let Some(v) = seq.next_element()? {
+                deq.push_back(v)
+                    .map_err(|_| serde::de::Error::invalid_length(deq.capacity() + 1, &self))?;
+            }
+
+            Ok(deq)
+        }
+    }
+
+    pub fn deserialize<'de, D>(d: D) -> Result<Deque<Vec<Option<Satellite>, 4>, 15>, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        d.deserialize_seq(DequeVisitor)
+    }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
