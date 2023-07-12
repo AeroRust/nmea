@@ -33,7 +33,7 @@ pub struct ZtgData {
     pub fix_time: Option<NaiveTime>,
     #[cfg_attr(
         feature = "serde",
-        serde(with = "As::<Option<serde_with::DurationSeconds<i64>>>")
+        serde(with = "As::<Option<serde_with::DurationSecondsWithFrac<f64>>>")
     )]
     pub fix_duration: Option<Duration>,
     pub waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
