@@ -4,6 +4,9 @@ use nom::{
     bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
 };
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::{
     parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
     sentences::utils::{parse_hms, parse_lat_lon},
@@ -20,6 +23,7 @@ use crate::{
 ///         |         |       | |        | |   | |   | |   | |    |   |
 /// $--BWC,hhmmss.ss,llll.ll,a,yyyyy.yy,a,x.x,T,x.x,M,x.x,N,c--c,m,*hh<CR><LF>
 /// ```
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq)]
 pub struct BwcData {
     pub fix_time: Option<NaiveTime>,

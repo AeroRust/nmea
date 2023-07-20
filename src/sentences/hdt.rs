@@ -5,6 +5,9 @@ use nom::{
     IResult,
 };
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use super::utils::parse_float_num;
 use crate::{Error, NmeaSentence, SentenceType};
 
@@ -20,6 +23,7 @@ use crate::{Error, NmeaSentence, SentenceType};
 /// 1. Heading, degrees True
 /// 2. T = True
 /// 3. Checksum
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq)]
 pub struct HdtData {
     /// Heading, degrees True

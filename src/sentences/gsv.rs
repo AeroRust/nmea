@@ -5,6 +5,9 @@ use nom::{
     IResult,
 };
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::{
     parse::NmeaSentence,
     sentences::{utils::number, GnssType},
@@ -20,6 +23,7 @@ use crate::{
 ///        | | | | | | |     |
 /// $--GSV,x,x,x,x,x,x,x,...*hh<CR><LF>
 /// ```
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq)]
 pub struct GsvData {
     pub gnss_type: GnssType,

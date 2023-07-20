@@ -2,6 +2,12 @@ use arrayvec::ArrayString;
 use chrono::{Duration, NaiveTime};
 use nom::{bytes::complete::is_not, character::complete::char, combinator::opt};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+#[cfg(feature = "serde")]
+use serde_with::As;
+
 use crate::{
     parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
     sentences::utils::{parse_duration_hms, parse_hms},
@@ -21,9 +27,14 @@ use super::utils::array_string;
 /// 2. Time Remaining
 /// 3. Destination Waypoint ID
 /// 4. Checksum
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq)]
 pub struct ZtgData {
     pub fix_time: Option<NaiveTime>,
+    #[cfg_attr(
+        feature = "serde",
+        serde(with = "As::<Option<serde_with::DurationSecondsWithFrac<f64>>>")
+    )]
     pub fix_duration: Option<Duration>,
     pub waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }

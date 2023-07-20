@@ -5,6 +5,9 @@ use nom::{
     IResult,
 };
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::{Error, NmeaSentence, SentenceType};
 
 use super::utils::parse_float_num;
@@ -31,6 +34,7 @@ use super::utils::parse_float_num;
 /// Note that this implementation follows the documentation published by `gpsd`, but the GLOBALSAT documentation may have conflicting definitions.
 /// > [[GLOBALSAT](https://gpsd.gitlab.io/gpsd/NMEA.html#GLOBALSAT)] describes a different format in which the first three fields are water-temperature measurements.
 /// > It’s not clear which is correct.
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, PartialEq, Debug)]
 pub struct VhwData {
     /// Heading degrees, True

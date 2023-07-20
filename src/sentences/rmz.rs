@@ -3,9 +3,13 @@ use nom::{
     IResult,
 };
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::sentences::utils::number;
 use crate::{parse::NmeaSentence, Error, SentenceType};
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PgrmzFixType {
     NoFix,
@@ -29,6 +33,7 @@ pub enum PgrmzFixType {
 /// 4. Checksum
 ///
 /// Example: `$PGRMZ,2282,f,3*21`
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PgrmzData {
     /// Current altitude in feet

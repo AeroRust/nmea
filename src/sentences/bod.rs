@@ -9,6 +9,9 @@ use nom::{
     sequence::preceded,
 };
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// BOD - Bearing - Waypoint to Waypoint
 ///
 /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_bod_bearing_waypoint_to_waypoint>
@@ -18,6 +21,7 @@ use nom::{
 ///        |   | |   | |    |    |
 /// $--BOD,x.x,T,x.x,M,c--c,c--c*hh<CR><LF>
 /// ```
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BodData {
     pub bearing_true: Option<f32>,

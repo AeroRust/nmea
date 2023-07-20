@@ -9,6 +9,8 @@ use nom::{
 };
 
 use cfg_if::cfg_if;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 use crate::{sentences::*, Error, SentenceType};
 
@@ -35,6 +37,7 @@ pub const SENTENCE_MAX_LEN: usize = 102;
 pub const TEXT_PARAMETER_MAX_LEN: usize = 64;
 
 /// A known and parsable Nmea sentence type.
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct NmeaSentence<'a> {
     pub talker_id: &'a str,
     pub message_id: SentenceType,

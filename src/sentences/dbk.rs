@@ -6,6 +6,9 @@ use nom::{
     IResult,
 };
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::{parse::NmeaSentence, Error, ParseResult, SentenceType};
 
 /// DBK - Depth Below Keel
@@ -24,6 +27,7 @@ use crate::{parse::NmeaSentence, Error, ParseResult, SentenceType};
 /// 5:    Depth, Fathoms
 /// 6:    F = Fathoms
 /// 7:    Mandatory NMEA checksum
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq)]
 pub struct DbkData {
     pub depth_feet: Option<f64>,

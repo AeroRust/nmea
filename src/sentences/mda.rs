@@ -1,5 +1,8 @@
 use nom::{character::complete::char, combinator::opt, number::complete::float, IResult};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::{parse::NmeaSentence, Error, SentenceType};
 
 /// MDA - Meterological Composite
@@ -11,6 +14,7 @@ use crate::{parse::NmeaSentence, Error, SentenceType};
 ///          |   |  |    |  |  | | |  |  |  |  |  |  |  |  |  |  |  |  |  |
 ///  $--MDA,n.nn,I,n.nnn,B,n.n,C,n.C,n.n,n,n.n,C,n.n,T,n.n,M,n.n,N,n.n,M*hh<CR><LF>
 /// ```
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq)]
 pub struct MdaData {
     /// Pressure in inches of mercury

@@ -6,6 +6,9 @@ use nom::{
     IResult,
 };
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::{
     parse::NmeaSentence,
     sentences::utils::{parse_date, parse_hms, parse_lat_lon},
@@ -14,6 +17,7 @@ use crate::{
 
 use super::{faa_mode::parse_faa_mode, utils::parse_magnetic_variation, FaaMode};
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RmcStatusOfFix {
     Autonomous,
@@ -21,6 +25,7 @@ pub enum RmcStatusOfFix {
     Invalid,
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RmcNavigationStatus {
     Autonomous,
@@ -72,6 +77,7 @@ pub enum RmcNavigationStatus {
 /// 13. Nav Status (NMEA 4.1 and later)
 ///     `A` = autonomous, `D` = differential, `E` = Estimated,
 ///     `M` = Manual input mode, `N` = not valid, `S` = Simulator, `V` = Valid
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RmcData {
     pub fix_time: Option<NaiveTime>,
