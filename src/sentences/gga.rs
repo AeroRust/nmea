@@ -32,6 +32,10 @@ use crate::{
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq)]
 pub struct GgaData {
+    #[cfg_attr(
+        not(feature = "std"),
+        cfg_attr(feature = "serde", serde(with = "serde_naive_time"))
+    )]
     pub fix_time: Option<NaiveTime>,
     pub fix_type: Option<FixType>,
     pub latitude: Option<f64>,
@@ -106,6 +110,81 @@ pub fn parse_gga(sentence: NmeaSentence) -> Result<GgaData, Error> {
     }
 }
 
+#[cfg(not(feature = "std"))]
+#[cfg(feature = "serde")]
+mod serde_naive_time {
+    use super::*;
+    use core::fmt::{self, Write};
+    use serde::de::Visitor;
+
+    pub fn serialize<S>(v: &Option<NaiveTime>, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match v {
+            Some(time) => {
+                let mut str: heapless::String<32> = heapless::String::new();
+                write!(&mut str, "{}", time).map_err(serde::ser::Error::custom)?;
+                s.serialize_str(&str)
+            }
+            None => s.serialize_none(),
+        }
+    }
+
+    struct NaiveTimeVisitor;
+
+    impl<'de> Visitor<'de> for NaiveTimeVisitor {
+        type Value = NaiveTime;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("expecting NaiveTime in format H:M:S.f")
+        }
+
+        fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+        {
+            let time =
+                NaiveTime::parse_from_str(v, "%H:%M:%S%.f").map_err(serde::de::Error::custom)?;
+            return Ok(time);
+        }
+    }
+
+    struct OptionVisitor;
+
+    impl<'de> Visitor<'de> for OptionVisitor {
+        type Value = Option<NaiveTime>;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("expecting Option<NaiveTime>")
+        }
+
+        fn visit_none<E>(self) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+        {
+            Ok(None)
+        }
+
+        fn visit_some<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            let time = deserializer
+                .deserialize_str(NaiveTimeVisitor)
+                .map_err(serde::de::Error::custom)?;
+            Ok(Some(time))
+        }
+    }
+
+    pub fn deserialize<'de, D>(d: D) -> Result<Option<NaiveTime>, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        d.deserialize_option(OptionVisitor)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use approx::assert_relative_eq;
@@ -161,5 +240,89 @@ mod tests {
         assert_eq!(sentence.checksum, 0x4f);
         let data = parse_gga(sentence).unwrap();
         assert_eq!(data.fix_type.unwrap(), FixType::Invalid);
+    }
+
+    #[test]
+    fn test_serialize_deserialize_gga_data_with_fix_time_milis() {
+        // hhmmss.sss
+        let data = parse_gga(NmeaSentence {
+            talker_id: "GP",
+            message_id: SentenceType::GGA,
+            data: "033745.222,5650.82344,N,03548.9778,E,1,07,1.8,101.2,M,14.7,M,,",
+            checksum: 0x57,
+        })
+        .unwrap();
+
+        assert_eq!(
+            data.fix_time,
+            Some(NaiveTime::from_hms_milli_opt(3, 37, 45, 222).expect("invalid time"))
+        );
+
+        let serialized = serde_json::to_string(&data).unwrap();
+        let gga: GgaData = serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(data.fix_time, gga.fix_time);
+    }
+
+    #[test]
+    fn test_serialize_deserialize_gga_data_with_fix_time_nano() {
+        // hhmmss.sss
+        let data = parse_gga(NmeaSentence {
+            talker_id: "GP",
+            message_id: SentenceType::GGA,
+            data: "033745.222222222,5650.82344,N,03548.9778,E,1,07,1.8,101.2,M,14.7,M,,",
+            checksum: 0x57,
+        })
+        .unwrap();
+
+        assert_eq!(
+            data.fix_time,
+            Some(NaiveTime::from_hms_nano_opt(3, 37, 45, 222_222_222).expect("invalid time"))
+        );
+
+        let serialized = serde_json::to_string(&data).unwrap();
+        let gga: GgaData = serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(data.fix_time, gga.fix_time);
+    }
+
+    #[test]
+    fn test_serialize_deserialize_gga_data_with_fix_time() {
+        // hhmmss.sss
+        let data = parse_gga(NmeaSentence {
+            talker_id: "GP",
+            message_id: SentenceType::GGA,
+            data: "033745.000,5650.82344,N,03548.9778,E,1,07,1.8,101.2,M,14.7,M,,",
+            checksum: 0x57,
+        })
+        .unwrap();
+
+        assert_eq!(
+            data.fix_time,
+            Some(NaiveTime::from_hms_opt(3, 37, 45).expect("invalid time"))
+        );
+
+        let serialized = serde_json::to_string(&data).unwrap();
+        let gga: GgaData = serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(data.fix_time, gga.fix_time);
+    }
+
+    #[test]
+    fn test_serialize_deserialize_gga_data_without_fix_time() {
+        let data = parse_gga(NmeaSentence {
+            talker_id: "GP",
+            message_id: SentenceType::GGA,
+            data: ",5650.82344,N,03548.9778,E,1,07,1.8,101.2,M,14.7,M,,",
+            checksum: 0x57,
+        })
+        .unwrap();
+
+        assert_eq!(data.fix_time, None);
+
+        let serialized = serde_json::to_string(&data).unwrap();
+        let gga: GgaData = serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(data.fix_time, gga.fix_time);
     }
 }

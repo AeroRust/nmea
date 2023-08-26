@@ -45,6 +45,7 @@ pretty_assertions = "1"
 quickcheck = { version = "1", default-features = false }
 # criterion 0.5 has clap_builder version which requires at least Rust 1.64
 criterion = "0.4"
+serde_json = "1.0.105"
 
 [features]
 default = ["std", "all-sentences"]
