@@ -242,6 +242,7 @@ mod tests {
         assert_eq!(data.fix_type.unwrap(), FixType::Invalid);
     }
 
+    #[cfg(feature = "serde")]
     #[test]
     fn test_serialize_deserialize_gga_data_with_fix_time_milis() {
         // hhmmss.sss
@@ -264,6 +265,7 @@ mod tests {
         assert_eq!(data.fix_time, gga.fix_time);
     }
 
+    #[cfg(feature = "serde")]
     #[test]
     fn test_serialize_deserialize_gga_data_with_fix_time_nano() {
         // hhmmss.sss
@@ -286,6 +288,7 @@ mod tests {
         assert_eq!(data.fix_time, gga.fix_time);
     }
 
+    #[cfg(feature = "serde")]
     #[test]
     fn test_serialize_deserialize_gga_data_with_fix_time() {
         // hhmmss.sss
@@ -308,6 +311,7 @@ mod tests {
         assert_eq!(data.fix_time, gga.fix_time);
     }
 
+    #[cfg(feature = "serde")]
     #[test]
     fn test_serialize_deserialize_gga_data_without_fix_time() {
         let data = parse_gga(NmeaSentence {
