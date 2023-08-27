@@ -9,10 +9,13 @@
 //! # Supported sentences:
 //!
 //! NMEA Standard Sentences
+//!
 //! - AAM
 //! - ALM
 //! - BOD
 //! - BWC
+//! - BWW
+//! - DBK
 //! - GBS
 //! - GGA *
 //! - GLL *
@@ -21,11 +24,14 @@
 //! - GSV *
 //! - HDT
 //! - MDA
+//! - MTW
 //! - MWV
 //! - RMC *
 //! - VHW
 //! - VTG *
 //! - ZDA
+//! - ZFO
+//! - ZTG
 //!
 //! Other Sentences
 //! - TXT *
