@@ -22,6 +22,7 @@ pub mod txt;
 pub mod utils;
 pub mod vhw;
 pub mod vtg;
+pub mod wnc;
 pub mod zda;
 pub mod zfo;
 pub mod ztg;
@@ -56,6 +57,7 @@ pub use {
     txt::{parse_txt, TxtData},
     vhw::{parse_vhw, VhwData},
     vtg::{parse_vtg, VtgData},
+    wnc::{parse_wnc, WncData},
     zda::{parse_zda, ZdaData},
     zfo::{parse_zfo, ZfoData},
     ztg::{parse_ztg, ZtgData},
