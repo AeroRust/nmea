@@ -1,12 +1,12 @@
-use crate::{parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN}, Error, SentenceType};
+use super::utils::array_string;
+use crate::{
+    parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
+    Error, SentenceType,
+};
 use arrayvec::ArrayString;
 use nom::{
-    character::complete::char,
-    bytes::complete::is_not,
-    combinator::opt, 
-    number::complete::float
+    bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
 };
-use super::utils::array_string;
 
 /// WNC - Distance, Waypoint to Waypoint
 #[derive(Debug, PartialEq)]
@@ -21,10 +21,25 @@ pub struct WncData {
     pub waypoint_id_origin: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 
-/// Parses the WNC sentence into a data structure
-///
+/// Parses the WNC - Distance, Waypoint to Waypoint sentence
+/// Please see: https://gpsd.gitlab.io/gpsd/NMEA.html#_wnc_distance_waypoint_to_waypoint
 /// Example of WNC sentences:
-/// - $GPWNC,12.3,N,45.6,K,DEST,START*hh
+/// - $GPWNC,200.00,N,370.40,K,Dest,Origin*58
+/// 
+/// Breakdown of sentence:
+/// 
+///             1  2  3  4   5    6  
+///             |  |  |  |   |    |  
+///     $--WNC,x.x,N,x.x,K,c--c,c--c*hh
+/// 
+/// Key:
+/// 1. Distance, Nautical Miles
+/// 2. N = Nautical Miles
+/// 3. Distance, Kilometers
+/// 4. K = Kilometers
+/// 5. Waypoint ID, Destination
+/// 6. Waypoint ID, Origin
+
 pub fn do_parse_wnc(i: &str) -> Result<WncData, Error> {
     let (i, distance_nautical_miles) = opt(float)(i)?;
     let (i, _) = char(',')(i)?;
@@ -44,14 +59,12 @@ pub fn do_parse_wnc(i: &str) -> Result<WncData, Error> {
         .map(array_string::<TEXT_PARAMETER_MAX_LEN>)
         .transpose()?;
 
-    Ok(
-        WncData {
-            distance_nautical_miles,
-            distance_kilometers,
-            waypoint_id_destination,
-            waypoint_id_origin,
-        }
-    )
+    Ok(WncData {
+        distance_nautical_miles,
+        distance_kilometers,
+        waypoint_id_destination,
+        waypoint_id_origin,
+    })
 }
 
 pub fn parse_wnc(sentence: NmeaSentence) -> Result<WncData, Error> {
@@ -68,7 +81,7 @@ pub fn parse_wnc(sentence: NmeaSentence) -> Result<WncData, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Error, parse::parse_nmea_sentence};
+    use crate::{parse::parse_nmea_sentence, Error};
     use approx::assert_relative_eq;
 
     fn run_parse_wnc(line: &str) -> Result<WncData, Error> {
