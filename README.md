@@ -30,6 +30,7 @@ NMEA Standard Sentences
 - RMC *
 - VHW
 - VTG *
+- WNC
 - ZDA
 - ZFO
 - ZTG
