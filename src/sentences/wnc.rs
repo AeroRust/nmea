@@ -8,7 +8,25 @@ use nom::{
     bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
 };
 
-/// WNC - Distance, Waypoint to Waypoint
+/// Parses the WNC - Distance, Waypoint to Waypoint sentence
+/// Please see: https://gpsd.gitlab.io/gpsd/NMEA.html#_wnc_distance_waypoint_to_waypoint
+/// Example of WNC sentences:
+/// - $GPWNC,200.00,N,370.40,K,Dest,Origin*58
+///
+/// Breakdown of sentence:
+///
+///             1  2  3  4   5    6  
+///             |  |  |  |   |    |  
+///     $--WNC,x.x,N,x.x,K,c--c,c--c*hh
+///
+/// Key:
+/// 1. Distance, Nautical Miles
+/// 2. N = Nautical Miles
+/// 3. Distance, Kilometers
+/// 4. K = Kilometers
+/// 5. Waypoint ID, Destination
+/// 6. Waypoint ID, Origin
+
 #[derive(Debug, PartialEq)]
 pub struct WncData {
     /// Distance, Nautical Miles
@@ -20,25 +38,6 @@ pub struct WncData {
     /// Waypoint ID, Origin
     pub waypoint_id_origin: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
-
-/// Parses the WNC - Distance, Waypoint to Waypoint sentence
-/// Please see: https://gpsd.gitlab.io/gpsd/NMEA.html#_wnc_distance_waypoint_to_waypoint
-/// Example of WNC sentences:
-/// - $GPWNC,200.00,N,370.40,K,Dest,Origin*58
-/// 
-/// Breakdown of sentence:
-/// 
-///             1  2  3  4   5    6  
-///             |  |  |  |   |    |  
-///     $--WNC,x.x,N,x.x,K,c--c,c--c*hh
-/// 
-/// Key:
-/// 1. Distance, Nautical Miles
-/// 2. N = Nautical Miles
-/// 3. Distance, Kilometers
-/// 4. K = Kilometers
-/// 5. Waypoint ID, Destination
-/// 6. Waypoint ID, Origin
 
 pub fn do_parse_wnc(i: &str) -> Result<WncData, Error> {
     let (i, distance_nautical_miles) = opt(float)(i)?;
