@@ -72,7 +72,7 @@ Add the `nmea` dependency in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nmea = "0.5"
+nmea = "0.6"
 ```
 
 ### For `no_std`
@@ -82,7 +82,7 @@ just add the `nmea` crate without the default features:
 
 ```toml
 [dependencies]
-nmea = { version = "0.5", default-features = false }
+nmea = { version = "0.6", default-features = false }
 ```
 
 ### Parse
