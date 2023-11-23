@@ -33,8 +33,6 @@ pub enum Error<'a> {
     Unknown(&'a str),
     /// The provided navigation configuration was empty and thus invalid
     EmptyNavConfig,
-    /// Invalid sentence number field in nmea sentence of type GSV
-    InvalidGsvSentenceNum,
     /// An unknown talker ID was found in the NMEA message.
     UnknownTalkerId { expected: &'a str, found: &'a str },
     /// The current sentences is parsable but the feature has been disabled.
@@ -94,10 +92,6 @@ impl<'a> fmt::Display for Error<'a> {
             Error::EmptyNavConfig => write!(
                 f,
                 "The provided navigation configuration was empty and thus invalid"
-            ),
-            Error::InvalidGsvSentenceNum => write!(
-                f,
-                "Invalid sentence number field in nmea sentence of type GSV"
             ),
             Error::UnknownTalkerId { expected, found } => write!(
                 f,

@@ -28,7 +28,7 @@ use super::utils::array_string;
 /// 3. Destination Waypoint ID
 /// 4. Checksum
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct ZtgData {
     pub fix_time: Option<NaiveTime>,
     #[cfg_attr(

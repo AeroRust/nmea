@@ -52,7 +52,7 @@ jobs:
 
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        rust: ["1.64", stable, beta]
+        rust: ["1.65", stable, beta]
     env:
       RUSTUP_MAX_RETRIES: 10
       CARGO_NET_RETRY: 10
@@ -77,7 +77,7 @@ jobs:
       - name: Test (Release)
         run: cargo test --release --no-default-features
 
-      - name: Test (Release) all-features
+      - name: Test (Release) --all-features
         run: cargo test --release --all-features
 
   # Detect cases where documentation links don't resolve and such.
