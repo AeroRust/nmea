@@ -77,7 +77,7 @@ jobs:
       - name: Test (Release)
         run: cargo test --release --no-default-features
 
-      - name: Test (Release) all-features
+      - name: Test (Release) --all-features
         run: cargo test --release --all-features
 
   # Detect cases where documentation links don't resolve and such.
