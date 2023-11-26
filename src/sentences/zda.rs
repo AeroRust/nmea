@@ -146,6 +146,8 @@ fn do_parse_zda(i: &str) -> IResult<&str, ZdaData> {
 
 #[cfg(test)]
 mod tests {
+    use chrono::TimeZone;
+
     use super::*;
     use crate::parse_nmea_sentence;
 
@@ -252,13 +254,15 @@ mod tests {
         );
         assert_eq!(
             zda_data.local_date_time(),
-            Some(DateTime::from_local(
-                NaiveDateTime::new(
-                    NaiveDate::from_ymd_opt(2004, 3, 11).unwrap(),
-                    NaiveTime::from_hms_milli_opt(16, 00, 12, 710).unwrap()
-                ),
-                FixedOffset::east_opt(-1 * 60 * 60).unwrap()
-            ))
+            Some(
+                FixedOffset::east_opt(-1 * 60 * 60)
+                    .unwrap()
+                    .from_local_datetime(&NaiveDateTime::new(
+                        NaiveDate::from_ymd_opt(2004, 3, 11).unwrap(),
+                        NaiveTime::from_hms_milli_opt(16, 00, 12, 710).unwrap()
+                    ))
+                    .unwrap()
+            )
         );
 
         assert_eq!(

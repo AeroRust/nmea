@@ -166,10 +166,7 @@ impl<'a> Nmea {
     fn merge_gsv_data(&mut self, data: GsvData) -> Result<(), Error<'a>> {
         {
             let d = &mut self.satellites_scan[data.gnss_type as usize];
-            let full_pack_size: usize = data
-                .sentence_num
-                .try_into()
-                .map_err(|_| Error::InvalidGsvSentenceNum)?;
+            let full_pack_size: usize = data.sentence_num.into();
             d.max_len = full_pack_size.max(d.max_len);
             d.data
                 .push_back(data.sats_info)
@@ -1292,6 +1289,7 @@ mod tests {
 
     use crate::{parse::checksum, sentences::FixType, Error, Nmea, SentenceType};
 
+    #[cfg(feature = "GGA")]
     fn check_parsing_lat_lon_in_gga(lat: f64, lon: f64) -> TestResult {
         fn scale(val: f64, max: f64) -> f64 {
             val % max
