@@ -1,18 +1,16 @@
-use arrayvec::ArrayString;
+use super::utils::array_string;
 use crate::{
     parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
     Error, SentenceType,
 };
+use arrayvec::ArrayString;
 use nom::{
     bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
 };
-use super::utils::array_string;
-
-
 
 /// WNC - Distance - Waypoint to Waypoint
-/// 
-/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_wnc_distance_waypoint_to_waypoint> 
+///
+/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_wnc_distance_waypoint_to_waypoint>
 ///
 /// Example of WNC sentences:
 /// - $GPWNC,200.00,N,370.40,K,Dest,Origin*58
@@ -22,7 +20,7 @@ use super::utils::array_string;
 ///             |  |  |  |   |    |  
 ///     $--WNC,x.x,N,x.x,K,c--c,c--c*hh  
 /// ```
-/// 
+///
 /// Key:
 /// 1. Distance, Nautical Miles
 /// 2. N = Nautical Miles
