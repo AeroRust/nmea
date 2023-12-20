@@ -389,7 +389,7 @@ pub fn parse_str(sentence_input: &str) -> Result<ParseResult, Error> {
             SentenceType::WNC => {
                 cfg_if! {
                     if #[cfg(feature = "WNC")] {
-                        parse_zda(nmea_sentence).map(ParseResult::WNC)
+                        parse_wnc(nmea_sentence).map(ParseResult::WNC)
                     } else {
                         return Err(Error::DisabledSentence);
                     }
