@@ -7,7 +7,7 @@
 ///         | |  |   | | | |  |  | |     |
 ///  $--APA,A,A,x.xx,L,N,A,A,xxx,M,c---c*hh<CR><LF>
 /// '''
-///Field Number:
+/// Field Number:
 ///
 /// 1. Status V = Loran-C Blink or SNR warning V = general warning flag or other navigation systems when a reliable fix is not available
 /// 2. Status V = Loran-C Cycle Lock warning flag A = OK or not used
