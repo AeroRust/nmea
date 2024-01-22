@@ -21,7 +21,6 @@
 /// 10. Destination Waypoint ID
 /// 11. Checksum
 
-
 use std::io::{self, BufRead};
 
 #[derive(Debug)]
