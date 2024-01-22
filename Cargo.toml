@@ -1,0 +1,185 @@
+[package]
+name = "nmea"
+version = "0.6.0"
+
+authors = [
+  "Felix Obenhuber <felix@obenhuber.de>",
+  "Evgeniy A. Dushistov <dushistov@mail.ru>",
+  "Henrik Böving <hargonix@gmail.com>",
+  "Lachezar Lechev <elpiel93@gmail.com>",
+  "AeroRust <aerospace.rust@gmail.com>",
+]
+
+categories = ["parser-implementations", "no-std", "embedded"]
+keywords = ["NMEA", "gps", "glonass", "coordinate", "position"]
+description = "Simple NMEA 0183 parser"
+license = "MIT OR Apache-2.0"
+documentation = "https://docs.rs/nmea"
+repository = "https://github.com/AeroRust/nmea"
+readme = "README.md"
+
+edition = "2021"
+rust-version = "1.65"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+arrayvec = { version = "0.7", default-features = false }
+chrono = { version = "0.4", default-features = false }
+heapless = "0.7"
+nom = { version = "7.1", default-features = false }
+
+# we include num-traits only when `std` is not enabled
+# because of `fract()` and `trunc()` methods
+num-traits = { version = "0.2", default-features = false, features = ["libm"]}
+cfg-if = "1"
+serde = { version = "1.0", default-features = false, optional = true }
+serde_with = { version = "3.0", default-features = false, optional = true }
+
+[dev-dependencies]
+approx = "0.5"
+doc-comment = "0.3"
+pretty_assertions = "1"
+quickcheck = { version = "1", default-features = false }
+# criterion 0.5.1 requires at least Rust 1.70 because of clap v4.4.0.
+criterion = "0.4"
+serde_json = "1.0"
+
+[features]
+default = ["std", "all-sentences"]
+std = ["nom/std", "chrono/std", "arrayvec/std", "serde?/std", "serde_with?/std"]
+serde = [
+    "serde/derive", 
+    "serde_with/macros", 
+    "serde_with/chrono_0_4", 
+    "heapless/serde", 
+    "chrono/serde", 
+    "arrayvec/serde"
+]
+
+all-sentences = ["GNSS", "waypoint", "maritime", "water", "vendor-specific", "other"]
+# GNSS specific sentences related to the possition or speed relative to the ground
+GNSS = ["ALM", "GBS", "GGA", "GLL", "GNS", "GSA", "GSV", "RMC", "VTG"]
+
+waypoint = ["AAM", "BOD", "BWC", "BWW", "WNC", "ZFO", "ZTG"]
+maritime = ["waypoint", "water"]
+water = ["DBK", "MTW", "VHW"]
+vendor-specific = ["RMZ"]
+other = ["HDT", "MDA", "MWV", "TXT", "ZDA"]
+
+# AAM - Waypoint Arrival Alarm
+# feature: waypoint
+AAM = []
+
+# ALM - GPS Almanac Data
+# feature: GNSS
+ALM = []
+
+# BOD - Bearing - Waypoint to Waypoint
+# feature: waypoint
+BOD = []
+
+# BWC - Bearing & Distance to Waypoint - Great Circle
+# feature: waypoint
+BWC = []
+
+# BWW - Bearing - Waypoint to Waypoint
+# feature: waypoint
+BWW = []
+
+# DBK - Depth Below Keel
+# feature: water
+DBK = []
+
+# GBS - GPS Satellite Fault Detection
+# feature: GNSS
+GBS = []
+
+# GGA - Global Positioning System Fix Data
+# feature: GNSS
+GGA = []
+
+# GLL - Geographic Position - Latitude/Longitude
+# feature: GNSS
+GLL = []
+
+# GNS - Fix data
+# feature: GNSS
+GNS = []
+
+# GSA - GPS DOP and active satellites
+# feature: GNSS
+GSA = []
+
+# GSV - Satellites in view
+# feature: GNSS
+GSV = []
+
+# HDT - Heading - True
+HDT = []
+
+# MDA - Meterological Composite
+MDA = []
+
+# MTW - Mean Temperature of Water
+# feature: water
+MTW = []
+
+# MWV - Wind Speed and Angle
+MWV = []
+
+# RMC - Recommended Minimum Navigation Information
+# feature: GNSS
+RMC = []
+
+# PGRMZ - Garmin Altitude (Vendor specific)
+# feature: vendor-specific
+RMZ = []
+
+# TXT - Text message
+TXT = []
+
+# VHW - Water speed and heading
+# feature: water
+VHW = []
+
+# VTG - Track made good and Ground speed
+# feature: GNSS
+VTG = []
+
+# WNC - Distance - Waypoint to waypoint
+# feature: waypoint
+WNC = []
+
+# ZDA - Time & Date - UTC, day, month, year and local time zone
+ZDA = []
+
+# ZFO - UTC & Time from origin Waypoint
+# feature: waypoint
+ZFO = []
+
+# ZTG - UTC & Time to Destination Waypoint
+# feature: waypoint
+ZTG = []
+
+[[test]]
+name = "all_supported_messages"
+required-features = ["all-sentences"]
+
+[[test]]
+name = "file_log_parser"
+required-features = ["all-sentences"]
+
+[[test]]
+name = "functional_tests"
+required-features = ["all-sentences"]
+
+[[bench]]
+name = "nom_parsing"
+harness = false
+
+[[bench]]
+name = "gsv_parser"
+harness = false

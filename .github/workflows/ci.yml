@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "00 01 * * *"
+
+# Stops the running workflow of previous pushes
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  RUST_BACKTRACE: 1
+jobs:
+  lints:
+    name: Rustfmt & Clippy lints
+
+    runs-on: ubuntu-latest
+    # strategy:
+    #   fail-fast: false
+    env:
+      RUSTUP_MAX_RETRIES: 10
+      CARGO_NET_RETRY: 10
+    steps:
+      - uses: actions/checkout@v3
+
+      # use nightly for rustfmt & clippy checks
+      - name: Install Rust nightly toolchain
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt, clippy
+
+      - name: Rust format
+        run: cargo fmt --check
+
+      - name: Clippy lints
+        run: cargo clippy --no-deps -- -D warnings
+  test:
+    name: Test
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        rust: ["1.65", stable, beta]
+    env:
+      RUSTUP_MAX_RETRIES: 10
+      CARGO_NET_RETRY: 10
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rust-src
+          toolchain: ${{ matrix.rust }}
+
+      - name: Build
+        run: cargo build
+
+      - name: Test --no-default-features
+        run: cargo test --no-default-features
+
+      - name: Test --all-features
+        run: cargo test --all-features
+
+      - name: Test (Release)
+        run: cargo test --release --no-default-features
+
+      - name: Test (Release) --all-features
+        run: cargo test --release --all-features
+
+  # Detect cases where documentation links don't resolve and such.
+  doc:
+    name: Docs check
+    runs-on: ubuntu-latest
+    env:
+      RUSTDOCFLAGS: "-D warnings"
+    steps:
+      - uses: actions/checkout@v3
+      # Docs.rs uses nightly, which allows for easier syntax for linking to functions.
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-docs
+
+      - name: Docs --all-features
+        run: cargo doc --all-features --no-deps
+
+      - name: Docs --no-default-features
+        run: cargo doc --no-default-features --no-deps
+  codecov:
+    name: Generate code coverage
+    runs-on: ubuntu-latest
+    container:
+      image: xd009642/tarpaulin:develop-nightly
+      options: --security-opt seccomp=unconfined
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Generate code coverage
+        run: |
+          cargo +nightly tarpaulin --verbose --all-features --workspace --timeout 120 --out xml
+
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
