@@ -44,7 +44,7 @@ pub enum GsaMode2 {
 pub struct GsaData {
     pub mode1: GsaMode1,
     pub mode2: GsaMode2,
-    pub fix_sats_prn: Vec<u32, 12>,
+    pub fix_sats_prn: Vec<u32, 18>,
     pub pdop: Option<f32>,
     pub hdop: Option<f32>,
     pub vdop: Option<f32>,
@@ -53,7 +53,7 @@ pub struct GsaData {
 /// This function is take from `nom`, see `nom::multi::many0`
 /// with one difference - we use a [`heapless::Vec`]
 /// because we want `no_std` & no `alloc`
-fn many0<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O, 12>, E>
+fn many0<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O, 18>, E>
 where
     I: Clone + InputLength,
     F: Parser<I, O, E>,
@@ -61,7 +61,7 @@ where
     O: core::fmt::Debug,
 {
     move |mut i: I| {
-        let mut acc = Vec::<_, 12>::new();
+        let mut acc = Vec::<_, 18>::new();
         loop {
             let len = i.input_len();
             match f.parse(i.clone()) {
@@ -81,11 +81,11 @@ where
     }
 }
 
-fn gsa_prn_fields_parse(i: &str) -> IResult<&str, Vec<Option<u32>, 12>> {
+fn gsa_prn_fields_parse(i: &str) -> IResult<&str, Vec<Option<u32>, 18>> {
     many0(terminated(opt(number::<u32>), char(',')))(i)
 }
 
-type GsaTail = (Vec<Option<u32>, 12>, Option<f32>, Option<f32>, Option<f32>);
+type GsaTail = (Vec<Option<u32>, 18>, Option<f32>, Option<f32>, Option<f32>);
 
 fn do_parse_gsa_tail(i: &str) -> IResult<&str, GsaTail> {
     let (i, prns) = gsa_prn_fields_parse(i)?;
@@ -129,7 +129,7 @@ fn do_parse_gsa(i: &str) -> IResult<&str, GsaData> {
                 _ => unreachable!(),
             },
             fix_sats_prn: {
-                let mut fix_sats_prn = Vec::<u32, 12>::new();
+                let mut fix_sats_prn = Vec::<u32, 18>::new();
                 for sat in tail.0.iter().flatten() {
                     fix_sats_prn.push(*sat).unwrap()
                 }
@@ -228,7 +228,7 @@ mod tests {
             GsaData {
                 mode1: GsaMode1::Automatic,
                 mode2: GsaMode2::Fix3D,
-                fix_sats_prn: Vec::<_, 12>::from_slice(&[16, 18, 22, 24]).unwrap(),
+                fix_sats_prn: Vec::from_slice(&[16, 18, 22, 24]).unwrap(),
                 pdop: Some(3.6),
                 hdop: Some(2.1),
                 vdop: Some(2.2),
