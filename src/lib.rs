@@ -46,7 +46,8 @@
 //!
 //! - `default` features - `std`
 //! - `std` - enable `std`
-//! - `serde` - enable `serde`
+//! - `serde` - enable `serde` Serialize and Deserialize derives
+//! - `defmt-03` - enable the `defmt@0.3` Format derives
 //!
 //! [`Nmea::parse()`]: Nmea::parse
 //! [`Nmea::parse_for_fix()`]: Nmea::parse_for_fix
