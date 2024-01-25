@@ -28,7 +28,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 arrayvec = { version = "0.7", default-features = false }
 chrono = { version = "0.4", default-features = false }
-heapless = "0.7"
+heapless = "0.8"
 nom = { version = "7.1", default-features = false }
 
 # we include num-traits only when `std` is not enabled
@@ -37,6 +37,8 @@ num-traits = { version = "0.2", default-features = false, features = ["libm"]}
 cfg-if = "1"
 serde = { version = "1.0", default-features = false, optional = true }
 serde_with = { version = "3.0", default-features = false, optional = true }
+
+defmt = { version = "0.3", optional = true }
 
 [dev-dependencies]
 approx = "0.5"
@@ -58,6 +60,8 @@ serde = [
     "chrono/serde", 
     "arrayvec/serde"
 ]
+
+defmt-03 = ["dep:defmt", "heapless/defmt-03"]
 
 all-sentences = ["GNSS", "waypoint", "maritime", "water", "vendor-specific", "other"]
 # GNSS specific sentences related to the possition or speed relative to the ground
