@@ -24,12 +24,14 @@ use crate::{parse::NmeaSentence, Error, SentenceType};
 /// 2:  Unit of Measurement, (only) Celsius
 /// 3:  Mandatory NMEA checksum
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct MtwData {
     pub temperature: Option<f64>,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MtwUnit {
     Celsius,

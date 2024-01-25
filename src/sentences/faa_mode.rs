@@ -7,6 +7,7 @@ use super::{nom_parse_failure, FixType};
 
 /// for now let's handle only two GPS and GLONASS
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct FaaModes {
     sys_state0: FaaMode,
@@ -29,6 +30,7 @@ impl From<FaaModes> for FixType {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FaaMode {
     /// A - Autonomous mode

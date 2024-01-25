@@ -16,6 +16,7 @@ use serde::{Deserialize, Serialize};
 use crate::{parse::NmeaSentence, sentences::utils::number, Error, SentenceType};
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GsaMode1 {
     Manual,
@@ -23,6 +24,7 @@ pub enum GsaMode1 {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GsaMode2 {
     NoFix,
@@ -40,6 +42,7 @@ pub enum GsaMode2 {
 /// $--GSA,a,a,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x.x,x.x,x.x*hh<CR><LF>
 /// ```
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct GsaData {
     pub mode1: GsaMode1,

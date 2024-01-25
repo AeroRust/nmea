@@ -21,6 +21,7 @@ use crate::{parse::NmeaSentence, Error, SentenceType};
 /// $--MWV,x.x,a,x.x,a*hh<CR><LF>
 /// ```
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct MwvData {
     pub wind_direction: Option<f32>,
@@ -31,6 +32,7 @@ pub struct MwvData {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MwvReference {
     Relative,
@@ -38,6 +40,7 @@ pub enum MwvReference {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MwvWindSpeedUnits {
     KilometersPerHour,

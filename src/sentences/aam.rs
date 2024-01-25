@@ -34,6 +34,7 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 /// WPTNME is the waypoint name.
 /// ```
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct AamData {
     pub arrival_circle_entered: Option<bool>,

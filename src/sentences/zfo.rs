@@ -26,6 +26,7 @@ use crate::{
 /// 3. Origin Waypoint ID
 /// 4. Checksum
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq, Eq)]
 pub struct ZfoData {
     pub fix_time: Option<NaiveTime>,

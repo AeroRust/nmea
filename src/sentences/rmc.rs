@@ -18,6 +18,7 @@ use crate::{
 use super::{faa_mode::parse_faa_mode, utils::parse_magnetic_variation, FaaMode};
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RmcStatusOfFix {
     Autonomous,
@@ -26,6 +27,7 @@ pub enum RmcStatusOfFix {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RmcNavigationStatus {
     Autonomous,
@@ -78,6 +80,7 @@ pub enum RmcNavigationStatus {
 ///     `A` = autonomous, `D` = differential, `E` = Estimated,
 ///     `M` = Manual input mode, `N` = not valid, `S` = Simulator, `V` = Valid
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RmcData {
     pub fix_time: Option<NaiveTime>,

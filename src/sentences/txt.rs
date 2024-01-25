@@ -67,6 +67,7 @@ fn do_parse_txt(i: &str) -> IResult<&str, TxtData0<'_>> {
 
 /// TXT - Text
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct TxtData {
     pub count: u8,

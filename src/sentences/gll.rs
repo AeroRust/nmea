@@ -33,6 +33,7 @@ use crate::{
 /// ```
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct GllData {
     pub latitude: Option<f64>,

@@ -33,6 +33,7 @@ use super::utils::array_string;
 /// 7. Checksum
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct BwwData {
     pub true_bearing: Option<f32>,
