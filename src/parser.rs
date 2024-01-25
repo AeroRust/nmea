@@ -35,6 +35,7 @@ use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Serialize};
 
 /// ```
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Default)]
 pub struct Nmea {
     pub fix_time: Option<NaiveTime>,
@@ -436,6 +437,7 @@ impl fmt::Display for Nmea {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Default)]
 struct SatsPack {
     /// max number of visible GNSS satellites per hemisphere, assuming global coverage
@@ -497,6 +499,7 @@ mod serde_deq {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Clone, PartialEq)]
 /// Satellite information
 pub struct Satellite {
@@ -760,6 +763,7 @@ define_sentence_type_enum! {
     ///
     /// - [`SentenceType::RMZ`]
     #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
     #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
     #[repr(u32)]
     #[allow(rustdoc::bare_urls)]
@@ -1244,6 +1248,7 @@ define_sentence_type_enum! {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
 pub struct SentenceMask {
     mask: u128,
