@@ -52,7 +52,7 @@ pub struct Nmea {
     pub pdop: Option<f32>,
     /// Geoid separation in meters
     pub geoid_separation: Option<f32>,
-    pub fix_satellites_prns: Option<Vec<u32, 12>>,
+    pub fix_satellites_prns: Option<Vec<u32, 18>>,
     satellites_scan: [SatsPack; GnssType::COUNT],
     required_sentences_for_nav: SentenceMask,
     last_fix_time: Option<NaiveTime>,
