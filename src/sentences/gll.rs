@@ -38,6 +38,7 @@ use crate::{
 pub struct GllData {
     pub latitude: Option<f64>,
     pub longitude: Option<f64>,
+    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
     pub fix_time: NaiveTime,
     pub valid: bool,
     pub faa_mode: Option<FaaMode>,

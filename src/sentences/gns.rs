@@ -31,6 +31,7 @@ use crate::{parse::NmeaSentence, Error, SentenceType};
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct GnsData {
+    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
     pub fix_time: Option<NaiveTime>,
     pub lat: Option<f64>,
     pub lon: Option<f64>,

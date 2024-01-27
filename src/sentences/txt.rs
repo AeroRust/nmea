@@ -73,6 +73,7 @@ pub struct TxtData {
     pub count: u8,
     pub seq: u8,
     pub text_ident: u8,
+    #[cfg_attr(feature = "defmt-03", defmt(Display2Format))]
     pub text: ArrayString<TEXT_PARAMETER_MAX_LEN>,
 }
 

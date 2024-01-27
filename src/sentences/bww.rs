@@ -38,7 +38,9 @@ use super::utils::array_string;
 pub struct BwwData {
     pub true_bearing: Option<f32>,
     pub magnetic_bearing: Option<f32>,
+    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
     pub to_waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
+    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
     pub from_waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 

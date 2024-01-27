@@ -41,6 +41,7 @@ pub struct AamData {
     pub perpendicular_passed: Option<bool>,
     pub arrival_circle_radius: Option<f32>,
     pub radius_units: Option<char>,
+    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
     pub waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 

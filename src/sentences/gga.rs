@@ -37,6 +37,7 @@ pub struct GgaData {
         not(feature = "std"),
         cfg_attr(feature = "serde", serde(with = "serde_naive_time"))
     )]
+    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
     pub fix_time: Option<NaiveTime>,
     pub fix_type: Option<FixType>,
     pub latitude: Option<f64>,

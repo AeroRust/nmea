@@ -27,7 +27,9 @@ use serde::{Deserialize, Serialize};
 pub struct BodData {
     pub bearing_true: Option<f32>,
     pub bearing_magnetic: Option<f32>,
+    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
     pub to_waypoint: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
+    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
     pub from_waypoint: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 

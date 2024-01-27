@@ -83,7 +83,9 @@ pub enum RmcNavigationStatus {
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RmcData {
+    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
     pub fix_time: Option<NaiveTime>,
+    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
     pub fix_date: Option<NaiveDate>,
     pub status_of_fix: RmcStatusOfFix,
     pub lat: Option<f64>,
