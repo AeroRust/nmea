@@ -107,6 +107,7 @@ pub fn parse_nmea_sentence(sentence: &str) -> core::result::Result<NmeaSentence,
 pub enum ParseResult {
     AAM(AamData),
     ALM(AlmData),
+    APA(ApaData),
     BOD(BodData),
     BWC(BwcData),
     BWW(BwwData),
@@ -139,6 +140,7 @@ impl From<&ParseResult> for SentenceType {
         match parse_result {
             ParseResult::AAM(_) => SentenceType::AAM,
             ParseResult::ALM(_) => SentenceType::ALM,
+            ParseResult::APA(_) => SentenceType::APA,
             ParseResult::BOD(_) => SentenceType::BOD,
             ParseResult::BWC(_) => SentenceType::BWC,
             ParseResult::BWW(_) => SentenceType::BWW,
@@ -210,6 +212,15 @@ pub fn parse_str(sentence_input: &str) -> Result<ParseResult, Error> {
                 cfg_if! {
                     if #[cfg(feature = "ALM")] {
                         parse_alm(nmea_sentence).map(ParseResult::ALM)
+                    } else {
+                        return Err(Error::DisabledSentence);
+                    }
+                }
+            }
+            SentenceType::APA => {
+                cfg_if! {
+                    if #[cfg(feature = "APA")] {
+                        parse_apa(nmea_sentence).map(ParseResult::APA)
                     } else {
                         return Err(Error::DisabledSentence);
                     }
