@@ -10,7 +10,7 @@ fn test_all_supported_messages() {
         // ALM
         (SentenceType::ALM, "$GPALM,1,1,15,1159,00,441D,4E,16BE,FD5E,A10C9F,4A2DA4,686E81,58CBE1,0A4,001*77"),
         // APA
-        (SentenceType::APA, "$GPAPA,A,A,0.10,R,N,V,V,011,M,DEST,011,M*82"),
+        (SentenceType::APA, "$GPAPA,A,A,0.10,R,N,V,V,011,M,DEST,011,M*42"),
         // BWC
         (SentenceType::BWC, "$GPBWC,220516,5130.02,N,00046.34,W,213.8,T,218.0,M,0004.6,N,EGLM*21"),
         // BWW

@@ -24,7 +24,7 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 /// $--APA,A,A,x.xx,L,N,A,A,xxx,M,c---c*hh<CR><LF>
 ///
 // Field Number:
-
+    
 // 1. Status, BOOLEAN, V = Loran-C Blink or SNR warning A = general warning flag or other navigation systems when a reliable fix is not available
 // 2. Status, BOOLEAN, V = Loran-C Cycle Lock warning flag A = OK or not used
 // 3. Cross Track Error Magnitude
@@ -38,7 +38,7 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 // 11. Checksum
 //
 // Example: $GPAPA,A,A,0.10,R,N,V,V,011,M,DEST,011,M*82
-/// ```
+/// M is the waypoint name
 ///
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -155,28 +155,99 @@ mod tests {
     use approx::assert_relative_eq;
 
     use super::*;
-    use crate::{SentenceType};
+    use crate::{parse::parse_nmea_sentence, SentenceType};
 
     #[test]
     fn parse_apa_with_nmea_sentence_struct() {
-;
         let data = parse_apa(NmeaSentence {
             talker_id: "GP",
             message_id: SentenceType::APA,
-            data: "A,A,0.10,R,N,V,V,011,M,DEST,011,M*82",
-            checksum: 0x82,
+            data: "A,A,0.10,R,N,V,V,011,M,DEST,011,M*42",
+            checksum: 0x3E,
         })
         .unwrap();
 
-        assert!(true);
-
-        // assert!(data.status_warning.unwrap());
-        // assert!(!data.status_cycle_warning.unwrap());
-        // assert_relative_eq!(data.cross_track_error_magnitude.unwrap(), 0.10);
-        // assert_eq!(data.direction_steer.unwrap(), false);
-        // assert!(data.status_arrived.unwrap());
-        // assert!(!data.status_passed.unwrap());
-        // assert_relative_eq!(data.bearing_origin_destination.unwrap(), 11.0);
-        // assert_eq!(&data.waypoint_id.unwrap(), "DEST");
+        assert!(data.status_warning.unwrap());
+        assert!(data.status_cycle_warning.unwrap());
+        assert_relative_eq!(data.cross_track_error_magnitude.unwrap(), 0.10);
+        assert_eq!(data.direction_steer.unwrap(), false);
+        assert_eq!(data.cross_track_units.unwrap(), 'N');
+        assert!(!data.status_arrived.unwrap());
+        assert!(!data.status_passed.unwrap());
+        assert_relative_eq!(data.bearing_origin_destination.unwrap(), 11.0);
+        assert_eq!(data.magnetic_true.unwrap(), 'M');
+        assert_eq!(&data.waypoint_id.unwrap(), "DEST,011,M");
     }
+
+     #[test]
+    fn parse_apa_full_sentence() {
+        let sentence = parse_nmea_sentence("$GPAPA,A,A,0.10,R,N,V,V,011,M,DEST,011,M*42").unwrap();
+        assert_eq!(sentence.checksum, 0x42);
+        assert_eq!(sentence.calc_checksum(), 0x42);
+
+        let data = parse_apa(sentence).unwrap();
+        assert!(data.status_warning.unwrap());
+        assert!(data.status_cycle_warning.unwrap());
+        assert_relative_eq!(data.cross_track_error_magnitude.unwrap(), 0.10);
+        assert_eq!(data.direction_steer.unwrap(), false);
+        assert_eq!(data.cross_track_units.unwrap(), 'N');
+        assert!(!data.status_arrived.unwrap());
+        assert!(!data.status_passed.unwrap());
+        assert_relative_eq!(data.bearing_origin_destination.unwrap(), 11.0);
+        assert_eq!(data.magnetic_true.unwrap(), 'M');
+        assert_eq!(&data.waypoint_id.unwrap(), "DEST,011,M");
+    }
+
+    #[test]
+    #[should_panic]
+    fn parse_apa_with_invalid_status_warning_value() {
+        parse_apa(NmeaSentence {
+            talker_id: "GP",
+            message_id: SentenceType::APA,
+            data: "G,A,0.10,R,N,V,V,011,M,DEST,011,M*4",
+            checksum: 0x0,
+        })
+        .unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn parse_apa_with_invalid_magnetic_true_value() {
+        parse_apa(NmeaSentence {
+            talker_id: "GP",
+            message_id: SentenceType::APA,
+            data: "A,A,0.10,R,N,V,V,011,X,DEST,011,M*4",
+            checksum: 0x0,
+        })
+        .unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn parse_apa_with_invalid_cross_track_units_value() {
+        parse_apa(NmeaSentence {
+            talker_id: "GP",
+            message_id: SentenceType::APA,
+            data: "A,A,0.10,R,C,V,V,011,M,DEST,011,M*4",
+            checksum: 0x0,
+        })
+        .unwrap();
+    }
+
+    #[test]
+    fn parse_apa_with_wrong_message_id() {
+         let error = parse_apa(NmeaSentence {
+            talker_id: "GP",
+            message_id: SentenceType::ABK,
+            data: "A,A,0.10,R,N,V,V,011,M,DEST,011,M*42",
+            checksum: 0x43,
+        })
+        .unwrap_err();
+
+        if let Error::WrongSentenceHeader { expected, found } = error {
+            assert_eq!(expected, SentenceType::APA);
+            assert_eq!(found, SentenceType::ABK);
+        }
+    }
+
 }
