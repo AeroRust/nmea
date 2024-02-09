@@ -172,11 +172,10 @@ mod tests {
     use approx::assert_relative_eq;
 
     use super::*;
-    use crate::{SentenceType};
+    use crate::{parse::parse_nmea_sentence, SentenceType};
 
     #[test]
     fn parse_apa_with_nmea_sentence_struct() {
-;
         let data = parse_apa(NmeaSentence {
             talker_id: "GP",
             message_id: SentenceType::APA,
