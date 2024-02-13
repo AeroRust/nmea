@@ -77,6 +77,18 @@ jobs:
         # this includes default features, `std` and `all-sentences`
         run: cargo test --release -F serde
 
+  bench:
+    name: Benches
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run Benches
+        run: cargo bench -p benches-harness
+
   # Detect cases where documentation links don't resolve and such.
   doc:
     name: Docs check
