@@ -30,6 +30,7 @@ NMEA Standard Sentences
 - RMC *
 - VHW
 - VTG *
+- WNC
 - ZDA
 - ZFO
 - ZTG
@@ -106,7 +107,7 @@ fn main() {
 
 ## Supported Rust Versions
 
-The Minimum supported Rust version (or MSRV) is **1.64**.
+The Minimum supported Rust version (or MSRV) is **1.65**.
 
 ## Unsafe-free crate
 

@@ -29,6 +29,7 @@
 //! - RMC *
 //! - VHW
 //! - VTG *
+//! - WNC
 //! - ZDA
 //! - ZFO
 //! - ZTG

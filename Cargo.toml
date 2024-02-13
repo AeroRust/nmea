@@ -19,6 +19,7 @@ repository = "https://github.com/AeroRust/nmea"
 readme = "README.md"
 
 edition = "2021"
+# Update README.md and ci.yml when updating the MSRV!
 rust-version = "1.65"
 
 [package.metadata.docs.rs]
@@ -67,7 +68,7 @@ all-sentences = ["GNSS", "waypoint", "maritime", "water", "vendor-specific", "ot
 # GNSS specific sentences related to the possition or speed relative to the ground
 GNSS = ["ALM", "GBS", "GGA", "GLL", "GNS", "GSA", "GSV", "RMC", "VTG"]
 
-waypoint = ["AAM", "BOD", "BWC", "BWW", "ZFO", "ZTG"]
+waypoint = ["AAM", "BOD", "BWC", "BWW", "WNC", "ZFO", "ZTG"]
 maritime = ["waypoint", "water"]
 water = ["DBK", "MTW", "VHW"]
 vendor-specific = ["RMZ"]
@@ -152,6 +153,10 @@ VHW = []
 # VTG - Track made good and Ground speed
 # feature: GNSS
 VTG = []
+
+# WNC - Distance - Waypoint to waypoint
+# feature: waypoint
+WNC = []
 
 # ZDA - Time & Date - UTC, day, month, year and local time zone
 ZDA = []
