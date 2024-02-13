@@ -19,16 +19,14 @@ concurrency:
 
 env:
   RUST_BACKTRACE: 1
+  RUSTUP_MAX_RETRIES: 10
+  CARGO_NET_RETRY: 10
+
 jobs:
   lints:
     name: Rustfmt & Clippy lints
 
     runs-on: ubuntu-latest
-    # strategy:
-    #   fail-fast: false
-    env:
-      RUSTUP_MAX_RETRIES: 10
-      CARGO_NET_RETRY: 10
     steps:
       - uses: actions/checkout@v3
 
@@ -53,9 +51,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         rust: ["1.65", stable, beta]
-    env:
-      RUSTUP_MAX_RETRIES: 10
-      CARGO_NET_RETRY: 10
     steps:
       - uses: actions/checkout@v3
 
@@ -70,15 +65,17 @@ jobs:
 
       - name: Test --no-default-features
         run: cargo test --no-default-features
-
-      - name: Test --all-features
-        run: cargo test --all-features
+        
+      - name: Test all features excluding `defmt-03`
+        # this includes default features, `std` and `all-sentences`
+        run: cargo test -F serde
 
       - name: Test (Release)
         run: cargo test --release --no-default-features
 
-      - name: Test (Release) --all-features
-        run: cargo test --release --all-features
+      - name: Test (Release) all features excluding `defmt-03`
+        # this includes default features, `std` and `all-sentences`
+        run: cargo test --release -F serde
 
   # Detect cases where documentation links don't resolve and such.
   doc:
@@ -109,8 +106,8 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Generate code coverage
-        run: |
-          cargo +nightly tarpaulin --verbose --all-features --workspace --timeout 120 --out xml
+        # this includes default features, `std` and `all-sentences`
+        run: cargo +nightly tarpaulin --features serde --verbose --workspace --timeout 120 --out xml
 
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3

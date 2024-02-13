@@ -1,11 +1,15 @@
+use arrayvec::ArrayString;
+use nom::{
+    bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
+};
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use super::utils::array_string;
 use crate::{
     parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
     Error, SentenceType,
-};
-use arrayvec::ArrayString;
-use nom::{
-    bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
 };
 
 /// WNC - Distance - Waypoint to Waypoint
@@ -28,16 +32,19 @@ use nom::{
 /// 4. K = Kilometers
 /// 5. Waypoint ID, Destination
 /// 6. Waypoint ID, Origin
-
 #[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 pub struct WncData {
     /// Distance, Nautical Miles
     pub distance_nautical_miles: Option<f32>,
     /// Distance, Kilometers
     pub distance_kilometers: Option<f32>,
     /// Waypoint ID, Destination
+    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
     pub waypoint_id_destination: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
     /// Waypoint ID, Origin
+    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
     pub waypoint_id_origin: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 

@@ -31,8 +31,10 @@ use super::utils::{parse_num, parse_number_in_range};
 /// 6. Local zone minutes description, 00 to 59, apply same sign as local hours
 /// 7. Checksum
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ZdaData {
+    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
     pub utc_time: Option<NaiveTime>,
     pub day: Option<u8>,
     pub month: Option<u8>,
