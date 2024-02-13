@@ -28,6 +28,7 @@ use crate::{parse::NmeaSentence, Error, ParseResult, SentenceType};
 /// 6:    F = Fathoms
 /// 7:    Mandatory NMEA checksum
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct DbkData {
     pub depth_feet: Option<f64>,

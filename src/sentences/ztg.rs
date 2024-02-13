@@ -28,14 +28,18 @@ use super::utils::array_string;
 /// 3. Destination Waypoint ID
 /// 4. Checksum
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq, Eq)]
 pub struct ZtgData {
+    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
     pub fix_time: Option<NaiveTime>,
     #[cfg_attr(
         feature = "serde",
         serde(with = "As::<Option<serde_with::DurationSecondsWithFrac<f64>>>")
     )]
+    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
     pub fix_duration: Option<Duration>,
+    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
     pub waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 

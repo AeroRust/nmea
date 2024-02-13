@@ -14,6 +14,7 @@ macro_rules! define_enum_with_count {
     ) => {
         $(#[$outer])*
         #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
         #[derive(PartialEq, Debug, Hash, Eq, Clone, Copy)]
         #[repr(u8)]
         pub enum $Name {

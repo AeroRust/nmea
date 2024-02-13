@@ -21,6 +21,7 @@ use crate::{parse::NmeaSentence, Error, SentenceType};
 ///  $--VTG,x.x,T,x.x,M,x.x,N,x.x,K,m*hh<CR><LF>
 /// ```
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct VtgData {
     pub true_course: Option<f32>,
