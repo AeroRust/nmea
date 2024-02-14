@@ -37,7 +37,7 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 // 10. Destination Waypoint ID
 // 11. Checksum
 //
-// Example: $GPAPA,A,A,0.10,R,N,V,V,011,M,DEST,011,M*82
+/// Example: `$GPAPA,A,A,0.10,R,N,V,V,011,M,DEST,011,M*82`
 /// M is the waypoint name
 ///
 
