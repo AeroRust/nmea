@@ -25,6 +25,7 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 /// ```
 /// Field Number:
 ///
+<<<<<<< HEAD
 /// 1. Status, BOOLEAN, V = Loran-C Blink or SNR warning A = general warning flag or other navigation systems when a reliable fix is not available
 /// 2. Status, BOOLEAN, V = Loran-C Cycle Lock warning flag A = OK or not used
 /// 3. Cross Track Error Magnitude
@@ -39,7 +40,6 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 ///
 /// Example: `$GPAPA,A,A,0.10,R,N,V,V,011,M,DEST,011,M*82`
 /// Where the last "M" is the waypoint name
-///
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq)]
