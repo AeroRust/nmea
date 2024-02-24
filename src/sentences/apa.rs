@@ -24,20 +24,20 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 /// $--APA,A,A,x.xx,L,N,A,A,xxx,M,c---c*hh<CR><LF>
 /// ```
 ///
-/// Field Number:
+// Field Number:
 ///
-/// 1. Status, BOOLEAN, V = Loran-C Blink or SNR warning A = general warning flag or other navigation systems when a reliable fix is not available
-/// 2. Status, BOOLEAN, V = Loran-C Cycle Lock warning flag A = OK or not used
-/// 3. Cross Track Error Magnitude
-/// 4. Status, BOOLEAN, L = Left or R = Right
-/// 5. Cross Track Units, N = Nautical miles or K = Kilometers
-/// 6. Status, BOOLEAN, A = Arrival Circle Entered, V = Not Entered
-/// 7. Status, BOOLEAN, A = Perpendicular passed at waypoint, V = Not Passed
-/// 8. Bearing origin to destination
-/// 9. M = Magnetic, T = True
-/// 10. Destination Waypoint ID
-/// 11. Checksum
-///
+// 1. Status, BOOLEAN, V = Loran-C Blink or SNR warning A = general warning flag or other navigation systems when a reliable fix is not available
+// 2. Status, BOOLEAN, V = Loran-C Cycle Lock warning flag A = OK or not used
+// 3. Cross Track Error Magnitude
+// 4. Direction to steer, L = Left or R = Right
+// 5. Cross Track Units, N = Nautical miles or K = Kilometers
+// 6. Status, BOOLEAN, A = Arrival Circle Entered, V = Not Entered
+// 7. Status, BOOLEAN, A = Perpendicular passed at waypoint, V = Not Passed
+// 8. Bearing origin to destination
+// 9. M = Magnetic, T = True
+// 10. Destination Waypoint ID
+// 11. Checksum
+//
 /// Example: `$GPAPA,A,A,0.10,R,N,V,V,011,M,DEST,011,M*82`
 /// Where the last "M" is the waypoint name
 ///
