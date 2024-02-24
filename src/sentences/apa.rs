@@ -23,20 +23,20 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 ///        | |  |   | | | |  |  | |     |
 /// $--APA,A,A,x.xx,L,N,A,A,xxx,M,c---c*hh<CR><LF>
 ///
-// Field Number:
-    
-// 1. Status, BOOLEAN, V = Loran-C Blink or SNR warning A = general warning flag or other navigation systems when a reliable fix is not available
-// 2. Status, BOOLEAN, V = Loran-C Cycle Lock warning flag A = OK or not used
-// 3. Cross Track Error Magnitude
-// 4. Status, BOOLEAN, L = Left or R = Right
-// 5. Cross Track Units, N = Nautical miles or K = Kilometers
-// 6. Status, BOOLEAN, A = Arrival Circle Entered, V = Not Entered
-// 7. Status, BOOLEAN, A = Perpendicular passed at waypoint, V = Not Passed
-// 8. Bearing origin to destination
-// 9. M = Magnetic, T = True
-// 10. Destination Waypoint ID
-// 11. Checksum
-//
+/// Field Number:
+///
+/// 1. Status, BOOLEAN, V = Loran-C Blink or SNR warning A = general warning flag or other navigation systems when a reliable fix is not available
+/// 2. Status, BOOLEAN, V = Loran-C Cycle Lock warning flag A = OK or not used
+/// 3. Cross Track Error Magnitude
+/// 4. Status, BOOLEAN, L = Left or R = Right
+/// 5. Cross Track Units, N = Nautical miles or K = Kilometers
+/// 6. Status, BOOLEAN, A = Arrival Circle Entered, V = Not Entered
+/// 7. Status, BOOLEAN, A = Perpendicular passed at waypoint, V = Not Passed
+/// 8. Bearing origin to destination
+/// 9. M = Magnetic, T = True
+/// 10. Destination Waypoint ID
+/// 11. Checksum
+///
 /// Example: `$GPAPA,A,A,0.10,R,N,V,V,011,M,DEST,011,M*82`
 /// Where the last "M" is the waypoint name
 ///
@@ -48,12 +48,24 @@ pub struct ApaData{
     pub status_cycle_warning: Option<bool>,
     pub cross_track_error_magnitude: Option<f32>,
     pub direction_steer: Option<bool>,
-    pub cross_track_units: Option<char>,
+    pub cross_track_units: Option<CrossTrackUnits>,
     pub status_arrived: Option<bool>,
     pub status_passed: Option<bool>,
     pub bearing_origin_destination: Option<f32>,
-    pub magnetic_true: Option<char>,
+    pub magnetic_true: Option<MagneticTrue>,
     pub waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum CrossTrackUnits {
+    Nautical,
+    Kilometers,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum MagneticTrue {
+    Magnetic,
+    True,
 }
 
 /// Parse APA message
@@ -98,8 +110,8 @@ fn do_parse_apa(i: &str) -> Result<ApaData, Error> {
 
     let (i, cross_track_units) = one_of("NK")(i)?;
     let cross_track_units = match cross_track_units {
-        'N' => Some('N'),
-        'K' => Some('K'),
+        'N' => Some(CrossTrackUnits::Nautical),
+        'K' => Some(CrossTrackUnits::Kilometers),
         _ => unreachable!(),
     };
     let (i, _) = char(',')(i)?;
@@ -125,8 +137,8 @@ fn do_parse_apa(i: &str) -> Result<ApaData, Error> {
 
     let (i, magnetic_true) = one_of("MT")(i)?;
     let magnetic_true = match magnetic_true {
-        'M' => Some('M'),
-        'T' => Some('T'),
+        'M' => Some(MagneticTrue::Magnetic),
+        'T' => Some(MagneticTrue::True),
         _ => unreachable!(),
     };
     let (i, _) = char(',')(i)?;
@@ -171,11 +183,11 @@ mod tests {
         assert!(data.status_cycle_warning.unwrap());
         assert_relative_eq!(data.cross_track_error_magnitude.unwrap(), 0.10);
         assert_eq!(data.direction_steer.unwrap(), false);
-        assert_eq!(data.cross_track_units.unwrap(), 'N');
+        assert_eq!(data.cross_track_units.unwrap(), CrossTrackUnits::Nautical);
         assert!(!data.status_arrived.unwrap());
         assert!(!data.status_passed.unwrap());
         assert_relative_eq!(data.bearing_origin_destination.unwrap(), 11.0);
-        assert_eq!(data.magnetic_true.unwrap(), 'M');
+        assert_eq!(data.magnetic_true.unwrap(), MagneticTrue::Magnetic);
         assert_eq!(&data.waypoint_id.unwrap(), "DEST,011,M");
     }
 
@@ -190,11 +202,11 @@ mod tests {
         assert!(data.status_cycle_warning.unwrap());
         assert_relative_eq!(data.cross_track_error_magnitude.unwrap(), 0.10);
         assert_eq!(data.direction_steer.unwrap(), false);
-        assert_eq!(data.cross_track_units.unwrap(), 'N');
+        assert_eq!(data.cross_track_units.unwrap(), CrossTrackUnits::Nautical);
         assert!(!data.status_arrived.unwrap());
         assert!(!data.status_passed.unwrap());
         assert_relative_eq!(data.bearing_origin_destination.unwrap(), 11.0);
-        assert_eq!(data.magnetic_true.unwrap(), 'M');
+        assert_eq!(data.magnetic_true.unwrap(), MagneticTrue::Magnetic);
         assert_eq!(&data.waypoint_id.unwrap(), "DEST,011,M");
     }
 
