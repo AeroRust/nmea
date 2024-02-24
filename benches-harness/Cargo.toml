@@ -1,0 +1,19 @@
+[package]
+name = "benches-harness"
+version = "0.1.0"
+edition = "2021"
+
+rust-version = "1.70"
+
+[dev-dependencies]
+criterion = { version = "0.5" }
+nom = { version = "7.1", default-features = false }
+nmea = { path = "../" }
+
+[[bench]]
+name = "nom_parsing"
+harness = false
+
+[[bench]]
+name = "gsv_parser"
+harness = false

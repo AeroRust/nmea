@@ -34,12 +34,14 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 /// WPTNME is the waypoint name.
 /// ```
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct AamData {
     pub arrival_circle_entered: Option<bool>,
     pub perpendicular_passed: Option<bool>,
     pub arrival_circle_radius: Option<f32>,
     pub radius_units: Option<char>,
+    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
     pub waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 
