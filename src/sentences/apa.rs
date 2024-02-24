@@ -29,7 +29,7 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 // 1. Status, BOOLEAN, V = Loran-C Blink or SNR warning A = general warning flag or other navigation systems when a reliable fix is not available
 // 2. Status, BOOLEAN, V = Loran-C Cycle Lock warning flag A = OK or not used
 // 3. Cross Track Error Magnitude
-// 4. Status, BOOLEAN, L = Left or R = Right
+// 4. Direction to steer, L = Left or R = Right
 // 5. Cross Track Units, N = Nautical miles or K = Kilometers
 // 6. Status, BOOLEAN, A = Arrival Circle Entered, V = Not Entered
 // 7. Status, BOOLEAN, A = Perpendicular passed at waypoint, V = Not Passed
