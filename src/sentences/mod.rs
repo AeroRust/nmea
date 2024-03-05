@@ -11,6 +11,7 @@ pub mod gga;
 pub mod gll;
 pub mod gns;
 pub mod gsa;
+pub mod gst;
 pub mod gsv;
 pub mod hdt;
 pub mod mda;
@@ -47,6 +48,7 @@ pub use {
     gns::{parse_gns, GnsData},
     gnss_type::GnssType,
     gsa::{parse_gsa, GsaData},
+    gst::{parse_gst, GstData},
     gsv::{parse_gsv, GsvData},
     hdt::{parse_hdt, HdtData},
     mda::{parse_mda, MdaData},
