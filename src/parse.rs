@@ -118,6 +118,7 @@ pub enum ParseResult {
     GLL(GllData),
     GNS(GnsData),
     GSA(GsaData),
+    GST(GstData),
     GSV(GsvData),
     HDT(HdtData),
     MDA(MdaData),
@@ -150,6 +151,7 @@ impl From<&ParseResult> for SentenceType {
             ParseResult::GLL(_) => SentenceType::GLL,
             ParseResult::GNS(_) => SentenceType::GNS,
             ParseResult::GSA(_) => SentenceType::GSA,
+            ParseResult::GST(_) => SentenceType::GST,
             ParseResult::GSV(_) => SentenceType::GSV,
             ParseResult::HDT(_) => SentenceType::HDT,
             ParseResult::MDA(_) => SentenceType::MDA,
@@ -293,6 +295,15 @@ pub fn parse_str(sentence_input: &str) -> Result<ParseResult, Error> {
                 cfg_if! {
                     if #[cfg(feature = "GSA")] {
                         parse_gsa(nmea_sentence).map(ParseResult::GSA)
+                    } else {
+                        return Err(Error::DisabledSentence);
+                    }
+                }
+            }
+            SentenceType::GST => {
+                cfg_if! {
+                    if #[cfg(feature = "GST")] {
+                        parse_gst(nmea_sentence).map(ParseResult::GST)
                     } else {
                         return Err(Error::DisabledSentence);
                     }

@@ -21,6 +21,7 @@
 //! - GLL *
 //! - GNS *
 //! - GSA *
+//! - GST
 //! - GSV *
 //! - HDT
 //! - MDA
