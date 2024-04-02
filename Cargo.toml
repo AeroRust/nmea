@@ -64,13 +64,17 @@ defmt-03 = ["dep:defmt", "heapless/defmt-03"]
 
 all-sentences = ["GNSS", "waypoint", "maritime", "water", "vendor-specific", "other"]
 # GNSS specific sentences related to the possition or speed relative to the ground
-GNSS = ["ALM", "GBS", "GGA", "GLL", "GNS", "GSA", "GSV", "RMC", "VTG"]
+GNSS = ["APA", "ALM", "GBS", "GGA", "GLL", "GNS", "GSA", "GSV", "RMC", "VTG"]
 
 waypoint = ["AAM", "BOD", "BWC", "BWW", "WNC", "ZFO", "ZTG"]
 maritime = ["waypoint", "water"]
 water = ["DBK", "MTW", "VHW"]
 vendor-specific = ["RMZ"]
 other = ["HDT", "MDA", "MWV", "TXT", "ZDA"]
+
+# APA - Autopilot Sentence "A"
+# feature: GNSS
+APA = []
 
 # AAM - Waypoint Arrival Alarm
 # feature: waypoint
@@ -178,6 +182,3 @@ required-features = ["all-sentences"]
 [[test]]
 name = "functional_tests"
 required-features = ["all-sentences"]
-
-[workspace]
-members = [".", "benches-harness"]
