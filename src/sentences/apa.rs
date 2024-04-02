@@ -43,7 +43,7 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq)]
-pub struct ApaData{
+pub struct ApaData {
     pub status_warning: Option<bool>,
     pub status_cycle_warning: Option<bool>,
     pub cross_track_error_magnitude: Option<f32>,
@@ -107,7 +107,7 @@ fn do_parse_apa(i: &str) -> Result<ApaData, Error> {
     let (i, _) = char(',')(i)?;
 
     let (i, steer_direction) = one_of("LR")(i)?;
-    let steer_direction = match direction_steer {
+    let steer_direction = match steer_direction {
         'L' => Some(SteerDirection::Left),
         'R' => Some(SteerDirection::Right),
         _ => unreachable!(),
@@ -167,7 +167,6 @@ fn do_parse_apa(i: &str) -> Result<ApaData, Error> {
     })
 }
 
-
 #[cfg(test)]
 mod tests {
     use approx::assert_relative_eq;
@@ -188,7 +187,7 @@ mod tests {
         assert!(data.status_warning.unwrap());
         assert!(data.status_cycle_warning.unwrap());
         assert_relative_eq!(data.cross_track_error_magnitude.unwrap(), 0.10);
-        assert_eq!(data.steer_direction.unwrap(), false);
+        assert_eq!(data.steer_direction.unwrap(), SteerDirection::Right);
         assert_eq!(data.cross_track_units.unwrap(), CrossTrackUnits::Nautical);
         assert!(!data.status_arrived.unwrap());
         assert!(!data.status_passed.unwrap());
@@ -197,7 +196,7 @@ mod tests {
         assert_eq!(&data.waypoint_id.unwrap(), "DEST,011,M");
     }
 
-     #[test]
+    #[test]
     fn parse_apa_full_sentence() {
         let sentence = parse_nmea_sentence("$GPAPA,A,A,0.10,R,N,V,V,011,M,DEST,011,M*42").unwrap();
         assert_eq!(sentence.checksum, 0x42);
@@ -207,7 +206,7 @@ mod tests {
         assert!(data.status_warning.unwrap());
         assert!(data.status_cycle_warning.unwrap());
         assert_relative_eq!(data.cross_track_error_magnitude.unwrap(), 0.10);
-        assert_eq!(data.steer_direction.unwrap(), false);
+        assert_eq!(data.steer_direction.unwrap(), SteerDirection::Right);
         assert_eq!(data.cross_track_units.unwrap(), CrossTrackUnits::Nautical);
         assert!(!data.status_arrived.unwrap());
         assert!(!data.status_passed.unwrap());
@@ -254,7 +253,7 @@ mod tests {
 
     #[test]
     fn parse_apa_with_wrong_message_id() {
-         let error = parse_apa(NmeaSentence {
+        let error = parse_apa(NmeaSentence {
             talker_id: "GP",
             message_id: SentenceType::ABK,
             data: "A,A,0.10,R,N,V,V,011,M,DEST,011,M*42",
@@ -267,5 +266,4 @@ mod tests {
             assert_eq!(found, SentenceType::ABK);
         }
     }
-
 }
