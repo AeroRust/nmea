@@ -23,38 +23,43 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 ///        | |  |   | | | |  |  | |     |
 /// $--APA,A,A,x.xx,L,N,A,A,xxx,M,c---c*hh<CR><LF>
 /// ```
+/// Field Number:
 ///
-// Field Number:
+/// 1. Status, BOOLEAN, V = Loran-C Blink or SNR warning A = general warning flag or other navigation systems when a reliable fix is not available
+/// 2. Status, BOOLEAN, V = Loran-C Cycle Lock warning flag A = OK or not used
+/// 3. Cross Track Error Magnitude
+/// 4. Direction to steer, L = Left or R = Right
+/// 5. Cross Track Units, N = Nautical miles or K = Kilometers
+/// 6. Status, BOOLEAN, A = Arrival Circle Entered, V = Not Entered
+/// 7. Status, BOOLEAN, A = Perpendicular passed at waypoint, V = Not Passed
+/// 8. Bearing origin to destination
+/// 9. M = Magnetic, T = True
+/// 10. Destination Waypoint ID
+/// 11. Checksum
 ///
-// 1. Status, BOOLEAN, V = Loran-C Blink or SNR warning A = general warning flag or other navigation systems when a reliable fix is not available
-// 2. Status, BOOLEAN, V = Loran-C Cycle Lock warning flag A = OK or not used
-// 3. Cross Track Error Magnitude
-// 4. Direction to steer, L = Left or R = Right
-// 5. Cross Track Units, N = Nautical miles or K = Kilometers
-// 6. Status, BOOLEAN, A = Arrival Circle Entered, V = Not Entered
-// 7. Status, BOOLEAN, A = Perpendicular passed at waypoint, V = Not Passed
-// 8. Bearing origin to destination
-// 9. M = Magnetic, T = True
-// 10. Destination Waypoint ID
-// 11. Checksum
-//
 /// Example: `$GPAPA,A,A,0.10,R,N,V,V,011,M,DEST,011,M*82`
 /// Where the last "M" is the waypoint name
 ///
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq)]
-pub struct ApaData{
+pub struct ApaData {
     pub status_warning: Option<bool>,
     pub status_cycle_warning: Option<bool>,
     pub cross_track_error_magnitude: Option<f32>,
-    pub direction_steer: Option<bool>,
+    pub steer_direction: Option<SteerDirection>,
     pub cross_track_units: Option<CrossTrackUnits>,
     pub status_arrived: Option<bool>,
     pub status_passed: Option<bool>,
     pub bearing_origin_destination: Option<f32>,
     pub magnetic_true: Option<MagneticTrue>,
     pub waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum SteerDirection {
+    Left,
+    Right,
 }
 
 #[derive(Debug, PartialEq)]
@@ -101,10 +106,10 @@ fn do_parse_apa(i: &str) -> Result<ApaData, Error> {
     let (i, cross_track_error_magnitude) = opt(float)(i)?;
     let (i, _) = char(',')(i)?;
 
-    let (i, direction_steer) = one_of("LR")(i)?;
-    let direction_steer = match direction_steer {
-        'L' => Some(true),
-        'R' => Some(false),
+    let (i, steer_direction) = one_of("LR")(i)?;
+    let steer_direction = match steer_direction {
+        'L' => Some(SteerDirection::Left),
+        'R' => Some(SteerDirection::Right),
         _ => unreachable!(),
     };
     let (i, _) = char(',')(i)?;
@@ -150,7 +155,7 @@ fn do_parse_apa(i: &str) -> Result<ApaData, Error> {
         status_warning,
         status_cycle_warning,
         cross_track_error_magnitude,
-        direction_steer,
+        steer_direction,
         cross_track_units,
         status_arrived,
         status_passed,
@@ -161,7 +166,6 @@ fn do_parse_apa(i: &str) -> Result<ApaData, Error> {
             .transpose()?,
     })
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -183,7 +187,7 @@ mod tests {
         assert!(data.status_warning.unwrap());
         assert!(data.status_cycle_warning.unwrap());
         assert_relative_eq!(data.cross_track_error_magnitude.unwrap(), 0.10);
-        assert_eq!(data.direction_steer.unwrap(), false);
+        assert_eq!(data.steer_direction.unwrap(), SteerDirection::Right);
         assert_eq!(data.cross_track_units.unwrap(), CrossTrackUnits::Nautical);
         assert!(!data.status_arrived.unwrap());
         assert!(!data.status_passed.unwrap());
@@ -192,7 +196,7 @@ mod tests {
         assert_eq!(&data.waypoint_id.unwrap(), "DEST,011,M");
     }
 
-     #[test]
+    #[test]
     fn parse_apa_full_sentence() {
         let sentence = parse_nmea_sentence("$GPAPA,A,A,0.10,R,N,V,V,011,M,DEST,011,M*42").unwrap();
         assert_eq!(sentence.checksum, 0x42);
@@ -202,7 +206,7 @@ mod tests {
         assert!(data.status_warning.unwrap());
         assert!(data.status_cycle_warning.unwrap());
         assert_relative_eq!(data.cross_track_error_magnitude.unwrap(), 0.10);
-        assert_eq!(data.direction_steer.unwrap(), false);
+        assert_eq!(data.steer_direction.unwrap(), SteerDirection::Right);
         assert_eq!(data.cross_track_units.unwrap(), CrossTrackUnits::Nautical);
         assert!(!data.status_arrived.unwrap());
         assert!(!data.status_passed.unwrap());
@@ -249,7 +253,7 @@ mod tests {
 
     #[test]
     fn parse_apa_with_wrong_message_id() {
-         let error = parse_apa(NmeaSentence {
+        let error = parse_apa(NmeaSentence {
             talker_id: "GP",
             message_id: SentenceType::ABK,
             data: "A,A,0.10,R,N,V,V,011,M,DEST,011,M*42",
@@ -262,5 +266,4 @@ mod tests {
             assert_eq!(found, SentenceType::ABK);
         }
     }
-
 }
