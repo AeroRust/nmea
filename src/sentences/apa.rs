@@ -41,7 +41,7 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 /// Where the last "M" is the waypoint name
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ApaData {
     pub status_warning: Option<bool>,
     pub status_cycle_warning: Option<bool>,
@@ -55,19 +55,22 @@ pub struct ApaData {
     pub waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum SteerDirection {
     Left,
     Right,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum CrossTrackUnits {
     Nautical,
     Kilometers,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum MagneticTrue {
     Magnetic,
     True,
