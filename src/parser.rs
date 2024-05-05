@@ -374,6 +374,7 @@ impl<'a> Nmea {
             | ParseResult::BOD(_)
             | ParseResult::DBK(_)
             | ParseResult::GBS(_)
+            | ParseResult::GST(_)
             | ParseResult::AAM(_)
             | ParseResult::APA(_)
             | ParseResult::ALM(_)
@@ -679,6 +680,7 @@ define_sentence_type_enum! {
     /// - [`SentenceType::GGA`]
     /// - [`SentenceType::GNS`]
     /// - [`SentenceType::GSA`]
+    /// - [`SentenceType::GST`]
     /// - [`SentenceType::GSV`]
     ///
     /// ### Course

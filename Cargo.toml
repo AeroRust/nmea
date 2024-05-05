@@ -67,7 +67,7 @@ defmt-03 = ["dep:defmt", "heapless/defmt-03"]
 
 all-sentences = ["GNSS", "waypoint", "maritime", "water", "vendor-specific", "other"]
 # GNSS specific sentences related to the possition or speed relative to the ground
-GNSS = ["APA", "ALM", "GBS", "GGA", "GLL", "GNS", "GSA", "GSV", "RMC", "VTG"]
+GNSS = ["APA", "ALM", "GBS", "GGA", "GLL", "GNS", "GSA", "GST", "GSV", "RMC", "VTG"]
 
 waypoint = ["AAM", "BOD", "BWC", "BWW", "WNC", "ZFO", "ZTG"]
 maritime = ["waypoint", "water"]
@@ -122,6 +122,10 @@ GNS = []
 # GSA - GPS DOP and active satellites
 # feature: GNSS
 GSA = []
+
+# GST - GPS Pseudorange Noise Statistics
+# feature: GNSS
+GST = []
 
 # GSV - Satellites in view
 # feature: GNSS
