@@ -376,6 +376,7 @@ impl<'a> Nmea {
             | ParseResult::GBS(_)
             | ParseResult::GST(_)
             | ParseResult::AAM(_)
+            | ParseResult::APA(_)
             | ParseResult::ALM(_)
             | ParseResult::HDT(_)
             | ParseResult::PGRMZ(_)

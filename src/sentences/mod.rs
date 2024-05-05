@@ -2,6 +2,7 @@
 
 pub mod aam;
 pub mod alm;
+pub mod apa;
 pub mod bod;
 pub mod bwc;
 pub mod bww;
@@ -36,6 +37,7 @@ pub mod gnss_type;
 pub use {
     aam::{parse_aam, AamData},
     alm::{parse_alm, AlmData},
+    apa::{parse_apa, ApaData},
     bod::{parse_bod, BodData},
     bwc::{parse_bwc, BwcData},
     bww::{parse_bww, BwwData},
