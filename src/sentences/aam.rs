@@ -26,7 +26,7 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 ///   1. Status, BOOLEAN, A = Arrival circle entered, V = not passed
 ///   2. Status, BOOLEAN, A = perpendicular passed at waypoint, V = not passed
 ///   3. Arrival circle radius
-///   4. Units of radiuos, nautical miles
+///   4. Units of radius, nautical miles
 ///   5. Waypoint ID
 ///   6. Checksum
 ///
