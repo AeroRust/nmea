@@ -13,6 +13,7 @@ Supported sentences:
 NMEA Standard Sentences
 - AAM
 - ALM
+- APA
 - BOD
 - BWC
 - BWW
@@ -22,6 +23,7 @@ NMEA Standard Sentences
 - GLL *
 - GNS *
 - GSA *
+- GST
 - GSV *
 - HDT
 - MDA
