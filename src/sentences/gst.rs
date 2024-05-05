@@ -1,6 +1,6 @@
-use chrono::NaiveTime;
-use nom::{character::complete::char, number::complete::float, combinator::opt, IResult};
 use crate::{parse::NmeaSentence, sentences::utils::parse_hms, Error, SentenceType};
+use chrono::NaiveTime;
+use nom::{character::complete::char, combinator::opt, number::complete::float, IResult};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
