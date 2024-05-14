@@ -24,7 +24,7 @@ pub enum TtmReference {
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct TtmAngle {
-    value: f32,
+    angle: f32,
     reference: TtmReference,
 }
 
@@ -230,7 +230,7 @@ fn parse_ttm_angle(i: &str) -> IResult<&str, Option<TtmAngle>> {
                 };
 
                 TtmAngle {
-                    value: angle,
+                    angle,
                     reference: reference,
                 }
             })
@@ -258,13 +258,13 @@ mod tests {
         assert_relative_eq!(data.target_distance.unwrap(), 0.5);
 
         let bearing_from_own_ship = data.bearing_from_own_ship.unwrap();
-        assert_relative_eq!(bearing_from_own_ship.value, 187.5,);
+        assert_relative_eq!(bearing_from_own_ship.angle, 187.5,);
         assert_eq!(bearing_from_own_ship.reference, TtmReference::Theoretical);
 
         assert_relative_eq!(data.target_speed.unwrap(), 12.0);
 
         let target_course = data.target_course.unwrap();
-        assert_relative_eq!(target_course.value, 17.6);
+        assert_relative_eq!(target_course.angle, 17.6);
         assert_eq!(target_course.reference, TtmReference::Theoretical);
 
         assert_relative_eq!(data.distance_of_cpa.unwrap(), 0.0);
