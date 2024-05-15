@@ -107,7 +107,7 @@ pub struct TtmData {
     /// Unit used for speed and distance
     pub speed_or_distance_unit: Option<TtmDistanceUnit>,
     /// Target name
-    pub target_name: Option<heapless::String<128>>,
+    pub target_name: Option<heapless::String<32>>,
     /// Target status
     pub target_status: Option<TtmStatus>,
     /// Set to true if target is a reference used to determine own-ship position or velocity
