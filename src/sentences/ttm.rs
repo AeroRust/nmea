@@ -3,6 +3,7 @@ use nom::{
     bytes::complete::take_until,
     character::complete::{char, one_of},
     combinator::{map_res, opt},
+    error::ErrorKind,
     IResult,
 };
 
@@ -11,6 +12,7 @@ use serde::{Deserialize, Serialize};
 
 use super::utils::{parse_float_num, parse_hms, parse_number_in_range};
 use crate::{Error, NmeaSentence, SentenceType};
+use heapless;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
@@ -105,7 +107,7 @@ pub struct TtmData {
     /// Unit used for speed and distance
     pub speed_or_distance_unit: Option<TtmDistanceUnit>,
     /// Target name
-    pub target_name: Option<String>,
+    pub target_name: Option<heapless::String<128>>,
     /// Target status
     pub target_status: Option<TtmStatus>,
     /// Set to true if target is a reference used to determine own-ship position or velocity
@@ -161,6 +163,16 @@ fn do_parse_ttm(i: &str) -> IResult<&str, TtmData> {
 
     let (i, target_name) = take_until(",")(i)?;
     let (i, _) = char(',')(i)?;
+    let target_name = if target_name.is_empty() {
+        None
+    } else {
+        Some(heapless::String::try_from(target_name).map_err(|_| {
+            nom::Err::Failure(nom::error::Error {
+                input: i,
+                code: ErrorKind::Fail,
+            })
+        })?)
+    };
 
     let (i, target_status_char) = opt(one_of("LQT"))(i)?;
     let (i, _) = char(',')(i)?;
@@ -173,10 +185,7 @@ fn do_parse_ttm(i: &str) -> IResult<&str, TtmData> {
 
     let (i, is_target_reference_char) = opt(one_of("R"))(i)?;
     let (i, _) = char(',')(i)?;
-    let is_target_reference = match is_target_reference_char {
-        Some(_) => true,
-        None => false,
-    };
+    let is_target_reference = is_target_reference_char.is_some();
 
     let (i, time_of_data) = opt(parse_hms)(i)?;
     let (i, _) = char(',')(i)?;
@@ -192,23 +201,19 @@ fn do_parse_ttm(i: &str) -> IResult<&str, TtmData> {
     Ok((
         i,
         TtmData {
-            target_number: target_number,
-            target_distance: target_distance,
-            bearing_from_own_ship: bearing_from_own_ship,
-            target_speed: target_speed,
-            target_course: target_course,
-            distance_of_cpa: distance_of_cpa,
-            time_to_cpa: time_to_cpa,
+            target_number,
+            target_distance,
+            bearing_from_own_ship,
+            target_speed,
+            target_course,
+            distance_of_cpa,
+            time_to_cpa,
             speed_or_distance_unit: unit,
-            target_name: if target_name == "" {
-                None
-            } else {
-                Some(target_name.to_string())
-            },
-            target_status: target_status,
-            is_target_reference: is_target_reference,
-            time_of_data: time_of_data,
-            type_of_acquisition: type_of_acquisition,
+            target_name,
+            target_status,
+            is_target_reference,
+            time_of_data,
+            type_of_acquisition,
         },
     ))
 }
@@ -229,10 +234,7 @@ fn parse_ttm_angle(i: &str) -> IResult<&str, Option<TtmAngle>> {
                     _ => unreachable!(),
                 };
 
-                TtmAngle {
-                    angle,
-                    reference: reference,
-                }
+                TtmAngle { angle, reference }
             })
         }),
     ))
@@ -275,7 +277,7 @@ mod tests {
         );
         assert_eq!(data.target_name.unwrap(), "TGT00");
         assert_eq!(data.target_status.unwrap(), TtmStatus::Tracking);
-        assert_eq!(data.is_target_reference, false);
+        assert!(!data.is_target_reference);
         assert_eq!(
             data.time_of_data.unwrap(),
             NaiveTime::from_hms_opt(10, 0, 23).unwrap()
