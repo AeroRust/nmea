@@ -12,7 +12,6 @@ use serde::{Deserialize, Serialize};
 
 use super::utils::{parse_float_num, parse_hms, parse_number_in_range};
 use crate::{Error, NmeaSentence, SentenceType};
-use heapless;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
@@ -86,6 +85,12 @@ pub enum TtmTypeOfAcquisition {
 /// 14. UTC of data (NMEA 3 and above) hh is hours, mm is minutes, ss.ss is seconds.
 /// 15. Type, A = Auto, M = Manual, R = Reported (NMEA 3 and above)
 /// 16. Checksum
+///
+///
+/// Example:
+/// ```text
+/// $RATTM,01,0.2,190.8,T,12.1,109.7,T,0.1,0.5,N,TGT01,T,,100021.00,A*79
+/// ```
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]

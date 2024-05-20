@@ -37,6 +37,8 @@ fn test_all_supported_messages() {
         (SentenceType::RMC, "$GPRMC,225446.33,A,4916.45,N,12311.12,W,000.5,054.7,191194,020.3,E,A*2B"),
         // RMZ
         (SentenceType::RMZ, "$PGRMZ,2282,f,3*21"),
+        // TTM
+        (SentenceType::TTM, "$RATTM,01,0.2,190.8,T,12.1,109.7,T,0.1,0.5,N,TGT01,T,,100021.00,A*79"),
         // TXT
         (SentenceType::TXT, "$GNTXT,01,01,02,u-blox AG - www.u-blox.com*4E"),
         // VHW
