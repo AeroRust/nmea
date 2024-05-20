@@ -70,7 +70,8 @@ all-sentences = ["GNSS", "waypoint", "maritime", "water", "vendor-specific", "ot
 GNSS = ["APA", "ALM", "GBS", "GGA", "GLL", "GNS", "GSA", "GST", "GSV", "RMC", "VTG"]
 
 waypoint = ["AAM", "BOD", "BWC", "BWW", "WNC", "ZFO", "ZTG"]
-maritime = ["waypoint", "water"]
+maritime = ["waypoint", "water", "radar"]
+radar = ["TTM"]
 water = ["DBK", "MTW", "VHW"]
 vendor-specific = ["RMZ"]
 other = ["HDT", "MDA", "MWV", "TXT", "ZDA"]
@@ -151,6 +152,9 @@ RMC = []
 # PGRMZ - Garmin Altitude (Vendor specific)
 # feature: vendor-specific
 RMZ = []
+
+# TTM - Tracked target message
+TTM = []
 
 # TXT - Text message
 TXT = []

@@ -126,6 +126,7 @@ pub enum ParseResult {
     MTW(MtwData),
     MWV(MwvData),
     RMC(RmcData),
+    TTM(TtmData),
     TXT(TxtData),
     VHW(VhwData),
     VTG(VtgData),
@@ -160,6 +161,7 @@ impl From<&ParseResult> for SentenceType {
             ParseResult::MTW(_) => SentenceType::MTW,
             ParseResult::MWV(_) => SentenceType::MWV,
             ParseResult::RMC(_) => SentenceType::RMC,
+            ParseResult::TTM(_) => SentenceType::TTM,
             ParseResult::TXT(_) => SentenceType::TXT,
             ParseResult::VHW(_) => SentenceType::VHW,
             ParseResult::VTG(_) => SentenceType::VTG,
@@ -378,6 +380,15 @@ pub fn parse_str(sentence_input: &str) -> Result<ParseResult, Error> {
                 cfg_if! {
                     if #[cfg(feature = "RMZ")] {
                         parse_pgrmz(nmea_sentence).map(ParseResult::PGRMZ)
+                    } else {
+                        return Err(Error::DisabledSentence);
+                    }
+                }
+            }
+            SentenceType::TTM => {
+                cfg_if! {
+                    if #[cfg(feature = "TTM")] {
+                        parse_ttm(nmea_sentence).map(ParseResult::TTM)
                     } else {
                         return Err(Error::DisabledSentence);
                     }

@@ -30,6 +30,7 @@ NMEA Standard Sentences
 - MTW
 - MWV
 - RMC *
+- TTM
 - VHW
 - VTG *
 - WNC
