@@ -252,12 +252,12 @@ mod tests {
         );
         assert_eq!(
             zda_data.offset(),
-            Some(FixedOffset::east_opt(-1 * 60 * 60).unwrap())
+            Some(FixedOffset::east_opt(-60 * 60).unwrap())
         );
         assert_eq!(
             zda_data.local_date_time(),
             Some(
-                FixedOffset::east_opt(-1 * 60 * 60)
+                FixedOffset::east_opt(-60 * 60)
                     .unwrap()
                     .from_local_datetime(&NaiveDateTime::new(
                         NaiveDate::from_ymd_opt(2004, 3, 11).unwrap(),

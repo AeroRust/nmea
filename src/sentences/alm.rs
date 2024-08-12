@@ -32,6 +32,7 @@ use super::utils::number;
 ///  4. GPS Week Number (range 0 to 2^13 - 1), where:
 ///     - 0 is the week of the GPS Week Number epoch on January 6th 1980;
 ///     - 8191 is the week that precedes the next rollover on January 6th 2137;
+///
 ///     Note: the legacy representation started at the same epoch, but
 ///           the number is 10-bit wide only, with a rollover every 19.7 years.
 ///  6. Eccentricity

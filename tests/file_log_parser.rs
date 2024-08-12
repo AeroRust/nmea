@@ -16,7 +16,7 @@ fn test_parse_file_log() {
         .unwrap_or_else(|err| panic!("process file failed with error '{}'", err));
 
     let expected: Vec<_> = BufReader::new(
-        File::open(&Path::new("tests").join("data").join("nmea1.log.expected")).unwrap(),
+        File::open(Path::new("tests").join("data").join("nmea1.log.expected")).unwrap(),
     )
     .lines()
     .collect::<Result<_, _>>()
@@ -28,7 +28,7 @@ fn test_parse_file_log() {
 #[test]
 fn test_parse_issue_2() {
     let mut input =
-        BufReader::new(File::open(&Path::new("tests").join("data").join("nmea2.log")).unwrap());
+        BufReader::new(File::open(Path::new("tests").join("data").join("nmea2.log")).unwrap());
     let mut nmea = Nmea::default();
     for _ in 0..100 {
         let mut buffer = String::new();
@@ -58,7 +58,7 @@ fn test_parse_all_logs() {
     .enumerate()
     {
         println!("test parsing of {:?}", log_path);
-        let full_log = fs::read_to_string(&log_path).unwrap();
+        let full_log = fs::read_to_string(log_path).unwrap();
 
         let mut nmea1 = Nmea::default();
         let mut nmea2 = Nmea::default();
