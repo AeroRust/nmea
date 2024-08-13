@@ -93,7 +93,7 @@ mod tests {
         let s = parse_nmea_sentence("$INMTW,17.9,x*20").unwrap();
         assert_eq!(s.checksum, s.calc_checksum());
         assert_eq!(s.checksum, 0x20);
-        assert_eq!(true, parse_mtw(s).is_err());
+        assert!(parse_mtw(s).is_err());
     }
 
     #[test]
@@ -101,6 +101,6 @@ mod tests {
         let s = parse_nmea_sentence("$INMTW,x.9,C*65").unwrap();
         assert_eq!(s.checksum, s.calc_checksum());
         assert_eq!(s.checksum, 0x65);
-        assert_eq!(true, parse_mtw(s).is_err());
+        assert!(parse_mtw(s).is_err());
     }
 }
