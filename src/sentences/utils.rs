@@ -57,7 +57,6 @@ const MILLISECS_PER_MINUTE: u32 = 60000;
 const MILLISECS_PER_HOUR: u32 = 3600000;
 
 /// Parses values like `125619,` and `125619.5,` to [`Duration`]
-
 pub fn parse_duration_hms(i: &str) -> IResult<&str, Duration> {
     map_res(
         tuple((
@@ -222,7 +221,6 @@ pub(crate) fn array_string<const MAX_LEN: usize>(
 
 #[cfg(test)]
 mod tests {
-
     use approx::assert_relative_eq;
 
     use super::*;
