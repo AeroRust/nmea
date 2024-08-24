@@ -18,6 +18,7 @@ use num_traits::float::FloatCore;
 
 use crate::Error;
 
+// has tests
 pub fn parse_hms(i: &str) -> IResult<&str, NaiveTime> {
     map_res(
         tuple((
@@ -57,6 +58,7 @@ const MILLISECS_PER_MINUTE: u32 = 60000;
 const MILLISECS_PER_HOUR: u32 = 3600000;
 
 /// Parses values like `125619,` and `125619.5,` to [`Duration`]
+// has tests
 pub fn parse_duration_hms(i: &str) -> IResult<&str, Duration> {
     map_res(
         tuple((
@@ -134,10 +136,12 @@ pub fn do_parse_magnetic_variation(i: &str) -> IResult<&str, f32> {
     Ok((i, variation_deg))
 }
 
+// has tests
 pub(crate) fn parse_lat_lon(i: &str) -> IResult<&str, Option<(f64, f64)>> {
     alt((map(tag(",,,"), |_| None), map(do_parse_lat_lon, Some)))(i)
 }
 
+// has tests
 pub(crate) fn parse_magnetic_variation(i: &str) -> IResult<&str, Option<f32>> {
     alt((
         map(tag(","), |_| None),
@@ -145,6 +149,7 @@ pub(crate) fn parse_magnetic_variation(i: &str) -> IResult<&str, Option<f32>> {
     ))(i)
 }
 
+// has tests
 pub(crate) fn parse_date(i: &str) -> IResult<&str, NaiveDate> {
     map_res(
         tuple((
@@ -181,14 +186,17 @@ pub(crate) fn parse_num<I: str::FromStr>(data: &str) -> Result<I, &'static str> 
     data.parse::<I>().map_err(|_| "parse of number failed")
 }
 
+// added
 pub(crate) fn parse_float_num<T: str::FromStr>(input: &str) -> Result<T, &'static str> {
     str::parse::<T>(input).map_err(|_| "parse of float number failed")
 }
 
+// added
 pub(crate) fn number<T: str::FromStr>(i: &str) -> IResult<&str, T> {
     map_res(digit1, parse_num)(i)
 }
 
+// added
 pub(crate) fn parse_number_in_range<T>(
     i: &str,
     lower_bound: T,
@@ -210,6 +218,7 @@ where
 /// # Errors
 ///
 /// If `&str` length > `MAX_LEN` it returns a [`Error::ParameterLength`] error.
+// added
 pub(crate) fn array_string<const MAX_LEN: usize>(
     string: &str,
 ) -> Result<ArrayString<MAX_LEN>, Error> {
@@ -221,6 +230,8 @@ pub(crate) fn array_string<const MAX_LEN: usize>(
 
 #[cfg(test)]
 mod tests {
+    use core::result;
+
     use approx::assert_relative_eq;
 
     use super::*;
@@ -314,5 +325,71 @@ mod tests {
         //illegal character for direction
         let result = parse_magnetic_variation("12,Q");
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_array_string() {
+        let result = array_string::<5>("12345");
+        assert!(result.is_ok());
+        let result = array_string::<5>("123456");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_number_in_range() {
+        let result = parse_number_in_range::<u8>("12", 10, 20);
+        assert!(result.is_ok());
+        let result = parse_number_in_range::<u8>("9", 10, 20);
+        assert!(result.is_err());
+        let result = parse_number_in_range::<u8>("21", 10, 20);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_number() {
+        let result = parse_num::<u8>("12");
+        assert!(result.is_ok());
+        let result = parse_num::<u8>("12.5");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_float_num() {
+        let result = parse_float_num::<f32>("12.5");
+        assert!(result.is_ok());
+        let result = parse_float_num::<f32>("12");
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_lat_lon() {
+        let (_, lat_lon) = parse_lat_lon("4807.038,N,01131.324,E").unwrap();
+        assert!(lat_lon.is_some());
+        let (_, lat_lon) = parse_lat_lon(",,,,").unwrap();
+        assert!(lat_lon.is_none());
+
+        let lat_lon = parse_lat_lon("51.5074,0.1278");
+        assert_eq!(lat_lon.is_err(), true);
+
+        let lat_lon = parse_lat_lon("1234.567,N,09876.543,W");
+        assert_eq!(lat_lon.is_ok(), true);
+
+        let lat_lon = parse_lat_lon("0000.000,S,00000.000,E");
+        assert_eq!(lat_lon.is_ok(), true);
+
+        let lat_lon = parse_lat_lon("1234.567,S,09876.543,E");
+        assert_eq!(lat_lon.is_ok(), true);
+
+        let lat_lon = parse_lat_lon("1234.567,S,09876.543,E");
+        assert!(lat_lon.is_ok());
+
+        let lat_lon = parse_lat_lon("40.7128,");
+        assert!(lat_lon.is_err());
+
+        let lat_lon = parse_lat_lon(", -74.0060");
+        assert!(lat_lon.is_err());
+
+        let lat_lon = parse_lat_lon("abc,def");
+        assert!(lat_lon.is_err());
     }
 }
