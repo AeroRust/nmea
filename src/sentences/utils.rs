@@ -18,7 +18,6 @@ use num_traits::float::FloatCore;
 
 use crate::Error;
 
-// has tests
 pub fn parse_hms(i: &str) -> IResult<&str, NaiveTime> {
     map_res(
         tuple((
@@ -58,7 +57,7 @@ const MILLISECS_PER_MINUTE: u32 = 60000;
 const MILLISECS_PER_HOUR: u32 = 3600000;
 
 /// Parses values like `125619,` and `125619.5,` to [`Duration`]
-// has tests
+
 pub fn parse_duration_hms(i: &str) -> IResult<&str, Duration> {
     map_res(
         tuple((
@@ -136,12 +135,10 @@ pub fn do_parse_magnetic_variation(i: &str) -> IResult<&str, f32> {
     Ok((i, variation_deg))
 }
 
-// has tests
 pub(crate) fn parse_lat_lon(i: &str) -> IResult<&str, Option<(f64, f64)>> {
     alt((map(tag(",,,"), |_| None), map(do_parse_lat_lon, Some)))(i)
 }
 
-// has tests
 pub(crate) fn parse_magnetic_variation(i: &str) -> IResult<&str, Option<f32>> {
     alt((
         map(tag(","), |_| None),
@@ -149,7 +146,6 @@ pub(crate) fn parse_magnetic_variation(i: &str) -> IResult<&str, Option<f32>> {
     ))(i)
 }
 
-// has tests
 pub(crate) fn parse_date(i: &str) -> IResult<&str, NaiveDate> {
     map_res(
         tuple((
@@ -186,17 +182,14 @@ pub(crate) fn parse_num<I: str::FromStr>(data: &str) -> Result<I, &'static str> 
     data.parse::<I>().map_err(|_| "parse of number failed")
 }
 
-// added
 pub(crate) fn parse_float_num<T: str::FromStr>(input: &str) -> Result<T, &'static str> {
     str::parse::<T>(input).map_err(|_| "parse of float number failed")
 }
 
-// added
 pub(crate) fn number<T: str::FromStr>(i: &str) -> IResult<&str, T> {
     map_res(digit1, parse_num)(i)
 }
 
-// added
 pub(crate) fn parse_number_in_range<T>(
     i: &str,
     lower_bound: T,
@@ -218,7 +211,6 @@ where
 /// # Errors
 ///
 /// If `&str` length > `MAX_LEN` it returns a [`Error::ParameterLength`] error.
-// added
 pub(crate) fn array_string<const MAX_LEN: usize>(
     string: &str,
 ) -> Result<ArrayString<MAX_LEN>, Error> {
@@ -230,7 +222,6 @@ pub(crate) fn array_string<const MAX_LEN: usize>(
 
 #[cfg(test)]
 mod tests {
-    use core::result;
 
     use approx::assert_relative_eq;
 
