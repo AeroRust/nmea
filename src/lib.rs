@@ -36,6 +36,7 @@
 //! - ZDA
 //! - ZFO
 //! - ZTG
+//! - DBT (Depth of water) available as `DBT_` due to name conflict
 //!
 //! Other Sentences
 //! - TXT *

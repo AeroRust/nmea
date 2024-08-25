@@ -36,7 +36,7 @@ NMEA Standard Sentences
 - WNC
 - ZDA
 - ZFO
-- ZTG
+- DBT (Depth of Water), available as DBT_
 
 Other Sentences
 - TXT *
