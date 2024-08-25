@@ -661,6 +661,7 @@ define_sentence_type_enum! {
     /// ### Echo
     /// - [`SentenceType::DBK`]
     /// - [`SentenceType::DBS`]
+    /// - [`SentenceType::DBT`]
     /// - [`SentenceType::DPT`]
     ///
     /// ### Radio
