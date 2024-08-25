@@ -53,8 +53,8 @@ fn test_all_supported_messages() {
         (SentenceType::ZFO, "$GPZFO,145832.12,042359.17,WPT*3E"),
         // ZTG
         (SentenceType::ZTG, "$GPZTG,145832.12,042359.17,WPT*24"),
-        // DBT
-        (SentenceType::DBT_, "$SDDPT,17.9,0.5*63")
+        // DPT (Depth of Water)
+        (SentenceType::DPT_, "$SDDPT,17.9,0.5*63")
     ]
     .into_iter()
     .collect::<HashMap<_, _>>();

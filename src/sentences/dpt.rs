@@ -36,14 +36,14 @@ pub struct DptData {
 
 impl From<DptData> for ParseResult {
     fn from(value: DptData) -> Self {
-        ParseResult::DPT(value)
+        ParseResult::DPT_(value)
     }
 }
 
 pub fn parse_dpt_(sentence: crate::NmeaSentence) -> Result<DptData, crate::Error> {
-    if sentence.message_id != crate::SentenceType::DPT {
+    if sentence.message_id != crate::SentenceType::DPT_ {
         return Err(Error::WrongSentenceHeader {
-            expected: SentenceType::DBT_,
+            expected: SentenceType::DPT_,
             found: sentence.message_id,
         });
     } else {
