@@ -118,6 +118,7 @@ pub struct TtmData {
     /// Set to true if target is a reference used to determine own-ship position or velocity
     pub is_target_reference: bool,
     /// Time of data
+    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
     pub time_of_data: Option<NaiveTime>,
     /// Type of acquisition
     pub type_of_acquisition: Option<TtmTypeOfAcquisition>,
