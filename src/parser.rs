@@ -373,6 +373,7 @@ impl<'a> Nmea {
             | ParseResult::BWW(_)
             | ParseResult::BOD(_)
             | ParseResult::DBK(_)
+            | ParseResult::DPT(_)
             | ParseResult::GBS(_)
             | ParseResult::GST(_)
             | ParseResult::AAM(_)
@@ -388,8 +389,7 @@ impl<'a> Nmea {
             | ParseResult::ZDA(_)
             | ParseResult::ZFO(_)
             | ParseResult::WNC(_)
-            | ParseResult::ZTG(_)
-            | ParseResult::DPT_(_) => return Ok(FixType::Invalid),
+            | ParseResult::ZTG(_) => return Ok(FixType::Invalid),
 
             ParseResult::Unsupported(_) => {
                 return Ok(FixType::Invalid);
@@ -709,7 +709,6 @@ define_sentence_type_enum! {
     /// - [`SentenceType::RMA`]
     /// - [`SentenceType::RMB`]
     /// - [`SentenceType::RMC`]
-    /// - [`SentenceType::DPT_`]
     ///
     /// ### Omega
     ///
@@ -1254,10 +1253,7 @@ define_sentence_type_enum! {
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_ztg_utc_time_to_destination_waypoint>
         ///
         /// Type: `Date and Time`
-        ZTG,
-        // DPT - Depth of Water
-        /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_dpt_depth_of_water>
-        DPT_
+        ZTG
     }
 }
 
