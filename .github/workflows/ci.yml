@@ -66,22 +66,32 @@ jobs:
       - name: Test --no-default-features
         run: cargo test --no-default-features
         
-      - name: Test all features
+      - name: Test feature serde
         # this includes default features, `std` and `all-sentences`
-        run: cargo test -F serde -F defmt-03
+        run: cargo test -F serde
+
+      - name: Test feature defmt-03
+        # this includes default features, `std` and `all-sentences`
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: cargo test -F defmt-03
 
       - name: Test (Release)
         run: cargo test --release --no-default-features
 
-      - name: Test (Release) all features
+      - name: Test (Release) feature serde
         # this includes default features, `std` and `all-sentences`
-        run: cargo test --release -F serde -F defmt-03
+        run: cargo test --release -F serde
+
+      - name: Test (Release) feature defmt-03
+        if: ${{ matrix.os != 'windows-latest' }}
+        # this includes default features, `std` and `all-sentences`
+        run: cargo test --release -F defmt-03
 
   bench:
     name: Benches
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -96,7 +106,7 @@ jobs:
     env:
       RUSTDOCFLAGS: "-D warnings"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       # Docs.rs uses nightly, which allows for easier syntax for linking to functions.
       - uses: dtolnay/rust-toolchain@nightly
         with:
