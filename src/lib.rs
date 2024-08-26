@@ -17,6 +17,7 @@
 //! - BWC
 //! - BWW
 //! - DBK
+//! - DBT (Depth of water) available as `DBT_` due to name conflict
 //! - GBS
 //! - GGA *
 //! - GLL *
@@ -36,7 +37,6 @@
 //! - ZDA
 //! - ZFO
 //! - ZTG
-//! - DBT (Depth of water) available as `DBT_` due to name conflict
 //!
 //! Other Sentences
 //! - TXT *

@@ -72,7 +72,7 @@ GNSS = ["APA", "ALM", "GBS", "GGA", "GLL", "GNS", "GSA", "GST", "GSV", "RMC", "V
 waypoint = ["AAM", "BOD", "BWC", "BWW", "WNC", "ZFO", "ZTG"]
 maritime = ["waypoint", "water", "radar"]
 radar = ["TTM"]
-water = ["DBK", "MTW", "VHW", "DBT"]
+water = ["DBK", "DBT", "MTW", "VHW"]
 vendor-specific = ["RMZ"]
 other = ["HDT", "MDA", "MWV", "TXT", "ZDA"]
 
@@ -103,6 +103,10 @@ BWW = []
 # DBK - Depth Below Keel
 # feature: water
 DBK = []
+
+# DBT - Depth of Water
+# feature: water
+DBT = []
 
 # GBS - GPS Satellite Fault Detection
 # feature: GNSS
@@ -181,10 +185,6 @@ ZFO = []
 # ZTG - UTC & Time to Destination Waypoint
 # feature: waypoint
 ZTG = []
-
-# DBT - Depth of Water
-# feature: water
-DBT = []
 
 [[test]]
 name = "all_supported_messages"
