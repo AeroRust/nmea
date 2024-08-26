@@ -17,7 +17,7 @@
 //! - BWC
 //! - BWW
 //! - DBK
-//! - DPT (Depth of water) available as `DPT_` due to name conflict
+//! - DPT
 //! - GBS
 //! - GGA *
 //! - GLL *

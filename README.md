@@ -18,7 +18,7 @@ NMEA Standard Sentences
 - BWC
 - BWW
 - DBK
-- DPT (Depth of Water), available as DPT_
+- DPT
 - GBS
 - GGA *
 - GLL *
