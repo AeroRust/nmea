@@ -72,7 +72,7 @@ GNSS = ["APA", "ALM", "GBS", "GGA", "GLL", "GNS", "GSA", "GST", "GSV", "RMC", "V
 waypoint = ["AAM", "BOD", "BWC", "BWW", "WNC", "ZFO", "ZTG"]
 maritime = ["waypoint", "water", "radar"]
 radar = ["TTM"]
-water = ["DBK", "DBT", "MTW", "VHW"]
+water = ["DBK", "DPT", "MTW", "VHW"]
 vendor-specific = ["RMZ"]
 other = ["HDT", "MDA", "MWV", "TXT", "ZDA"]
 
@@ -104,9 +104,9 @@ BWW = []
 # feature: water
 DBK = []
 
-# DBT - Depth of Water
+# DPT - Depth of Water
 # feature: water
-DBT = []
+DPT = []
 
 # GBS - GPS Satellite Fault Detection
 # feature: GNSS
