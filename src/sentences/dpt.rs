@@ -76,57 +76,57 @@ mod tests {
 
     #[test]
     fn test_parse_dpt() {
-        let correct_dpt_messages: [&str; 10] = [
-            "15.2,0.5*68",
-            "15.5,0.5*6D",
-            "15.8,0.5*62",
-            "16.1,0.5*66",
-            "16.4,0.5*61",
-            "16.7,0.5*64",
-            "17.0,0.5*64",
-            "17.3,0.5*61",
-            "17.9,0.5*63",
-            "18.7,0.5,2.0*70", // Extra field (NMEA 2.3 DPT has only 2 fields before checksum)
+        let correct_dpt_messages: [&str; 11] = [
+            "$SDDPT,2.4,,*7F", // checksum fails
+            "$SDDPT,15.2,0.5*68",
+            "$SDDPT,15.5,0.5*6D",
+            "$SDDPT,15.8,0.5*62",
+            "$SDDPT,16.1,0.5*66",
+            "$SDDPT,16.4,0.5*61",
+            "$SDDPT,16.7,0.5*64",
+            "$SDDPT,17.0,0.5*64",
+            "$SDDPT,17.3,0.5*61",
+            "$SDDPT,17.9,0.5*63",
+            "$SDDPT,18.7,0.5,2.0*70", // Extra field (NMEA 2.3 DPT has only 2 fields before checksum)
         ];
 
         let incorrect_dpt_messages: [&str; 10] = [
-            "15.2,0.5,*68",        // Extra comma before the checksum
-            "-12.3,0.5*6A",        // negative water depth
-            "ABC,0.5*41",          // non-numeric water depth
-            "20.1,XYZ*55",         // non-numeric offset
-            "22.3*31",             // missing offset
-            "19.8,0.5*ZZ",         // Invalid checksum (not hexadecimal)
-            "16.5,0.5,3.0,4.0*6B", // Too many fields
-            "21.0,-1.5*65",        // negative offset
-            "17.2 0.5*60",         // missing comma
-            "18.3,0.5*XX",         // Invalid checksum (not hexadecimal)
+            "$SDDPT,15.2,0.5,*68",        // Extra comma before the checksum
+            "$SDDPT,-12.3,0.5*6A",        // negative water depth
+            "$SDDPT,ABC,0.5*41",          // non-numeric water depth
+            "$SDDPT,20.1,XYZ*55",         // non-numeric offset
+            "$SDDPT,22.3*31",             // missing offset
+            "$SDDPT,19.8,0.5*ZZ",         // Invalid checksum (not hexadecimal)
+            "$SDDPT,16.5,0.5,3.0,4.0*6B", // Too many fields
+            "$SDDPT,21.0,-1.5*65",        // negative offset
+            "$SDDPT,17.2 0.5*60",         // missing comma
+            "$SDDPT,18.3,0.5*XX",         // Invalid checksum (not hexadecimal)
         ];
 
         for msg in correct_dpt_messages.iter() {
-            let seq = format!("$SDDPT,{}", msg);
-            println!("{}", seq); // $SDDPT,15.2,0.5*68
-            let s = crate::parse::parse_nmea_sentence(&seq);
-            assert!(s.is_ok());
-            let s = s.unwrap();
-            println!("{:?}", s.checksum); // 104 VS calculated 100, but 104 must be correct
-            assert_eq!(s.checksum, s.calc_checksum());
-            let dpt_data = parse_dpt_(s);
-            // asset the result is ok
-            assert!(dpt_data.is_ok());
+            let parsed = crate::parse::parse_nmea_sentence(msg);
+            match parsed {
+                Ok(sentence) => {
+                    println!("{:?}", sentence.data);
+                    assert_eq!(sentence.checksum, sentence.calc_checksum());
+                    let dpt_data = parse_dpt_(sentence);
+                    assert!(dpt_data.is_ok());
+                }
+                Err(_) => {
+                    assert!(false);
+                }
+            }
         }
 
         for msg in incorrect_dpt_messages.iter() {
-            let seq = format!("$SDDPT,{}", msg);
-            let s = crate::parse::parse_nmea_sentence(&seq);
-            match s {
+            let parsed = crate::parse::parse_nmea_sentence(msg);
+            match parsed {
                 Ok(sentence) => {
                     assert_eq!(sentence.checksum, sentence.calc_checksum());
                     let dpt_data = parse_dpt_(sentence);
-                    // asset the result is an error
                     assert!(dpt_data.is_err());
                 }
                 Err(_) => {
-                    // checksum error
                     assert!(true);
                 }
             }
