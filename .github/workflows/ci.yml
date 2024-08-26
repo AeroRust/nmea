@@ -28,7 +28,7 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       # use nightly for rustfmt & clippy checks
       - name: Install Rust nightly toolchain
@@ -52,7 +52,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         rust: ["1.70", stable, beta]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -66,16 +66,16 @@ jobs:
       - name: Test --no-default-features
         run: cargo test --no-default-features
         
-      - name: Test all features excluding `defmt-03`
+      - name: Test all features
         # this includes default features, `std` and `all-sentences`
-        run: cargo test -F serde
+        run: cargo test -F serde -F defmt-03
 
       - name: Test (Release)
         run: cargo test --release --no-default-features
 
-      - name: Test (Release) all features excluding `defmt-03`
+      - name: Test (Release) all features
         # this includes default features, `std` and `all-sentences`
-        run: cargo test --release -F serde
+        run: cargo test --release -F serde -F defmt-03
 
   bench:
     name: Benches
@@ -115,14 +115,14 @@ jobs:
       options: --security-opt seccomp=unconfined
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Generate code coverage
         # this includes default features, `std` and `all-sentences`
         run: cargo +nightly tarpaulin --features serde --verbose --workspace --timeout 120 --out xml
 
       - name: Upload to codecov.io
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
