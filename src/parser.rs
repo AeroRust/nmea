@@ -1253,7 +1253,7 @@ define_sentence_type_enum! {
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_ztg_utc_time_to_destination_waypoint>
         ///
         /// Type: `Date and Time`
-        ZTG
+        ZTG,
     }
 }
 
