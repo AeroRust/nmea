@@ -117,6 +117,7 @@ pub fn do_parse_lat_lon(i: &str) -> IResult<&str, (f64, f64)> {
 }
 
 /// Parses the variation between magnetic north and true north.
+///
 /// The angle returned will be positive or negative depending on
 /// the East or West direction.<br>
 /// E.g:<br>
