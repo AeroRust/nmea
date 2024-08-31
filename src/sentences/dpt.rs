@@ -77,17 +77,17 @@ mod tests {
     #[test]
     fn test_parse_dpt() {
         let correct_dpt_messages: [&str; 11] = [
-            "$SDDPT,2.4,,*7F", // checksum fails
-            "$SDDPT,15.2,0.5*68",
-            "$SDDPT,15.5,0.5*6D",
-            "$SDDPT,15.8,0.5*62",
-            "$SDDPT,16.1,0.5*66",
+            "$SDDPT,2.4,,*53", // checksum fails
+            "$SDDPT,15.2,0.5*64",
+            "$SDDPT,15.5,0.5*63",
+            "$SDDPT,15.8,0.5*6E",
+            "$SDDPT,16.1,0.5*64",
             "$SDDPT,16.4,0.5*61",
-            "$SDDPT,16.7,0.5*64",
+            "$SDDPT,16.7,0.5*62",
             "$SDDPT,17.0,0.5*64",
-            "$SDDPT,17.3,0.5*61",
-            "$SDDPT,17.9,0.5*63",
-            "$SDDPT,18.7,0.5,2.0*70", // Extra field (NMEA 2.3 DPT has only 2 fields before checksum)
+            "$SDDPT,17.3,0.5*67",
+            "$SDDPT,17.9,0.5*6D",
+            "$SDDPT,18.7,0.5,2.0*6C", // Extra field (NMEA 2.3 DPT has only 2 fields before checksum)
         ];
 
         let incorrect_dpt_messages: [&str; 10] = [
