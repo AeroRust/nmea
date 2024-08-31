@@ -44,7 +44,7 @@ pub use {
     bwc::{parse_bwc, BwcData},
     bww::{parse_bww, BwwData},
     dbk::{parse_dbk, DbkData},
-    dpt::{parse_dpt_, DptData},
+    dpt::{parse_dpt, DptData},
     faa_mode::{FaaMode, FaaModes},
     fix_type::FixType,
     gbs::{parse_gbs, GbsData},

@@ -43,7 +43,7 @@ impl From<DptData> for ParseResult {
     }
 }
 
-pub fn parse_dpt_(sentence: crate::NmeaSentence) -> Result<DptData, crate::Error> {
+pub fn parse_dpt(sentence: crate::NmeaSentence) -> Result<DptData, crate::Error> {
     if sentence.message_id != crate::SentenceType::DPT {
         return Err(Error::WrongSentenceHeader {
             expected: SentenceType::DPT,
@@ -95,7 +95,7 @@ mod tests {
         let result = crate::parse::parse_nmea_sentence(message);
         match result {
             Ok(sentence) => {
-                let dpt_data = parse_dpt_(sentence);
+                let dpt_data = parse_dpt(sentence);
                 match dpt_data {
                     Ok(data) => {
                         if data != expected {
@@ -120,7 +120,7 @@ mod tests {
         let result = crate::parse::parse_nmea_sentence(message);
         match result {
             Ok(sentence) => {
-                let dpt_data = parse_dpt_(sentence);
+                let dpt_data = parse_dpt(sentence);
                 match dpt_data {
                     Ok(_) => Err(format!(
                         "Parsing should have failed for message: {}",

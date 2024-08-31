@@ -462,7 +462,7 @@ pub fn parse_str(sentence_input: &str) -> Result<ParseResult, Error> {
             SentenceType::DPT => {
                 cfg_if! {
                     if #[cfg(feature = "DPT")] {
-                        parse_dpt_(nmea_sentence).map(ParseResult::DPT)
+                        parse_dpt(nmea_sentence).map(ParseResult::DPT)
                     } else {
                         return Err(Error::DisabledSentence);
                     }
