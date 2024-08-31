@@ -13,7 +13,9 @@ use crate::SentenceType;
 //         1   2   3   4
 //         |   |   |   |
 //  $--DPT,x.x,x.x,x.x*hh<CR><LF>
-// Field Number:
+/// ```
+///
+/// Field Number:
 
 // 1. Water depth relative to transducer, meters
 
