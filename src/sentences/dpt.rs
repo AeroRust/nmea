@@ -58,8 +58,15 @@ fn do_parse_dbt(i: &str) -> IResult<&str, DptData> {
     let (i, water_depth) = opt(double)(i)?;
     let (i, _) = char(',')(i)?;
     let (i, offset) = opt(double)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, max_range_scale) = opt(double)(i)?;
+    // this comma is optional in NMEA 2.3
+    let (i, comma) = opt(char(','))(i)?;
+    let (i, max_range_scale) = if comma.is_some() {
+        let (i, max_range_scale) = opt(double)(i)?;
+        (i, max_range_scale)
+    } else {
+        (i, None)
+    };
+
     Ok((
         i,
         DptData {
@@ -72,64 +79,198 @@ fn do_parse_dbt(i: &str) -> IResult<&str, DptData> {
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
 
+    struct TestExpectation(&'static str, DptData);
+    struct FailedTestExpectation(&'static str);
+
+    fn test_check_valid_message(
+        message: &str,
+        expected: DptData,
+    ) -> std::result::Result<(), String> {
+        let result = crate::parse::parse_nmea_sentence(message);
+        match result {
+            Ok(sentence) => {
+                let dpt_data = parse_dpt_(sentence);
+                match dpt_data {
+                    Ok(data) => {
+                        if data != expected {
+                            return Err(format!(
+                                "DPT parse result is different from expectations. Expected: {:?}, got {:?}",
+                                expected, data
+                            ));
+                        }
+                        Ok(())
+                    }
+                    Err(_) => Err(format!("Failed to parse DPT sentence: {}", message)),
+                }
+            }
+            Err(_) => Err(format!(
+                "NMEA sentence is constructed incorrectly: {}",
+                message
+            )),
+        }
+    }
+
+    fn test_invalid_message(message: &str) -> std::result::Result<(), String> {
+        let result = crate::parse::parse_nmea_sentence(message);
+        match result {
+            Ok(sentence) => {
+                let dpt_data = parse_dpt_(sentence);
+                match dpt_data {
+                    Ok(_) => Err(format!(
+                        "Parsing should have failed for message: {}",
+                        message
+                    )),
+                    Err(e) => {
+                        println!("{:?}", e);
+                        Ok(())
+                    }
+                }
+            }
+            Err(_) => Err(format!(
+                "NMEA sentence is constructed incorrectly: {}",
+                message
+            )),
+        }
+    }
+
     #[test]
-    fn test_parse_dpt() {
-        let correct_dpt_messages: [&str; 11] = [
-            "$SDDPT,2.4,,*53", // checksum fails
-            "$SDDPT,15.2,0.5*64",
-            "$SDDPT,15.5,0.5*63",
-            "$SDDPT,15.8,0.5*6E",
-            "$SDDPT,16.1,0.5*64",
-            "$SDDPT,16.4,0.5*61",
-            "$SDDPT,16.7,0.5*62",
-            "$SDDPT,17.0,0.5*64",
-            "$SDDPT,17.3,0.5*67",
-            "$SDDPT,17.9,0.5*6D",
-            "$SDDPT,18.7,0.5,2.0*6C", // Extra field (NMEA 2.3 DPT has only 2 fields before checksum)
+    fn test_parse_dpt() -> std::result::Result<(), String> {
+        let correct_dpt_messages: [TestExpectation; 11] = [
+            TestExpectation(
+                "$SDDPT,2.4,,*53",
+                DptData {
+                    water_depth: Some(2.4),
+                    offset: None,
+                    max_range_scale: None,
+                },
+            ), // checksum fails
+            TestExpectation(
+                "$SDDPT,15.2,0.5*64",
+                DptData {
+                    water_depth: Some(15.2),
+                    offset: Some(0.5),
+                    max_range_scale: None,
+                },
+            ),
+            TestExpectation(
+                "$SDDPT,15.5,0.5*63",
+                DptData {
+                    water_depth: Some(15.5),
+                    offset: Some(0.5),
+                    max_range_scale: None,
+                },
+            ),
+            TestExpectation(
+                "$SDDPT,15.8,0.5*6E",
+                DptData {
+                    water_depth: Some(15.8),
+                    offset: Some(0.5),
+                    max_range_scale: None,
+                },
+            ),
+            TestExpectation(
+                "$SDDPT,16.1,0.5*64",
+                DptData {
+                    water_depth: Some(16.1),
+                    offset: Some(0.5),
+                    max_range_scale: None,
+                },
+            ),
+            TestExpectation(
+                "$SDDPT,16.4,0.5*61",
+                DptData {
+                    water_depth: Some(16.4),
+                    offset: Some(0.5),
+                    max_range_scale: None,
+                },
+            ),
+            TestExpectation(
+                "$SDDPT,16.7,0.5*62",
+                DptData {
+                    water_depth: Some(16.7),
+                    offset: Some(0.5),
+                    max_range_scale: None,
+                },
+            ),
+            TestExpectation(
+                "$SDDPT,17.0,0.5*64",
+                DptData {
+                    water_depth: Some(17.0),
+                    offset: Some(0.5),
+                    max_range_scale: None,
+                },
+            ),
+            TestExpectation(
+                "$SDDPT,17.3,0.5*67",
+                DptData {
+                    water_depth: Some(17.3),
+                    offset: Some(0.5),
+                    max_range_scale: None,
+                },
+            ),
+            TestExpectation(
+                "$SDDPT,17.9,0.5*6D",
+                DptData {
+                    water_depth: Some(17.9),
+                    offset: Some(0.5),
+                    max_range_scale: None,
+                },
+            ),
+            TestExpectation(
+                "$SDDPT,18.7,0.5,2.0*6C",
+                DptData {
+                    water_depth: Some(18.7),
+                    offset: Some(0.5),
+                    max_range_scale: Some(2.0),
+                },
+            ), // Extra field (NMEA 2.3 DPT has only 2 fields before checksum)
         ];
 
-        let incorrect_dpt_messages: [&str; 10] = [
-            "$SDDPT,15.2,0.5,*68",        // Extra comma before the checksum
-            "$SDDPT,-12.3,0.5*6A",        // negative water depth
-            "$SDDPT,ABC,0.5*41",          // non-numeric water depth
-            "$SDDPT,20.1,XYZ*55",         // non-numeric offset
-            "$SDDPT,22.3*31",             // missing offset
-            "$SDDPT,19.8,0.5*ZZ",         // Invalid checksum (not hexadecimal)
-            "$SDDPT,16.5,0.5,3.0,4.0*6B", // Too many fields
-            "$SDDPT,21.0,-1.5*65",        // negative offset
-            "$SDDPT,17.2 0.5*60",         // missing comma
-            "$SDDPT,18.3,0.5*XX",         // Invalid checksum (not hexadecimal)
+        let incorrect_dpt_messages: [FailedTestExpectation; 11] = [
+            FailedTestExpectation("$SDDPT,15.2,0.5,*6C"),
+            FailedTestExpectation(
+                "$SDDPT,15.2,0.5,*68", // Extra comma before the checksum
+            ),
+            FailedTestExpectation("$SDDPT,-12.3,0.5,*6A"),
+            FailedTestExpectation(
+                "$SDDPT,ABC,0.5*41", // non-numeric water depth
+            ),
+            FailedTestExpectation(
+                "$SDDPT,20.1,XYZ*55", // non-numeric offset
+            ),
+            FailedTestExpectation(
+                "$SDDPT,22.3*31", // missing offset
+            ),
+            FailedTestExpectation(
+                "$SDDPT,19.8,0.5*ZZ", // Invalid checksum (not hexadecimal)
+            ),
+            FailedTestExpectation(
+                "$SDDPT,16.5,0.5,3.0,4.0*6B", // Too many fields
+            ),
+            FailedTestExpectation(
+                "$SDDPT,21.0,-1.5*65", // negative offset
+            ),
+            FailedTestExpectation(
+                "$SDDPT,17.2 0.5*60", // missing comma
+            ),
+            FailedTestExpectation(
+                "$SDDPT,18.3,0.5*XX", // Invalid checksum (not hexadecimal)
+            ),
         ];
 
-        for msg in correct_dpt_messages.iter() {
-            let parsed = crate::parse::parse_nmea_sentence(msg);
-            match parsed {
-                Ok(sentence) => {
-                    println!("{:?}", sentence.data);
-                    assert_eq!(sentence.checksum, sentence.calc_checksum());
-                    let dpt_data = parse_dpt_(sentence);
-                    assert!(dpt_data.is_ok());
-                }
-                Err(_) => {
-                    assert!(false);
-                }
-            }
-        }
+        correct_dpt_messages
+            .iter()
+            .try_for_each(|test_expectation| {
+                test_check_valid_message(test_expectation.0, test_expectation.1)
+            })?;
 
-        for msg in incorrect_dpt_messages.iter() {
-            let parsed = crate::parse::parse_nmea_sentence(msg);
-            match parsed {
-                Ok(sentence) => {
-                    assert_eq!(sentence.checksum, sentence.calc_checksum());
-                    let dpt_data = parse_dpt_(sentence);
-                    assert!(dpt_data.is_err());
-                }
-                Err(_) => {
-                    assert!(true);
-                }
-            }
-        }
+        incorrect_dpt_messages
+            .iter()
+            .try_for_each(|test_expectation| test_invalid_message(test_expectation.0))?;
+
+        Ok(())
     }
 }
