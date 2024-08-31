@@ -10,7 +10,8 @@ use crate::ParseResult;
 use crate::SentenceType;
 
 // DPT - Depth of Water
-//         1   2   3   4
+/// ```text
+///         1   2   3   4
 //         |   |   |   |
 //  $--DPT,x.x,x.x,x.x*hh<CR><LF>
 /// ```
