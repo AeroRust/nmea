@@ -9,7 +9,7 @@ use crate::Error;
 use crate::ParseResult;
 use crate::SentenceType;
 
-// DPT - Depth of Water
+/// DPT - Depth of Water
 /// ```text
 ///         1   2   3   4
 //         |   |   |   |
@@ -17,15 +17,10 @@ use crate::SentenceType;
 /// ```
 ///
 /// Field Number:
-
-// 1. Water depth relative to transducer, meters
-
-// 2. Offset from transducer, meters positive means distance from transducer to water line negative means distance from transducer to keel
-
-// 3. Maximum range scale in use (NMEA 3.0 and above)
-
-// 4. Checksum
-
+/// 1. Water depth relative to transducer, meters
+/// 2. Offset from transducer, meters positive means distance from transducer to water line negative means distance from transducer to keel
+/// 3. Maximum range scale in use (NMEA 3.0 and above)
+/// 4. Checksum
 /// Example: `$INDPT,2.3,0.0*46`
 /// `$SDDPT,15.2,0.5*68` - `$SDDPT` is the sentence identifier (`SD` for the talker ID, `DPT` for Depth)
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
