@@ -50,14 +50,14 @@ pub fn parse_dpt(sentence: crate::NmeaSentence) -> Result<DptData, crate::Error>
             found: sentence.message_id,
         });
     } else {
-        match do_parse_dbt(sentence.data) {
+        match do_parse_dpt(sentence.data) {
             Ok((_, data)) => Ok(data),
             Err(err) => Err(Error::ParsingError(err)),
         }
     }
 }
 
-fn do_parse_dbt(i: &str) -> IResult<&str, DptData> {
+fn do_parse_dpt(i: &str) -> IResult<&str, DptData> {
     let (i, water_depth) = opt(double)(i)?;
     let (i, _) = char(',')(i)?;
     let (i, offset) = opt(double)(i)?;
