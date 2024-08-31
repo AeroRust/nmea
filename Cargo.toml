@@ -23,7 +23,7 @@ readme = "README.md"
 
 edition = "2021"
 # Update README.md and ci.yml when updating the MSRV!
-rust-version = "1.65"
+rust-version = "1.70.0"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -40,7 +40,7 @@ nom = { version = "7.1", default-features = false }
 num-traits = { version = "0.2", default-features = false, features = ["libm"] }
 cfg-if = "1"
 serde = { version = "1.0", default-features = false, optional = true }
-serde_with = { version = "3.0", default-features = false, optional = true }
+serde_with = { version = "~3.9", default-features = false, optional = true }
 
 defmt = { version = "0.3", optional = true }
 
