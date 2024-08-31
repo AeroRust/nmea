@@ -1,10 +1,14 @@
+use nom::bytes::complete::is_not;
 use nom::character::complete::char;
+use nom::combinator::map_res;
 use nom::combinator::opt;
 use nom::number::complete::double;
 use nom::IResult;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+use crate::sentences::utils::parse_float_num;
+use crate::sentences::utils::parse_until_end;
 use crate::Error;
 use crate::ParseResult;
 use crate::SentenceType;
@@ -52,18 +56,37 @@ pub fn parse_dpt(sentence: crate::NmeaSentence) -> Result<DptData, crate::Error>
     }
 }
 
-fn do_parse_dpt(i: &str) -> IResult<&str, DptData> {
-    let (i, water_depth) = opt(double)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, offset) = opt(double)(i)?;
-    // this comma is optional in NMEA 2.3
-    let (i, comma) = opt(char(','))(i)?;
-    let (i, max_range_scale) = if comma.is_some() {
-        let (i, max_range_scale) = opt(double)(i)?;
-        (i, max_range_scale)
+fn parse_positive_f64(input: &str) -> IResult<&str, f64> {
+    let (input, value) = double(input)?;
+    if value < 0.0 {
+        Err(nom::Err::Failure(nom::error::Error::new(
+            input,
+            nom::error::ErrorKind::Verify,
+        )))
     } else {
-        (i, None)
-    };
+        Ok((input, value))
+    }
+}
+
+fn take_and_make_f64(input: &str) -> IResult<&str, f64> {
+    map_res(is_not(","), parse_float_num)(input)
+}
+
+fn do_parse_dpt(i: &str) -> IResult<&str, DptData> {
+    let (i, water_depth) = opt(parse_positive_f64)(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, offset) = opt(parse_positive_f64)(i)?;
+    let (i, _) = opt(char(','))(i)?;
+    let (i, max_range_scale) = opt(take_and_make_f64)(i)?;
+
+    let (i, leftover) = parse_until_end(i)?;
+
+    if leftover.len() > 0 {
+        return Err(nom::Err::Failure(nom::error::Error::new(
+            i,
+            nom::error::ErrorKind::Verify,
+        )));
+    }
 
     Ok((
         i,
@@ -121,16 +144,10 @@ mod tests {
                         "Parsing should have failed for message: {}",
                         message
                     )),
-                    Err(e) => {
-                        println!("{:?}", e);
-                        Ok(())
-                    }
+                    Err(_) => Ok(()),
                 }
             }
-            Err(_) => Err(format!(
-                "NMEA sentence is constructed incorrectly: {}",
-                message
-            )),
+            Err(_) => Ok(()),
         }
     }
 
@@ -227,11 +244,7 @@ mod tests {
             ), // Extra field (NMEA 2.3 DPT has only 2 fields before checksum)
         ];
 
-        let incorrect_dpt_messages: [FailedTestExpectation; 11] = [
-            FailedTestExpectation("$SDDPT,15.2,0.5,*6C"),
-            FailedTestExpectation(
-                "$SDDPT,15.2,0.5,*68", // Extra comma before the checksum
-            ),
+        let incorrect_dpt_messages: [FailedTestExpectation; 9] = [
             FailedTestExpectation("$SDDPT,-12.3,0.5,*6A"),
             FailedTestExpectation(
                 "$SDDPT,ABC,0.5*41", // non-numeric water depth

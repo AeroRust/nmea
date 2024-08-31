@@ -4,11 +4,11 @@ use arrayvec::ArrayString;
 use chrono::{Duration, NaiveDate, NaiveTime};
 use nom::{
     branch::alt,
-    bytes::complete::{tag, take, take_until},
+    bytes::complete::{tag, take, take_until, take_while},
     character::complete::{char, digit1, one_of},
-    combinator::{map, map_parser, map_res},
+    combinator::{all_consuming, eof, map, map_parser, map_res},
     number::complete::{double, float},
-    sequence::tuple,
+    sequence::{terminated, tuple},
     IResult,
 };
 
@@ -218,6 +218,10 @@ pub(crate) fn array_string<const MAX_LEN: usize>(
         max_length: MAX_LEN,
         parameter_length: string.len(),
     })
+}
+
+pub(crate) fn parse_until_end(input: &str) -> IResult<&str, &str> {
+    all_consuming(terminated(take_while(|_| true), eof))(input)
 }
 
 #[cfg(test)]
