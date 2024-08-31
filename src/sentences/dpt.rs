@@ -144,7 +144,7 @@ mod tests {
                     offset: None,
                     max_range_scale: None,
                 },
-            ), // checksum fails
+            ),
             TestExpectation(
                 "$SDDPT,15.2,0.5*64",
                 DptData {
