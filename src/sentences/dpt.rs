@@ -14,20 +14,26 @@ use crate::ParseResult;
 use crate::SentenceType;
 
 /// DPT - Depth of Water
+///
+/// <https://gpsd.gitlab.io/gpsd/NMEA.html#_dpt_depth_of_water>
 /// ```text
-///         1   2   3   4
-//         |   |   |   |
-//  $--DPT,x.x,x.x,x.x*hh<CR><LF>
+///        1   2   3   4
+///        |   |   |   |   
+/// $--DPT,x.x,x.x,x.x*hh<CR><LF>
 /// ```
 ///
 /// Field Number:
+///
 /// 1. Water depth relative to transducer, meters
 /// 2. Offset from transducer, meters positive means distance from transducer to water line negative means distance from transducer to keel
 /// 3. Maximum range scale in use (NMEA 3.0 and above)
 /// 4. Checksum
-/// 
-/// Example: `$INDPT,2.3,0.0*46`
-/// `$SDDPT,15.2,0.5*68` - `$SDDPT` is the sentence identifier (`SD` for the talker ID, `DPT` for Depth)
+///
+/// Examples:
+/// * $INDPT,2.3,0.0*46
+/// * $SDDPT,15.2,0.5*68
+///
+/// `$SDDPT` is the sentence identifier (`SD` for the talker ID, `DPT` for Depth)
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq)]
