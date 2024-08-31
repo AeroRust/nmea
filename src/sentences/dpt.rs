@@ -23,7 +23,7 @@ use crate::SentenceType;
 
 // 4. Checksum
 
-// Example: $INDPT,2.3,0.0*46
+/// Example: `$INDPT,2.3,0.0*46`
 /// `$SDDPT,15.2,0.5*68` - `$SDDPT` is the sentence identifier (`SD` for the talker ID, `DPT` for Depth)
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
