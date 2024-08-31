@@ -25,6 +25,7 @@ use crate::SentenceType;
 /// 2. Offset from transducer, meters positive means distance from transducer to water line negative means distance from transducer to keel
 /// 3. Maximum range scale in use (NMEA 3.0 and above)
 /// 4. Checksum
+/// 
 /// Example: `$INDPT,2.3,0.0*46`
 /// `$SDDPT,15.2,0.5*68` - `$SDDPT` is the sentence identifier (`SD` for the talker ID, `DPT` for Depth)
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -44,10 +45,10 @@ impl From<DptData> for ParseResult {
 
 pub fn parse_dpt(sentence: crate::NmeaSentence) -> Result<DptData, crate::Error> {
     if sentence.message_id != crate::SentenceType::DPT {
-        return Err(Error::WrongSentenceHeader {
+        Err(Error::WrongSentenceHeader {
             expected: SentenceType::DPT,
             found: sentence.message_id,
-        });
+        })
     } else {
         match do_parse_dpt(sentence.data) {
             Ok((_, data)) => Ok(data),
@@ -81,7 +82,7 @@ fn do_parse_dpt(i: &str) -> IResult<&str, DptData> {
 
     let (i, leftover) = parse_until_end(i)?;
 
-    if leftover.len() > 0 {
+    if !leftover.is_empty() {
         return Err(nom::Err::Failure(nom::error::Error::new(
             i,
             nom::error::ErrorKind::Verify,
