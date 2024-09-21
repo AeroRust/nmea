@@ -222,8 +222,6 @@ pub(crate) fn array_string<const MAX_LEN: usize>(
 
 #[cfg(test)]
 mod tests {
-    use core::error;
-    use core::result;
 
     use approx::assert_relative_eq;
 
