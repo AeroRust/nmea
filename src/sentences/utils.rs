@@ -222,6 +222,7 @@ pub(crate) fn array_string<const MAX_LEN: usize>(
 
 #[cfg(test)]
 mod tests {
+
     use approx::assert_relative_eq;
 
     use super::*;
@@ -315,5 +316,94 @@ mod tests {
         //illegal character for direction
         let result = parse_magnetic_variation("12,Q");
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_array_string() {
+        let result = array_string::<5>("12345");
+        assert!(result.is_ok());
+
+        let err_expected = Error::ParameterLength {
+            max_length: 5,
+            parameter_length: 6,
+        };
+        let result = array_string::<5>("123456");
+        assert_eq!(result, Err(err_expected));
+    }
+
+    #[test]
+    fn test_parse_number_in_range() {
+        let result = parse_number_in_range::<u8>("12", 10, 20);
+        assert!(result.is_ok());
+
+        let result = parse_number_in_range::<u8>("9", 10, 20);
+        let nom_error_expected = nom::error::Error::new("9", nom::error::ErrorKind::MapRes);
+        let err = result.unwrap_err();
+        assert_eq!(err, nom::Err::Error(nom_error_expected));
+
+        let result = parse_number_in_range::<u8>("21", 10, 20);
+        let nom_error_expected = nom::error::Error::new("21", nom::error::ErrorKind::MapRes);
+        let err = result.unwrap_err();
+        assert_eq!(err, nom::Err::Error(nom_error_expected));
+    }
+
+    #[test]
+    fn test_parse_number() {
+        let result = parse_num::<u8>("12");
+        assert!(result.is_ok());
+
+        let result = parse_num::<u8>("12.5");
+        let err_expected = "parse of number failed";
+        assert_eq!(result, Err(err_expected));
+    }
+
+    #[test]
+    fn test_parse_float_num() {
+        let result = parse_float_num::<f32>("12.5");
+        assert!(result.is_ok());
+        let result = parse_float_num::<f32>("12");
+        assert!(result.is_ok());
+
+        let result = parse_float_num::<f32>("12.5.5");
+        let err_expected = "parse of float number failed";
+        assert_eq!(result, Err(err_expected));
+    }
+
+    #[test]
+    fn test_parse_lat_lon() {
+        let (_, lat_lon) = parse_lat_lon("4807.038,N,01131.324,E").unwrap();
+        assert!(lat_lon.is_some());
+        let (_, lat_lon) = parse_lat_lon(",,,,").unwrap();
+        assert!(lat_lon.is_none());
+
+        let lat_lon = parse_lat_lon("51.5074,0.1278");
+        let err_expected = nom::error::Error::new("0.1278", nom::error::ErrorKind::OneOf);
+        let err = lat_lon.unwrap_err();
+        assert_eq!(err, nom::Err::Error(err_expected));
+
+        let lat_lon = parse_lat_lon("1234.567,N,09876.543,W");
+        assert_eq!(lat_lon.is_ok(), true);
+
+        let lat_lon = parse_lat_lon("0000.000,S,00000.000,E");
+        assert_eq!(lat_lon.is_ok(), true);
+
+        let lat_lon = parse_lat_lon("1234.567,S,09876.543,E");
+        assert_eq!(lat_lon.is_ok(), true);
+
+        let lat_lon = parse_lat_lon("1234.567,S,09876.543,E");
+        assert!(lat_lon.is_ok());
+
+        let lat_lon = parse_lat_lon("40.7128,");
+        assert!(lat_lon.is_err());
+
+        let lat_lon = parse_lat_lon(", -74.0060");
+        let err_expected = nom::error::Error::new(", -74.0060", nom::error::ErrorKind::MapRes);
+        let err = lat_lon.unwrap_err();
+        assert_eq!(err, nom::Err::Error(err_expected));
+
+        let lat_lon = parse_lat_lon("abc,def");
+        let err_expected = nom::error::Error::new("abc,def", nom::error::ErrorKind::MapRes);
+        let err = lat_lon.unwrap_err();
+        assert_eq!(err, nom::Err::Error(err_expected));
     }
 }
