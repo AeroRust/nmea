@@ -7,6 +7,7 @@ pub mod bod;
 pub mod bwc;
 pub mod bww;
 pub mod dbk;
+pub mod dpt;
 pub mod gbs;
 pub mod gga;
 pub mod gll;
@@ -43,6 +44,7 @@ pub use {
     bwc::{parse_bwc, BwcData},
     bww::{parse_bww, BwwData},
     dbk::{parse_dbk, DbkData},
+    dpt::{parse_dpt, DptData},
     faa_mode::{FaaMode, FaaModes},
     fix_type::FixType,
     gbs::{parse_gbs, GbsData},
