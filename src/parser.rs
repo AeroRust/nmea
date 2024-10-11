@@ -32,7 +32,7 @@ use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Serialize};
 /// nmea.parse(gga).unwrap();
 /// println!("{}", nmea);
 /// # }
-
+///
 /// ```
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
