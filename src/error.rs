@@ -46,7 +46,7 @@ impl<'a> From<nom::Err<nom::error::Error<&'a str>>> for Error<'a> {
     }
 }
 
-impl<'a> fmt::Display for Error<'a> {
+impl fmt::Display for Error<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Error::Utf8Decoding => {
@@ -107,4 +107,4 @@ impl<'a> fmt::Display for Error<'a> {
 
 #[cfg(feature = "std")]
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-impl<'a> std::error::Error for Error<'a> {}
+impl std::error::Error for Error<'_> {}

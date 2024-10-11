@@ -46,7 +46,7 @@ pub struct NmeaSentence<'a> {
     pub checksum: u8,
 }
 
-impl<'a> NmeaSentence<'a> {
+impl NmeaSentence<'_> {
     pub fn calc_checksum(&self) -> u8 {
         checksum(
             self.talker_id
