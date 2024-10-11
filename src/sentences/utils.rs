@@ -382,13 +382,13 @@ mod tests {
         assert_eq!(err, nom::Err::Error(err_expected));
 
         let lat_lon = parse_lat_lon("1234.567,N,09876.543,W");
-        assert_eq!(lat_lon.is_ok(), true);
+        assert!(lat_lon.is_ok());
 
         let lat_lon = parse_lat_lon("0000.000,S,00000.000,E");
-        assert_eq!(lat_lon.is_ok(), true);
+        assert!(lat_lon.is_ok());
 
         let lat_lon = parse_lat_lon("1234.567,S,09876.543,E");
-        assert_eq!(lat_lon.is_ok(), true);
+        assert!(lat_lon.is_ok());
 
         let lat_lon = parse_lat_lon("1234.567,S,09876.543,E");
         assert!(lat_lon.is_ok());
