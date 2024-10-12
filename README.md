@@ -2,7 +2,7 @@
 
 [![Version](https://img.shields.io/crates/v/nmea.svg)](https://crates.io/crates/nmea)
 [![Build Status](https://github.com/AeroRust/nmea/actions/workflows/ci.yml/badge.svg)](https://github.com/AeroRust/nmea/actions/workflows/ci.yml)
-[![License Apache-2](https://img.shields.io/crates/l/nmea.svg)](./LICENSE-APACHE)
+[![License Apache-2](https://img.shields.io/crates/l/nmea.svg)](./LICENSE.txt)
 
 [Complete documentation can be found on www.docs.rs/nmea][doc]
 
@@ -76,7 +76,7 @@ Add the `nmea` dependency in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nmea = "0.6"
+nmea = "0.7"
 ```
 
 ### For `no_std`
@@ -86,7 +86,7 @@ just add the `nmea` crate without the default features:
 
 ```toml
 [dependencies]
-nmea = { version = "0.6", default-features = false }
+nmea = { version = "0.7", default-features = false }
 ```
 
 ### Parse

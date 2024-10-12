@@ -3,7 +3,7 @@ members = [".", "benches-harness"]
 
 [package]
 name = "nmea"
-version = "0.6.0"
+version = "0.7.0"
 
 authors = [
   "Felix Obenhuber <felix@obenhuber.de>",
@@ -16,7 +16,7 @@ authors = [
 categories = ["parser-implementations", "no-std", "embedded"]
 keywords = ["NMEA", "gps", "glonass", "coordinate", "position"]
 description = "Simple NMEA 0183 parser"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 documentation = "https://docs.rs/nmea"
 repository = "https://github.com/AeroRust/nmea"
 readme = "README.md"
