@@ -18,6 +18,7 @@ NMEA Standard Sentences
 - BWC
 - BWW
 - DBK
+- DPT
 - GBS
 - GGA *
 - GLL *
