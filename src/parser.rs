@@ -831,7 +831,7 @@ define_sentence_type_enum! {
         BWR,
         /// BWW - Bearing - Waypoint to Waypoint
         ///
-        /// https://gpsd.gitlab.io/gpsd/NMEA.html#_bww_bearing_waypoint_to_waypoint
+        /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_bww_bearing_waypoint_to_waypoint>
         ///
         /// Type: `Waypoints and tacks`
         BWW,
@@ -926,7 +926,7 @@ define_sentence_type_enum! {
         GSA,
         /// GST - GPS Pseudorange Noise Statistics
         ///
-        /// https://gpsd.gitlab.io/gpsd/NMEA.html#_gst_gps_pseudorange_noise_statistics
+        /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gst_gps_pseudorange_noise_statistics>
         GST,
         /// GSV - Satellites in view
         ///
