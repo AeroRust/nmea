@@ -23,6 +23,7 @@ readme = "README.md"
 
 edition = "2021"
 # Update README.md and ci.yml when updating the MSRV!
+# When bumping MSRV to 1.81, make sure to use core::error::Error.
 rust-version = "1.70.0"
 
 [package.metadata.docs.rs]
@@ -40,7 +41,7 @@ nom = { version = "7.1", default-features = false }
 num-traits = { version = "0.2", default-features = false, features = ["libm"] }
 cfg-if = "1"
 serde = { version = "1.0", default-features = false, optional = true }
-serde_with = { version = "~3.9", default-features = false, optional = true }
+serde_with = { version = "~3.11", default-features = false, optional = true }
 
 defmt = { version = "0.3", optional = true }
 

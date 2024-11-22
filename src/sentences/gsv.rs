@@ -25,7 +25,7 @@ use crate::{
 /// ```
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GsvData {
     pub gnss_type: GnssType,
     pub number_of_sentences: u16,
