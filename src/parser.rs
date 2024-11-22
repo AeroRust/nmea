@@ -773,10 +773,9 @@ define_sentence_type_enum! {
     ///
     /// - [`SentenceType::RMZ`]
     #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+    #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
     #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
     #[repr(u32)]
-    #[allow(rustdoc::bare_urls)]
     pub enum SentenceType {
         /// AAM - Waypoint Arrival Alarm
         ///
