@@ -7,6 +7,7 @@ pub mod bod;
 pub mod bwc;
 pub mod bww;
 pub mod dbk;
+pub mod dbs;
 pub mod dpt;
 pub mod gbs;
 pub mod gga;

@@ -1,5 +1,6 @@
 use core::str;
 
+use dbs::DbsData;
 use nom::{
     bytes::complete::{take, take_until},
     character::complete::char,
@@ -114,6 +115,7 @@ pub enum ParseResult {
     BWC(BwcData),
     BWW(BwwData),
     DBK(DbkData),
+    DBS(DbsData),
     DPT(DptData),
     GBS(GbsData),
     GGA(GgaData),
@@ -150,6 +152,7 @@ impl From<&ParseResult> for SentenceType {
             ParseResult::BWC(_) => SentenceType::BWC,
             ParseResult::BWW(_) => SentenceType::BWW,
             ParseResult::DBK(_) => SentenceType::DBK,
+            ParseResult::DBS(_) => SentenceType::DBS,
             ParseResult::GBS(_) => SentenceType::GBS,
             ParseResult::GGA(_) => SentenceType::GGA,
             ParseResult::GLL(_) => SentenceType::GLL,
