@@ -1,3 +1,4 @@
+use crate::render;
 use chrono::{NaiveTime, Timelike};
 use core::fmt::Write;
 use nom::{
@@ -7,7 +8,8 @@ use nom::{
     number::complete::float,
     IResult,
 };
-use crate::render;
+#[cfg(not(feature = "std"))]
+use num_traits::Float;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -147,11 +149,12 @@ pub fn render_nmea(data: &GgaData) -> heapless::String<128> {
         let _ = result.push_str(",,");
     }
 
-    let _ = result.push_str(
-        &data
-            .fix_type
-            .map_or("".to_string(), |ft| render::fix_type_to_str(&ft)),
-    );
+    if let Some(fix_type) = &data.fix_type {
+        let fix_type_str = render::fix_type_to_str(fix_type);
+        let _ = result.push_str(&fix_type_str);
+    } else {
+        let _ = result.push_str("");
+    }
     let _ = result.push_str(",");
     let _ = result.push_str(&render::format_u32(data.fix_satellites, 2));
     let _ = result.push_str(",");

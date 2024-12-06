@@ -1,18 +1,21 @@
 use crate::sentences::FixType;
 use core::fmt::Write;
+use heapless::String as HeaplessString;
 
-pub(crate) fn fix_type_to_str(fix_type: &FixType) -> String {
+pub(crate) fn fix_type_to_str(fix_type: &FixType) -> HeaplessString<16> {
+    let mut result = HeaplessString::new();
     match fix_type {
-        FixType::Invalid => "0".to_string(),
-        FixType::Gps => "1".to_string(),
-        FixType::DGps => "2".to_string(),
-        FixType::Pps => "3".to_string(),
-        FixType::Rtk => "4".to_string(),
-        FixType::FloatRtk => "5".to_string(),
-        FixType::Estimated => "6".to_string(),
-        FixType::Manual => "7".to_string(),
-        FixType::Simulation => "8".to_string(),
+        FixType::Invalid => result.push_str("0").unwrap(),
+        FixType::Gps => result.push_str("1").unwrap(),
+        FixType::DGps => result.push_str("2").unwrap(),
+        FixType::Pps => result.push_str("3").unwrap(),
+        FixType::Rtk => result.push_str("4").unwrap(),
+        FixType::FloatRtk => result.push_str("5").unwrap(),
+        FixType::Estimated => result.push_str("6").unwrap(),
+        FixType::Manual => result.push_str("7").unwrap(),
+        FixType::Simulation => result.push_str("8").unwrap(),
     }
+    result
 }
 
 pub(crate) fn format_float(value: Option<f32>, precision: usize) -> heapless::String<16> {
