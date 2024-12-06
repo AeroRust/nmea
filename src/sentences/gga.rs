@@ -1,4 +1,5 @@
-use chrono::NaiveTime;
+use chrono::{NaiveTime, Timelike};
+use core::fmt::Write;
 use nom::{
     bytes::complete::take_until,
     character::complete::{char, one_of},
@@ -6,6 +7,7 @@ use nom::{
     number::complete::float,
     IResult,
 };
+use crate::render;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -110,6 +112,57 @@ pub fn parse_gga(sentence: NmeaSentence) -> Result<GgaData, Error> {
     } else {
         Ok(do_parse_gga(sentence.data)?.1)
     }
+}
+
+/// Renders back GGA message to NMEA without the prefix. Example rendered message: `GGA,123519,4807.038,N,01131.324,E,1,08,0.9,545.4,M,46.9,M, , *42`
+pub fn render_nmea(data: &GgaData) -> heapless::String<128> {
+    let mut result = heapless::String::new();
+
+    if let Some(fix_time) = data.fix_time {
+        let _ = write!(
+            result,
+            "{:02}{:02}{:02}.{:02},",
+            fix_time.hour(),
+            fix_time.minute(),
+            fix_time.second(),
+            fix_time.nanosecond() / 10_000_000
+        );
+    } else {
+        let _ = result.push_str(",");
+    }
+
+    if let Some(latitude) = data.latitude {
+        let degrees = latitude.trunc() as i32;
+        let minutes = (latitude.fract() * 60.0) as f64;
+        let _ = write!(result, "{:02}{:07.4},N,", degrees, minutes);
+    } else {
+        let _ = result.push_str(",,");
+    }
+
+    if let Some(longitude) = data.longitude {
+        let degrees = longitude.trunc() as i32;
+        let minutes = (longitude.fract() * 60.0) as f64;
+        let _ = write!(result, "{:03}{:07.4},E,", degrees, minutes);
+    } else {
+        let _ = result.push_str(",,");
+    }
+
+    let _ = result.push_str(
+        &data
+            .fix_type
+            .map_or("".to_string(), |ft| render::fix_type_to_str(&ft)),
+    );
+    let _ = result.push_str(",");
+    let _ = result.push_str(&render::format_u32(data.fix_satellites, 2));
+    let _ = result.push_str(",");
+    let _ = result.push_str(&render::format_float(data.hdop, 1));
+    let _ = result.push_str(",");
+    let _ = result.push_str(&render::format_float(data.altitude, 1));
+    let _ = result.push_str(",M,");
+    let _ = result.push_str(&render::format_float(data.geoid_separation, 1));
+    let _ = result.push_str(",M,,");
+
+    result
 }
 
 #[cfg(not(feature = "std"))]
@@ -330,5 +383,19 @@ mod tests {
         let gga: GgaData = serde_json::from_str(&serialized).unwrap();
 
         assert_eq!(data.fix_time, gga.fix_time);
+    }
+
+    #[test]
+    fn test_render_nmea_01() {
+        let data_s = "033745.00,5650.8234,N,03548.9778,E,1,07,1.8,101.2,M,14.7,M,,";
+        let data = parse_gga(NmeaSentence {
+            talker_id: "GP",
+            message_id: SentenceType::GGA,
+            data: data_s,
+            checksum: 0x57,
+        })
+        .unwrap();
+        let rendered = render_nmea(&data);
+        assert_eq!(data_s, rendered.as_str());
     }
 }
