@@ -119,6 +119,7 @@ pub fn parse_gga(sentence: NmeaSentence) -> Result<GgaData, Error> {
 /// Renders back GGA message to NMEA without the prefix. Example rendered message: `GGA,123519,4807.038,N,01131.324,E,1,08,0.9,545.4,M,46.9,M, , *42`
 pub fn render_nmea(data: &GgaData) -> heapless::String<128> {
     let mut result = heapless::String::new();
+    let _ = result.push_str("GGA");
 
     if let Some(fix_time) = data.fix_time {
         let _ = write!(
@@ -390,7 +391,7 @@ mod tests {
 
     #[test]
     fn test_render_nmea_01() {
-        let data_s = "033745.00,5650.8234,N,03548.9778,E,1,07,1.8,101.2,M,14.7,M,,";
+        let data_s = "GGA033745.00,5650.8234,N,03548.9778,E,1,07,1.8,101.2,M,14.7,M,,";
         let data = parse_gga(NmeaSentence {
             talker_id: "GP",
             message_id: SentenceType::GGA,
