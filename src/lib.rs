@@ -66,7 +66,7 @@
 mod error;
 pub(crate) mod parse;
 mod parser;
-mod render;
+pub mod render;
 
 pub mod sentences;
 

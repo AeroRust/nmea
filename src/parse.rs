@@ -477,3 +477,22 @@ pub fn parse_str(sentence_input: &str) -> Result<ParseResult, Error> {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_nmea_sentence_01() {
+        let sentence = "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47";
+        let nmea_sentence = parse_nmea_sentence(sentence).unwrap();
+
+        assert_eq!(nmea_sentence.talker_id, "GP");
+        assert_eq!(nmea_sentence.message_id, SentenceType::GGA);
+        assert_eq!(
+            nmea_sentence.data,
+            "123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,"
+        );
+        assert_eq!(nmea_sentence.checksum, 0x47);
+    }
+}
