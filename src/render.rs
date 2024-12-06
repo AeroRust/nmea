@@ -1,5 +1,5 @@
 use crate::sentences::FixType;
-use core::fmt::Write;
+use core::fmt::{self, Write};
 use heapless::String as HeaplessString;
 
 pub(crate) fn fix_type_to_str(fix_type: &FixType) -> HeaplessString<16> {
@@ -35,21 +35,42 @@ pub(crate) fn format_u32(value: Option<u32>, width: usize) -> heapless::String<1
 }
 
 /// Prefixes the talker id part (like `$GP`) into a sentence like `GGA,123519...` and adds checksum at the end, forming a valid NMEA sentence.
-pub fn nmea_prefix_sentence(
+pub fn nmea_prefix_sentence<'a>(
     nmea_sentence: &crate::NmeaSentence,
     msg: &str,
-) -> Result<HeaplessString<16>, core::fmt::Error> {
+) -> Result<HeaplessString<128>, crate::error::Error<'a>> {
     let mut prefixed = HeaplessString::new();
-    prefixed.push_str("$").map_err(|_| core::fmt::Error)?;
-    prefixed.push_str(msg).map_err(|_| core::fmt::Error)?;
-    if prefixed.push_str(nmea_sentence.talker_id).is_err() {
-        return Err(core::fmt::Error);
-    }
+    prefixed
+        .push_str("$")
+        .map_err(|()| crate::Error::RenderError("push_str error"))?;
+    prefixed
+        .push_str(nmea_sentence.talker_id)
+        .map_err(|()| crate::Error::RenderError("push_str error"))?;
+    prefixed
+        .push_str(msg)
+        .map_err(|()| crate::Error::RenderError("push_str error"))?;
     let checksum = nmea_sentence.calc_checksum();
-    let mut checksum_str: HeaplessString<16> = HeaplessString::new();
-    write!(&mut checksum_str, "*{:02X}\r\n", checksum)?;
-    if prefixed.push_str(&checksum_str).is_err() {
-        return Err(core::fmt::Error);
-    }
+    let mut checksum_str: HeaplessString<128> = HeaplessString::new();
+    write!(&mut checksum_str, "*{:02X}\r\n", checksum)
+        .map_err(|ref _e: fmt::Error| crate::Error::RenderError("fmt Error"))?;
+    prefixed
+        .push_str(&checksum_str)
+        .map_err(|()| crate::Error::RenderError("push_str error"))?;
     Ok(prefixed)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parse_nmea_sentence;
+
+    #[test]
+    fn test_nmea_prefix_sentence() {
+        let nmea_sentence =
+            parse_nmea_sentence("$GNGSA,M,1,,,,,,,,,,,,,99.99,99.99,99.99*22").unwrap();
+        println!("talker_id: {}", nmea_sentence.talker_id);
+        let msg = "GSA,M,1,,,,,,,,,,,,,99.99,99.99,99.99";
+        let result = nmea_prefix_sentence(&nmea_sentence, msg).unwrap();
+        assert_eq!(result, "$GNGSA,M,1,,,,,,,,,,,,,99.99,99.99,99.99*22\r\n");
+    }
 }
