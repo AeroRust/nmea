@@ -40,6 +40,8 @@ pub enum Error<'a> {
     /// The current sentences is parsable but the feature has been disabled.
     // TODO: Add sentences and data?!
     DisabledSentence,
+    /// RenderError
+    RenderError(&'a str),
 }
 
 impl<'a> From<nom::Err<nom::error::Error<&'a str>>> for Error<'a> {
@@ -103,6 +105,7 @@ impl fmt::Display for Error<'_> {
             Error::DisabledSentence => {
                 write!(f, "Sentence is parsable but it's feature is disabled",)
             }
+            Error::RenderError(e) => write!(f, "Render error: {}", e),
         }
     }
 }
