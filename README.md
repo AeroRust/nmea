@@ -11,6 +11,7 @@
 Supported sentences:
 
 NMEA Standard Sentences
+
 - AAM
 - ALM
 - APA
@@ -18,31 +19,34 @@ NMEA Standard Sentences
 - BWC
 - BWW
 - DBK
+- DBS
 - DPT
 - GBS
-- GGA *
-- GLL *
-- GNS *
-- GSA *
+- GGA \*
+- GLL \*
+- GNS \*
+- GSA \*
 - GST
-- GSV *
+- GSV \*
 - HDT
 - MDA
 - MTW
 - MWV
-- RMC *
+- RMC \*
 - TTM
 - VHW
-- VTG *
+- VTG \*
 - WNC
 - ZDA
 - ZFO
 - ZTG
 
 Other Sentences
-- TXT *
+
+- TXT \*
 
 Vendor Extensions
+
 - PGRMZ
 
 **\* [`Nmea::parse()`] supported sentences**
@@ -64,9 +68,8 @@ If you'd like to contribute by writing a parser for a given message, check out t
 > NMEA 0183 is a combined electrical and data specification for communication
 > between marine electronics such as echo sounder, sonars, anemometer,
 > gyrocompass, autopilot, GPS receivers and many other types of instruments.
->
-- _https://en.wikipedia.org/wiki/NMEA_0183_
 
+- _https://en.wikipedia.org/wiki/NMEA_0183_
 
 [doc]: https://docs.rs/nmea
 
