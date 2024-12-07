@@ -373,6 +373,7 @@ impl<'a> Nmea {
             | ParseResult::BWW(_)
             | ParseResult::BOD(_)
             | ParseResult::DBK(_)
+            | ParseResult::DBS(_)
             | ParseResult::DPT(_)
             | ParseResult::GBS(_)
             | ParseResult::GST(_)
