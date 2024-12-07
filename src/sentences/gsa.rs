@@ -14,6 +14,7 @@ use nom::{
 use serde::{Deserialize, Serialize};
 
 use crate::{parse::NmeaSentence, sentences::utils::number, Error, SentenceType};
+use core::fmt::Write;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
@@ -227,15 +228,23 @@ pub fn render_nmea(data: &GsaData) -> heapless::String<128> {
     let _ = result.push(',');
 
     for prn in data.fix_sats_prn.iter() {
-        let _ = result.push_str(&prn.to_string());
+        write!(&mut result, "{}", prn).ok();
         let _ = result.push(',');
     }
 
-    let _ = result.push_str(&data.pdop.map_or("".to_string(), |x| x.to_string()));
+    if let Some(pdop) = data.pdop {
+        write!(&mut result, "{}", pdop).ok();
+    }
     let _ = result.push(',');
-    let _ = result.push_str(&data.hdop.map_or("".to_string(), |x| x.to_string()));
+
+    if let Some(hdop) = data.hdop {
+        write!(&mut result, "{}", hdop).ok();
+    }
     let _ = result.push(',');
-    let _ = result.push_str(&data.vdop.map_or("".to_string(), |x| x.to_string()));
+
+    if let Some(vdop) = data.vdop {
+        write!(&mut result, "{}", vdop).ok();
+    }
 
     result
 }
