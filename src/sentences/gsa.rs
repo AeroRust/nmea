@@ -206,6 +206,40 @@ pub fn parse_gsa(sentence: NmeaSentence) -> Result<GsaData, Error> {
     }
 }
 
+/// Renders back GSA message to NMEA without the prefix. Example rendered message: `GSA,A,3,19,28,14,18,27,22,31,39,,,,,1.7,1.0,1.3`
+pub fn render_nmea(data: &GsaData) -> heapless::String<128> {
+    let mut result = heapless::String::new();
+    let _ = result.push_str("GSA,");
+
+    let mode1 = match data.mode1 {
+        GsaMode1::Manual => 'M',
+        GsaMode1::Automatic => 'A',
+    };
+    let _ = result.push(mode1);
+    let _ = result.push(',');
+
+    let mode2 = match data.mode2 {
+        GsaMode2::NoFix => '1',
+        GsaMode2::Fix2D => '2',
+        GsaMode2::Fix3D => '3',
+    };
+    let _ = result.push(mode2);
+    let _ = result.push(',');
+
+    for prn in data.fix_sats_prn.iter() {
+        let _ = result.push_str(&prn.to_string());
+        let _ = result.push(',');
+    }
+
+    let _ = result.push_str(&data.pdop.map_or("".to_string(), |x| x.to_string()));
+    let _ = result.push(',');
+    let _ = result.push_str(&data.hdop.map_or("".to_string(), |x| x.to_string()));
+    let _ = result.push(',');
+    let _ = result.push_str(&data.vdop.map_or("".to_string(), |x| x.to_string()));
+
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -251,5 +285,19 @@ mod tests {
             let s = parse_nmea_sentence(line).unwrap();
             parse_gsa(s).unwrap();
         }
+    }
+
+    #[test]
+    fn test_gsa_render_nmea_01() {
+        let data_s = "GSA,A,3,19,28,14,18,27,22,31,39,,,,,1.7,1.0,1.3";
+        let data = parse_gsa(NmeaSentence {
+            talker_id: "GP",
+            message_id: SentenceType::GSA,
+            data: data_s,
+            checksum: 0x35,
+        })
+        .unwrap();
+        let rendered = render_nmea(&data);
+        assert_eq!(data_s, rendered.as_str());
     }
 }

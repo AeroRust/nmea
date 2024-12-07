@@ -390,7 +390,7 @@ mod tests {
     }
 
     #[test]
-    fn test_render_nmea_01() {
+    fn test_gga_render_nmea_01() {
         let data_s = "GGA,033745.00,5650.8234,N,03548.9778,E,1,07,1.8,101.2,M,14.7,M,,";
         let data = parse_gga(NmeaSentence {
             talker_id: "GP",
