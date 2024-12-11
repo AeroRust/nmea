@@ -8,7 +8,7 @@ use crate::{Error, NmeaSentence, ParseResult, SentenceType};
 /// ```text
 ///         1   2 3   4 5   6 7
 ///         |   | |   | |   | |
-///  $--DBT,x.x,f,x.x,M,x.x,F*hh<CR><LF>
+///  $--DBS,x.x,f,x.x,M,x.x,F*hh<CR><LF>
 /// Field Number:
 ///     1. Water depth, feet
 ///     2. f = feet
@@ -17,8 +17,11 @@ use crate::{Error, NmeaSentence, ParseResult, SentenceType};
 ///     5. Water depth, Fathoms
 ///     6. F = Fathoms
 ///     7. Checksum
-/// In real-world sensors, sometimes not all three conversions are reported. So you might see something like $SDDBT,,f,22.5,M,,F*cs
-/// Example: $DBS,x.x,f,x.x,M,x.x,F*hh<CR><LF>
+/// In real-world sensors, sometimes not all three conversions are reported.
+/// So you might see something like `$SDDBS,,f,22.5,M,,F*cs`
+///
+/// Examples:
+/// * `$DBS,x.x,f,x.x,M,x.x,F*hh<CR><LF>`
 /// ```
 ///
 ///
