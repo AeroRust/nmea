@@ -1,6 +1,8 @@
 use nom::{character::complete::char, combinator::opt, number::complete::float};
 
 use crate::{Error, NmeaSentence, ParseResult, SentenceType};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 /// DBS - Depth Below Surface
 ///
