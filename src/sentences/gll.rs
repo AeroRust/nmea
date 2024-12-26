@@ -5,9 +5,6 @@ use nom::{
     IResult,
 };
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 use super::{faa_mode::parse_faa_mode, nom_parse_failure, FaaMode};
 use crate::{
     parse::NmeaSentence,
@@ -31,7 +28,7 @@ use crate::{
 ///         |       | |        | |         | |
 ///  $--GLL,ddmm.mm,a,dddmm.mm,a,hhmmss.ss,a,m*hh<CR><LF>
 /// ```
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GllData {

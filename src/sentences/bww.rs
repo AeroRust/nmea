@@ -3,15 +3,11 @@ use nom::{
     bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
 };
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 use crate::{
     parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
+    sentences::utils::array_string,
     Error, SentenceType,
 };
-
-use super::utils::array_string;
 
 /// BWW - Bearing - Waypoint to Waypoint
 ///
@@ -25,14 +21,15 @@ use super::utils::array_string;
 /// ```
 /// Field Number:
 /// 1. Bearing, degrees True
-/// 2. T = True
+/// 2. `T` = True
 /// 3. Bearing Degrees, Magnetic
-/// 4. M = Magnetic
+/// 4. `M` = Magnetic
 /// 5. TO Waypoint ID
 /// 6. FROM Waypoint ID
 /// 7. Checksum
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+///
+/// Example: `$GPBWW,213.8,T,218.0,M,TOWPT,FROMWPT*42`
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct BwwData {

@@ -8,13 +8,16 @@ use nom::{
     number::complete::float,
 };
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, SentenceType};
 
-///  APA - Autopilot Sentence "A"
-///  This sentence is sent by some GPS receivers to allow them to be used to control an autopilot unit
+/// APA - Autopilot Sentence "A"
+///
+/// This sentence is sent by some GPS receivers to allow them to be used to control an autopilot unit
+///
+/// This sentence is commonly used by autopilots and contains navigation receiver warning flag status,
+/// cross-track-error, waypoint arrival status, initial bearing from origin waypoint to the destination,
+/// continuous bearing from present position to destination and recommended heading-to-steer to
+/// destination waypoint for the active navigation leg of the journey.
 ///
 /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_apa_autopilot_sentence_a>
 ///
@@ -23,6 +26,7 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 ///        | |  |   | | | |  |  | |     |
 /// $--APA,A,A,x.xx,L,N,A,A,xxx,M,c---c*hh<CR><LF>
 /// ```
+///
 /// Field Number:
 ///
 /// 1. Status, BOOLEAN, V = Loran-C Blink or SNR warning A = general warning flag or other navigation systems when a reliable fix is not available
@@ -40,7 +44,7 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 /// Example: `$GPAPA,A,A,0.10,R,N,V,V,011,M,DEST,011,M*82`
 /// Where the last "M" is the waypoint name
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq, Clone)]
 pub struct ApaData {
@@ -58,7 +62,7 @@ pub struct ApaData {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 pub enum SteerDirection {
     Left,
@@ -66,7 +70,7 @@ pub enum SteerDirection {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 pub enum CrossTrackUnits {
     Nautical,
@@ -74,7 +78,7 @@ pub enum CrossTrackUnits {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 pub enum MagneticTrue {
     Magnetic,

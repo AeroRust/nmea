@@ -34,7 +34,7 @@ use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Serialize};
 /// # }
 ///
 /// ```
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Default)]
 pub struct Nmea {
@@ -445,7 +445,7 @@ impl fmt::Display for Nmea {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Default)]
 struct SatsPack {
@@ -508,7 +508,7 @@ mod serde_deq {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Clone, PartialEq)]
 /// Satellite information
@@ -773,7 +773,7 @@ define_sentence_type_enum! {
     /// ### Vendor extensions
     ///
     /// - [`SentenceType::RMZ`]
-    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+    #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
     #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
     #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
     #[repr(u32)]
@@ -1257,7 +1257,7 @@ define_sentence_type_enum! {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
 pub struct SentenceMask {

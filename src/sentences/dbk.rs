@@ -6,9 +6,6 @@ use nom::{
     IResult,
 };
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 use crate::{parse::NmeaSentence, Error, ParseResult, SentenceType};
 
 /// DBK - Depth Below Keel
@@ -20,14 +17,17 @@ use crate::{parse::NmeaSentence, Error, ParseResult, SentenceType};
 ///        |   | |   | |   | |
 /// $--DBK,x.x,f,x.x,M,x.x,F*hh<CR><LF>
 /// ```
-/// 1:    Depth, feet
-/// 2:    f = feet
-/// 3:    Depth, meters
-/// 4:    M = meters
-/// 5:    Depth, Fathoms
-/// 6:    F = Fathoms
-/// 7:    Mandatory NMEA checksum
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+///
+/// 1. Depth, feet
+/// 2. `f` = feet
+/// 3. Depth, meters
+/// 4. `M` = meters
+/// 5. Depth, Fathoms
+/// 6. `F` = Fathoms
+/// 7. Mandatory NMEA checksum
+///
+/// Example: `$SDDBK,1330.5,f,0405.5,M,0221.6,F*2E`
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct DbkData {
