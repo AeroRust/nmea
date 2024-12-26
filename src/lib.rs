@@ -1,58 +1,21 @@
-//! NMEA 0183 parser
+//! ## NMEA 0183 parser
 //!
 //! Use [`Nmea::parse()`] and [`Nmea::parse_for_fix()`]
-//! to preserve state between receiving new NMEA sentence,
-//! and [`parse_str()`] or [`parse_bytes()`] to parse sentences without state.
+//! to preserve state between receiving new NMEA sentences
+//! (large size, not recommended for embedded platforms).
 //!
-//! Units used: **celsius**, **degrees**, **knots**, **meters** for altitude
+//! For embedded platforms, i.e. `no_std`, use [`parse_str()`] or [`parse_bytes()`]
+//! to parse sentences without preserving state.
 //!
-//! # Supported sentences:
+//! Units used: **celsius**, **degrees**, **knots**, **meters** for altitude.
 //!
-//! NMEA Standard Sentences
+//! Check the feature flags below for all the supported sentences.
 //!
-//! - AAM
-//! - ALM
-//! - APA
-//! - BOD
-//! - BWC
-//! - BWW
-//! - DBK
-//! - DPT
-//! - GBS
-//! - GGA *
-//! - GLL *
-//! - GNS *
-//! - GSA *
-//! - GST
-//! - GSV *
-//! - HDT
-//! - MDA
-//! - MTW
-//! - MWV
-//! - RMC *
-//! - TTM
-//! - VHW
-//! - VTG *
-//! - WNC
-//! - ZDA
-//! - ZFO
-//! - ZTG
-//!
-//! Other Sentences
-//! - TXT *
-//!
-//! Vendor Extension
-//! - PGRMZ
+//! ## Crate features
+#![cfg_attr(feature = "features-docs", doc = document_features::document_features!())]
+#![cfg_attr(not(feature = "features-docs"), doc = "Please enable the `features-docs` feature to see the documented features list")]
 //!
 //! **\* [`Nmea::parse()`] supported sentences**
-//!
-//!
-//! # Crate features
-//!
-//! - `default` features - `std`
-//! - `std` - enable `std`
-//! - `serde` - enable `serde` Serialize and Deserialize derives
-//! - `defmt-03` - enable the `defmt@0.3` Format derives
 //!
 //! [`Nmea::parse()`]: Nmea::parse
 //! [`Nmea::parse_for_fix()`]: Nmea::parse_for_fix
