@@ -5,8 +5,6 @@ use nom::{
     IResult,
 };
 
-
-
 use crate::{Error, NmeaSentence, SentenceType};
 
 use super::utils::parse_float_num;

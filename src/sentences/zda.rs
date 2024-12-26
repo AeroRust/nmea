@@ -6,8 +6,6 @@ use nom::{
     IResult,
 };
 
-
-
 use crate::{parse::NmeaSentence, sentences::utils::parse_hms, Error, SentenceType};
 
 use super::utils::{parse_num, parse_number_in_range};

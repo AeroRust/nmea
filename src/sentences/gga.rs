@@ -7,8 +7,6 @@ use nom::{
     IResult,
 };
 
-
-
 use crate::{
     parse::NmeaSentence,
     sentences::{

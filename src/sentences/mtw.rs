@@ -6,8 +6,6 @@ use nom::{
     IResult,
 };
 
-
-
 use crate::{parse::NmeaSentence, Error, SentenceType};
 
 /// MTW - Mean Temperature of Water

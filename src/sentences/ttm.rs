@@ -7,8 +7,6 @@ use nom::{
     IResult,
 };
 
-
-
 use super::utils::{parse_float_num, parse_hms, parse_number_in_range};
 use crate::{Error, NmeaSentence, SentenceType};
 

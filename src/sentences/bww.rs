@@ -3,12 +3,10 @@ use nom::{
     bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
 };
 
-
-
 use crate::{
     parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
+    sentences::utils::array_string,
     Error, SentenceType,
-    sentences::utils::array_string
 };
 
 /// BWW - Bearing - Waypoint to Waypoint

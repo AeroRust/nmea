@@ -8,8 +8,6 @@ use nom::{
     IResult,
 };
 
-
-
 use crate::{Error, NmeaSentence, SentenceType};
 
 use super::utils::number;

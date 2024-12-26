@@ -2,8 +2,6 @@ use crate::{parse::NmeaSentence, sentences::utils::parse_hms, Error, SentenceTyp
 use chrono::NaiveTime;
 use nom::{character::complete::char, combinator::opt, number::complete::float, IResult};
 
-
-
 /// GST - GPS Pseudorange Noise Statistics
 /// ```text
 ///              1    2 3 4 5 6 7 8   9

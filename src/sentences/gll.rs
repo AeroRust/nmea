@@ -5,8 +5,6 @@ use nom::{
     IResult,
 };
 
-
-
 use super::{faa_mode::parse_faa_mode, nom_parse_failure, FaaMode};
 use crate::{
     parse::NmeaSentence,

@@ -1,7 +1,5 @@
 use nom::{character::complete::char, combinator::opt, number::complete::float, IResult};
 
-
-
 use crate::{parse::NmeaSentence, Error, SentenceType};
 
 /// VTG - Track made good and Ground speed

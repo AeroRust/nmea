@@ -8,8 +8,6 @@ use nom::{
     IResult,
 };
 
-
-
 use super::{
     faa_mode::parse_faa_modes,
     utils::{number, parse_hms, parse_lat_lon},

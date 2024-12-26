@@ -10,8 +10,6 @@ use nom::{
     Err, IResult, InputLength, Parser,
 };
 
-
-
 use crate::{parse::NmeaSentence, sentences::utils::number, Error, SentenceType};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

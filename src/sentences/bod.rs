@@ -9,8 +9,6 @@ use nom::{
     sequence::preceded,
 };
 
-
-
 /// BOD - Bearing - Waypoint to Waypoint
 ///
 /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_bod_bearing_waypoint_to_waypoint>

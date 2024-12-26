@@ -10,7 +10,6 @@ use nom::{
 
 use cfg_if::cfg_if;
 
-
 use crate::{sentences::*, Error, SentenceType};
 
 /// The maximum message length parsable by the crate.

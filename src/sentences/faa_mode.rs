@@ -1,7 +1,5 @@
 use nom::{character::complete::anychar, combinator::opt, IResult};
 
-
-
 use super::{nom_parse_failure, FixType};
 
 /// for now let's handle only two GPS and GLONASS

@@ -5,8 +5,6 @@ use nom::{
     IResult,
 };
 
-
-
 use crate::{
     parse::NmeaSentence,
     sentences::{utils::number, GnssType},
@@ -44,7 +42,7 @@ use crate::{
 ///
 /// Some GPS receivers may emit more than 12 quadruples (more than three `GPGSV` sentences),
 /// even though NMEA-0813 doesn’t allow this. (The extras might be `WAAS` satellites, for example.)
-/// 
+///
 /// Receivers may also report quads for satellites they aren’t tracking, in which case the `SNR` field will be null;
 /// we don’t know whether this is formally allowed or not.
 ///
@@ -55,7 +53,7 @@ use crate::{
 ///
 /// Note: `$GNGSV` uses `PRN` in field 4. Other `$GxGSV` use the `satellite ID` in field 4.
 /// Jackson Labs, Quectel, Telit, and others get this wrong, in various conflicting ways.
- #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct GsvData {

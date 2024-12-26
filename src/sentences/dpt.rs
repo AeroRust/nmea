@@ -6,8 +6,10 @@ use nom::{
     IResult,
 };
 
-
-use crate::{sentences::utils::{parse_float_num, parse_until_end}, Error, ParseResult, SentenceType};
+use crate::{
+    sentences::utils::{parse_float_num, parse_until_end},
+    Error, ParseResult, SentenceType,
+};
 
 /// DPT - Depth of Water
 ///

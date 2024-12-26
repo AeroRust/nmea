@@ -1,8 +1,6 @@
 use crate::count_tts;
 use core::fmt;
 
-
-
 macro_rules! define_enum_with_count {
     (
         $(#[$outer:meta])*

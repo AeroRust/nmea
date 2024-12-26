@@ -6,8 +6,6 @@ use nom::{
     IResult,
 };
 
-
-
 use crate::{parse::NmeaSentence, Error, SentenceType};
 
 /// MWV - Wind Speed and Angle

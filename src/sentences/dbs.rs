@@ -2,7 +2,6 @@ use nom::{character::complete::char, combinator::opt, number::complete::float};
 
 use crate::{Error, NmeaSentence, ParseResult, SentenceType};
 
-
 /// DBS - Depth Below Surface
 ///
 /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_dbs_depth_below_surface>
@@ -11,7 +10,7 @@ use crate::{Error, NmeaSentence, ParseResult, SentenceType};
 ///         |   | |   | |   | |
 ///  $--DBS,x.x,f,x.x,M,x.x,F*hh<CR><LF>
 /// ```
-/// 
+///
 /// Field Number:
 /// 1. Water depth, feet
 /// 2. `f` = feet

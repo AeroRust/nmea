@@ -13,7 +13,10 @@
 //!
 //! ## Crate features
 #![cfg_attr(feature = "features-docs", doc = document_features::document_features!())]
-#![cfg_attr(not(feature = "features-docs"), doc = "Please enable the `features-docs` feature to see the documented features list")]
+#![cfg_attr(
+    not(feature = "features-docs"),
+    doc = "Please enable the `features-docs` feature to see the documented features list"
+)]
 //!
 //! **\* [`Nmea::parse()`] supported sentences**
 //!

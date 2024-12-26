@@ -3,8 +3,6 @@ use nom::{
     IResult,
 };
 
-
-
 use crate::sentences::utils::number;
 use crate::{parse::NmeaSentence, Error, SentenceType};
 

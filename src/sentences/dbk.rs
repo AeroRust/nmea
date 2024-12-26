@@ -6,8 +6,6 @@ use nom::{
     IResult,
 };
 
-
-
 use crate::{parse::NmeaSentence, Error, ParseResult, SentenceType};
 
 /// DBK - Depth Below Keel

@@ -8,8 +8,6 @@ use nom::{
     number::complete::float,
 };
 
-
-
 use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, SentenceType};
 
 /// AAM - Waypoint Arrival Alarm

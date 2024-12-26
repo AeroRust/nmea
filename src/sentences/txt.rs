@@ -1,8 +1,6 @@
 use arrayvec::ArrayString;
 use nom::{bytes::complete::take_while, character::complete::char, IResult};
 
-
-
 use super::utils::number;
 use crate::{
     parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},

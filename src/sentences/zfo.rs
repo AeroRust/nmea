@@ -2,8 +2,6 @@ use arrayvec::ArrayString;
 use chrono::{Duration, NaiveTime};
 use nom::{bytes::complete::is_not, character::complete::char, combinator::opt};
 
-
-
 #[cfg(feature = "serde")]
 use serde_with::As;
 

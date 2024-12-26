@@ -1,7 +1,5 @@
 use nom::{character::complete::char, combinator::opt, number::complete::float, IResult};
 
-
-
 use crate::{parse::NmeaSentence, Error, SentenceType};
 
 /// MDA - Meterological Composite

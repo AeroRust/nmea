@@ -3,8 +3,6 @@ use nom::{
     bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
 };
 
-
-
 use super::utils::array_string;
 use crate::{
     parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},

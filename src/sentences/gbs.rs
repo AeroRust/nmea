@@ -1,8 +1,6 @@
 use chrono::NaiveTime;
 use nom::{character::complete::char, combinator::opt, number::complete::float, IResult};
 
-
-
 use crate::{
     parse::NmeaSentence,
     sentences::utils::{number, parse_hms, parse_lat_lon},

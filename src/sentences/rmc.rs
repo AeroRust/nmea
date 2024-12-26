@@ -6,8 +6,6 @@ use nom::{
     IResult,
 };
 
-
-
 use crate::{
     parse::NmeaSentence,
     sentences::utils::{parse_date, parse_hms, parse_lat_lon},
