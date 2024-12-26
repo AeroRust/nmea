@@ -102,8 +102,9 @@ pub fn parse_nmea_sentence(sentence: &str) -> core::result::Result<NmeaSentence,
 }
 
 /// The result of parsing a single NMEA message.
-#[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[derive(Debug, PartialEq)]
 pub enum ParseResult {
     AAM(AamData),
     ALM(AlmData),
