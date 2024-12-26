@@ -3,8 +3,7 @@ use nom::{
     bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
 };
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+
 
 use super::utils::array_string;
 use crate::{
@@ -33,7 +32,7 @@ use crate::{
 /// 5. Waypoint ID, Destination
 /// 6. Waypoint ID, Origin
 #[derive(Debug, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 pub struct WncData {
     /// Distance, Nautical Miles

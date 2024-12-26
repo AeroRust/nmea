@@ -2,8 +2,7 @@ use crate::{parse::NmeaSentence, sentences::utils::parse_hms, Error, SentenceTyp
 use chrono::NaiveTime;
 use nom::{character::complete::char, combinator::opt, number::complete::float, IResult};
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+
 
 /// GST - GPS Pseudorange Noise Statistics
 /// ```text
@@ -23,7 +22,7 @@ use serde::{Deserialize, Serialize};
 /// 8. Standard deviation (meters) of altitude error
 /// 9. Checksum
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct GstData {

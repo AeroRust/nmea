@@ -8,8 +8,7 @@ use nom::{
     number::complete::float,
 };
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+
 
 use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, SentenceType};
 
@@ -33,7 +32,7 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 /// Example: $GPAAM,A,A,0.10,N,WPTNME*43
 /// WPTNME is the waypoint name.
 /// ```
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct AamData {

@@ -9,8 +9,7 @@ use nom::{
     sequence::preceded,
 };
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+
 
 /// BOD - Bearing - Waypoint to Waypoint
 ///
@@ -21,7 +20,7 @@ use serde::{Deserialize, Serialize};
 ///        |   | |   | |    |    |
 /// $--BOD,x.x,T,x.x,M,c--c,c--c*hh<CR><LF>
 /// ```
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BodData {

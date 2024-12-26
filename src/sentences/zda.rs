@@ -6,8 +6,7 @@ use nom::{
     IResult,
 };
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+
 
 use crate::{parse::NmeaSentence, sentences::utils::parse_hms, Error, SentenceType};
 
@@ -30,7 +29,7 @@ use super::utils::{parse_num, parse_number_in_range};
 /// 5. Local zone description, 00 to +- 13 hours
 /// 6. Local zone minutes description, 00 to 59, apply same sign as local hours
 /// 7. Checksum
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ZdaData {

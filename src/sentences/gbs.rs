@@ -1,8 +1,7 @@
 use chrono::NaiveTime;
 use nom::{character::complete::char, combinator::opt, number::complete::float, IResult};
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+
 
 use crate::{
     parse::NmeaSentence,
@@ -19,7 +18,7 @@ use crate::{
 /// |      |   |   |   |   |   |   |   |
 /// $--GBS,hhmmss.ss,x.x,x.x,x.x,x.x,x.x,x.x,x.x*hh<CR><LF>
 /// ```
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GbsData {

@@ -2,8 +2,7 @@ use arrayvec::ArrayString;
 use chrono::{Duration, NaiveTime};
 use nom::{bytes::complete::is_not, character::complete::char, combinator::opt};
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+
 
 #[cfg(feature = "serde")]
 use serde_with::As;
@@ -27,7 +26,7 @@ use super::utils::array_string;
 /// 2. Time Remaining
 /// 3. Destination Waypoint ID
 /// 4. Checksum
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq, Eq)]
 pub struct ZtgData {

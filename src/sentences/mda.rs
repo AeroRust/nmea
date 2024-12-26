@@ -1,7 +1,6 @@
 use nom::{character::complete::char, combinator::opt, number::complete::float, IResult};
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+
 
 use crate::{parse::NmeaSentence, Error, SentenceType};
 
@@ -14,7 +13,7 @@ use crate::{parse::NmeaSentence, Error, SentenceType};
 ///          |   |  |    |  |  | | |  |  |  |  |  |  |  |  |  |  |  |  |  |
 ///  $--MDA,n.nn,I,n.nnn,B,n.n,C,n.C,n.n,n,n.n,C,n.n,T,n.n,M,n.n,N,n.n,M*hh<CR><LF>
 /// ```
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct MdaData {
@@ -49,33 +48,30 @@ pub struct MdaData {
 /// NMEA 0183 standard Wind Speed and Angle, in relation to the vessel’s bow/centerline.
 /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_mda_meteorological_composite>
 ///
-/// ## Example (Ignore the line break):
-/// ```text
-/// $WIMDA,29.7544,I,1.0076,B,35.5,C,17.5,C,42.1,30.6,20.6,C,116.4,T,107.7,M,1.2,N,0.6,M*66
-///```
+///  Example: `$WIMDA,29.7544,I,1.0076,B,35.5,C,17.5,C,42.1,30.6,20.6,C,116.4,T,107.7,M,1.2,N,0.6,M*66`
 ///
 ///
-/// 1: 29.7544     Pressure in inches of mercury
-/// 2: I
-/// 3: 1.0076      Pressure in bars
-/// 4: B
-/// 5: 35.5        Air temp, deg celsius
-/// 6: C
-/// 7: 17.5        Water temp, deg celsius
-/// 8: C
-/// 9: 42.1        Relative humidity, percent
-/// 10: 30.6       Absolute humidity, percent
-/// 11: 20.6       Dew point, degrees celsius
-/// 12: C
-/// 13: 116.4      True Wind Direction, NED degrees
-/// 14: T
-/// 15: 107.7      Magnetic Wind Direction, NED degrees
-/// 16: M
-/// 17: 1.2        Wind speed knots
-/// 18: N
-/// 19: 0.6        Wind speed meters/second
-/// 20: M
-/// 21: *16        Mandatory NMEA checksum
+/// 1. 29.7544     Pressure in inches of mercury
+/// 2. I
+/// 3. 1.0076      Pressure in bars
+/// 4. B
+/// 5. 35.5        Air temp, deg celsius
+/// 6. C
+/// 7. 17.5        Water temp, deg celsius
+/// 8. C
+/// 9. 42.1        Relative humidity, percent
+/// 10. 30.6       Absolute humidity, percent
+/// 11. 20.6       Dew point, degrees celsius
+/// 12. C
+/// 13. 116.4      True Wind Direction, NED degrees
+/// 14. T
+/// 15. 107.7      Magnetic Wind Direction, NED degrees
+/// 16. M
+/// 17. 1.2        Wind speed knots
+/// 18. N
+/// 19. 0.6        Wind speed meters/second
+/// 20. M
+/// 21. *16        Mandatory NMEA checksum
 ///
 pub fn parse_mda(sentence: NmeaSentence) -> Result<MdaData, Error> {
     if sentence.message_id != SentenceType::MDA {

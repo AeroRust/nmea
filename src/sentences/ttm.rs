@@ -7,13 +7,12 @@ use nom::{
     IResult,
 };
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+
 
 use super::utils::{parse_float_num, parse_hms, parse_number_in_range};
 use crate::{Error, NmeaSentence, SentenceType};
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TtmReference {
@@ -21,7 +20,7 @@ pub enum TtmReference {
     Theoretical,
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct TtmAngle {
@@ -29,7 +28,7 @@ pub struct TtmAngle {
     reference: TtmReference,
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TtmDistanceUnit {
@@ -38,7 +37,7 @@ pub enum TtmDistanceUnit {
     StatuteMile,
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TtmStatus {
@@ -50,7 +49,7 @@ pub enum TtmStatus {
     Tracking,
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TtmTypeOfAcquisition {
@@ -91,7 +90,7 @@ pub enum TtmTypeOfAcquisition {
 /// ```text
 /// $RATTM,01,0.2,190.8,T,12.1,109.7,T,0.1,0.5,N,TGT01,T,,100021.00,A*79
 /// ```
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct TtmData {

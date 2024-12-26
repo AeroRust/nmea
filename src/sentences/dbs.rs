@@ -1,8 +1,7 @@
 use nom::{character::complete::char, combinator::opt, number::complete::float};
 
 use crate::{Error, NmeaSentence, ParseResult, SentenceType};
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+
 
 /// DBS - Depth Below Surface
 ///
@@ -11,24 +10,24 @@ use serde::{Deserialize, Serialize};
 ///         1   2 3   4 5   6 7
 ///         |   | |   | |   | |
 ///  $--DBS,x.x,f,x.x,M,x.x,F*hh<CR><LF>
-/// Field Number:
-///     1. Water depth, feet
-///     2. f = feet
-///     3. Water depth, meters
-///     4. M = meters
-///     5. Water depth, Fathoms
-///     6. F = Fathoms
-///     7. Checksum
 /// ```
+/// 
+/// Field Number:
+/// 1. Water depth, feet
+/// 2. `f` = feet
+/// 3. Water depth, meters
+/// 4. `M` = meters
+/// 5. Water depth, Fathoms
+/// 6. `F` = Fathoms
+/// 7. Checksum
+///
 /// In real-world sensors, sometimes not all three conversions are reported.
 /// So you might see something like `$SDDBS,,f,22.5,M,,F*cs`
 ///
 /// Examples:
 /// * `$DBS,x.x,f,x.x,M,x.x,F*hh<CR><LF>`
 ///
-///
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct DbsData {
@@ -36,6 +35,7 @@ pub struct DbsData {
     pub water_depth_meters: Option<f32>,
     pub water_depth_fathoms: Option<f32>,
 }
+
 impl From<DbsData> for ParseResult {
     fn from(value: DbsData) -> Self {
         ParseResult::DBS(value)

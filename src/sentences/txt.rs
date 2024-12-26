@@ -1,8 +1,7 @@
 use arrayvec::ArrayString;
 use nom::{bytes::complete::take_while, character::complete::char, IResult};
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+
 
 use super::utils::number;
 use crate::{
@@ -66,7 +65,7 @@ fn do_parse_txt(i: &str) -> IResult<&str, TxtData0<'_>> {
 }
 
 /// TXT - Text
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct TxtData {
