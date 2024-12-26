@@ -60,7 +60,7 @@ If you'd like to contribute by writing a parser for a given message, check out t
    - Add the sentence to the features list in `Cargo.toml` in **alphabetical order** and assign it to proper category (if you are unsure which category to use, open a PR to discuss it)
    - Add the sentence to the `README.md` list of [supported sentences above](./README.md#nmea-0183-sentence-parser-for-rust)
    - Passing linters checks. Just run `cargo fmt` and fix any issues raised by `cargo clippy`
-   - Appropriate documentation following the rest of the sentences format
+   - Appropriate documentation following the rest of the sentences format. For proper documentation you can take a look at `GSV`, `APA` and `WNC` sentences.
 3. Open a PR 🎉
 
 **NB:** We use [https://gpsd.gitlab.io/gpsd/NMEA.html](https://gpsd.gitlab.io/gpsd/NMEA.html) as a reference for most sentences as it's a very well documented project.
