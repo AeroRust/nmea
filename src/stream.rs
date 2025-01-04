@@ -5,20 +5,20 @@ use std::io::Read;
 //
 // we should 'chunkinate' the bytes based on the \r\n ending
 
-struct NmeaStreamParser {
+pub struct NmeaStreamParser {
     buffer: Vec<u8>,
     separator: Vec<u8>,
 }
 
 impl NmeaStreamParser {
-    fn new() -> Self {
+    pub fn new() -> Self {
         NmeaStreamParser {
             buffer: Vec::new(),
             separator: b"\r\n".to_vec(),
         }
     }
 
-    fn process_chunk(&mut self, chunk: &[u8]) -> Vec<Vec<u8>> {
+    pub fn process_chunk(&mut self, chunk: &[u8]) -> Vec<Vec<u8>> {
         self.buffer.extend_from_slice(chunk);
         let mut messages = Vec::new();
 
