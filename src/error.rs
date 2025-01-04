@@ -2,6 +2,7 @@ use core::fmt;
 
 use crate::{sentences::GnssType, SentenceType};
 
+#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub enum Error<'a> {
     /// The provided input was not a proper UTF-8 string
@@ -19,6 +20,7 @@ pub enum Error<'a> {
     /// An unknown [`GnssType`] was found in the NMEA message.
     UnknownGnssType(&'a str),
     /// The sentence could not be parsed because its format was invalid.
+    #[cfg_attr(feature = "defmt-03", defmt(defmt::Debug2Format))]
     ParsingError(nom::Err<nom::error::Error<&'a str>>),
     /// The sentence was too long to be parsed, our current limit is `SENTENCE_MAX_LEN` characters.
     SentenceLength(usize),

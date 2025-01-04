@@ -23,6 +23,7 @@ readme = "README.md"
 
 edition = "2021"
 # Update README.md and ci.yml when updating the MSRV!
+# When bumping MSRV to 1.81, make sure to use core::error::Error.
 rust-version = "1.70.0"
 
 [package.metadata.docs.rs]
@@ -40,9 +41,10 @@ nom = { version = "7.1", default-features = false }
 num-traits = { version = "0.2", default-features = false, features = ["libm"] }
 cfg-if = "1"
 serde = { version = "1.0", default-features = false, optional = true }
-serde_with = { version = "~3.9", default-features = false, optional = true }
+serde_with = { version = "~3.11", default-features = false, optional = true }
 
 defmt = { version = "0.3", optional = true }
+document-features = { version = "0.2", optional = true }
 
 [dev-dependencies]
 approx = "0.5"
@@ -52,8 +54,11 @@ quickcheck = { version = "1", default-features = false }
 serde_json = "1.0"
 
 [features]
+## Default features: `std` & `all-sentences`
 default = ["std", "all-sentences"]
+## Enable the `std` (standard library) usage
 std = ["nom/std", "chrono/std", "arrayvec/std", "serde?/std", "serde_with?/std"]
+## Enable derives for (De)Serialization with `serde`
 serde = [
     "serde/derive", 
     "serde_with/macros", 
@@ -63,127 +68,153 @@ serde = [
     "arrayvec/serde"
 ]
 
+## Enable derives of `defmt@0.3` formatting for embedded platforms
 defmt-03 = ["dep:defmt", "heapless/defmt-03"]
 
-all-sentences = ["GNSS", "waypoint", "maritime", "water", "vendor-specific", "other"]
-# GNSS specific sentences related to the possition or speed relative to the ground
-GNSS = ["APA", "ALM", "GBS", "GGA", "GLL", "GNS", "GSA", "GST", "GSV", "RMC", "VTG"]
+## Enable the documentation of features (disabled by default to remove unnecessary to the functionality dependencies)
+features-docs = ["dep:document-features"]
 
+#! ## Sentences features
+## Enable all sentences
+all-sentences = ["GNSS", "waypoint", "maritime", "water", "vendor-specific", "other"]
+
+#! ### Categorised features
+
+## GNSS specific sentences related to the position or speed relative to the ground
+GNSS = ["APA", "ALM", "GBS", "GGA", "GLL", "GNS", "GSA", "GST", "GSV", "RMC", "VTG"]
+## Waypoint
 waypoint = ["AAM", "BOD", "BWC", "BWW", "WNC", "ZFO", "ZTG"]
+## Maritime
 maritime = ["waypoint", "water", "radar"]
+## Radar
 radar = ["TTM"]
-water = ["DBK", "DPT", "MTW", "VHW"]
+## Water
+water = ["DBK", "DBS", "DPT", "MTW", "VHW"]
+## Vendor-specific messages
 vendor-specific = ["RMZ"]
+## Other
 other = ["HDT", "MDA", "MWV", "TXT", "ZDA"]
 
-# AAM - Waypoint Arrival Alarm
-# feature: waypoint
+#! ### Supported sentences (alphabetically ordered)
+
+## Waypoint Arrival Alarm
+## (feature: `waypoint`)
 AAM = []
 
-# ALM - GPS Almanac Data
-# feature: GNSS
+## GPS Almanac Data
+## (feature: `GNSS`)
 ALM = []
 
-# APA - Autopilot Sentence "A"
-# feature: GNSS
+## Autopilot Sentence "A"
+## (feature: `GNSS`)
 APA = []
 
-# BOD - Bearing - Waypoint to Waypoint
-# feature: waypoint
+## Bearing - Waypoint to Waypoint
+## (feature: `waypoint`)
 BOD = []
 
-# BWC - Bearing & Distance to Waypoint - Great Circle
-# feature: waypoint
+## Bearing & Distance to Waypoint - Great Circle
+## (feature: `waypoint`)
 BWC = []
 
-# BWW - Bearing - Waypoint to Waypoint
-# feature: waypoint
+## Bearing - Waypoint to Waypoint
+## (feature: `waypoint`)
 BWW = []
 
-# DBK - Depth Below Keel
-# feature: water
+## Depth Below Keel
+## (feature: `water`)
 DBK = []
 
-# DPT - Depth of Water
-# feature: water
+## Depth Below Surface
+## (feature: `water`)
+DBS = []
+
+## Depth of Water
+## (feature: `water`)
 DPT = []
 
-# GBS - GPS Satellite Fault Detection
-# feature: GNSS
+## GPS Satellite Fault Detection
+## (feature: `GNSS`)
 GBS = []
 
-# GGA - Global Positioning System Fix Data
-# feature: GNSS
+## * Global Positioning System Fix Data
+## (feature: `GNSS`)
 GGA = []
 
-# GLL - Geographic Position - Latitude/Longitude
-# feature: GNSS
+## * Geographic Position - Latitude/Longitude
+## (feature: `GNSS`)
 GLL = []
 
-# GNS - Fix data
-# feature: GNSS
+## * Fix data
+## (feature: `GNSS`)
 GNS = []
 
-# GSA - GPS DOP and active satellites
-# feature: GNSS
+## * GPS DOP and active satellites
+## (feature: `GNSS`)
 GSA = []
 
-# GST - GPS Pseudorange Noise Statistics
-# feature: GNSS
+## GPS Pseudorange Noise Statistics
+## (feature: `GNSS`)
 GST = []
 
-# GSV - Satellites in view
-# feature: GNSS
+## * Satellites in view
+## (feature: `GNSS`)
 GSV = []
 
-# HDT - Heading - True
+## Heading - True
+## (feature: `other`)
 HDT = []
 
-# MDA - Meterological Composite
+## Meterological Composite
+## (feature: `other`)
 MDA = []
 
-# MTW - Mean Temperature of Water
-# feature: water
+## Mean Temperature of Water
+## (feature: `water`)
 MTW = []
 
-# MWV - Wind Speed and Angle
+## Wind Speed and Angle
+## (feature: `other`)
 MWV = []
 
-# RMC - Recommended Minimum Navigation Information
-# feature: GNSS
+## * Recommended Minimum Navigation Information
+## (feature: `GNSS`)
 RMC = []
 
-# PGRMZ - Garmin Altitude (Vendor specific)
-# feature: vendor-specific
+## PGRMZ - Garmin Altitude (Vendor specific)
+## (feature: `vendor-specific`)
 RMZ = []
 
-# TTM - Tracked target message
+## Tracked target message
+## (feature: `radar`)
 TTM = []
 
-# TXT - Text message
+## * Text message
+## (feature: `other`)
 TXT = []
 
-# VHW - Water speed and heading
-# feature: water
+## Water speed and heading
+## (feature: `water`)
 VHW = []
 
-# VTG - Track made good and Ground speed
-# feature: GNSS
+## * Track made good and Ground speed
+## (feature: `GNSS`)
 VTG = []
 
-# WNC - Distance - Waypoint to waypoint
-# feature: waypoint
+## Distance - Waypoint to waypoint
+## (feature: `waypoint`)
 WNC = []
 
-# ZDA - Time & Date - UTC, day, month, year and local time zone
+## Time & Date - UTC, day, month, year and local time zone
+## (feature: `other`)
 ZDA = []
 
-# ZFO - UTC & Time from origin Waypoint
-# feature: waypoint
+## UTC & Time from origin Waypoint
+## (feature: `waypoint`)
 ZFO = []
 
-# ZTG - UTC & Time to Destination Waypoint
-# feature: waypoint
+## UTC & Time to Destination Waypoint
+## (feature: `waypoint`)
 ZTG = []
 
 [[test]]

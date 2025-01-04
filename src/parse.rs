@@ -9,8 +9,6 @@ use nom::{
 };
 
 use cfg_if::cfg_if;
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
 
 use crate::{sentences::*, Error, SentenceType};
 
@@ -37,7 +35,7 @@ pub const SENTENCE_MAX_LEN: usize = 102;
 pub const TEXT_PARAMETER_MAX_LEN: usize = 64;
 
 /// A known and parsable Nmea sentence type.
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 pub struct NmeaSentence<'a> {
     pub talker_id: &'a str,
@@ -104,8 +102,9 @@ pub fn parse_nmea_sentence(sentence: &str) -> core::result::Result<NmeaSentence,
 }
 
 /// The result of parsing a single NMEA message.
-#[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[derive(Debug, PartialEq)]
 pub enum ParseResult {
     AAM(AamData),
     ALM(AlmData),
@@ -114,6 +113,7 @@ pub enum ParseResult {
     BWC(BwcData),
     BWW(BwwData),
     DBK(DbkData),
+    DBS(DbsData),
     DPT(DptData),
     GBS(GbsData),
     GGA(GgaData),
@@ -150,6 +150,7 @@ impl From<&ParseResult> for SentenceType {
             ParseResult::BWC(_) => SentenceType::BWC,
             ParseResult::BWW(_) => SentenceType::BWW,
             ParseResult::DBK(_) => SentenceType::DBK,
+            ParseResult::DBS(_) => SentenceType::DBS,
             ParseResult::GBS(_) => SentenceType::GBS,
             ParseResult::GGA(_) => SentenceType::GGA,
             ParseResult::GLL(_) => SentenceType::GLL,

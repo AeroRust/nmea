@@ -34,7 +34,7 @@ use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Serialize};
 /// # }
 ///
 /// ```
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Default)]
 pub struct Nmea {
@@ -374,6 +374,7 @@ impl<'a> Nmea {
             | ParseResult::BWW(_)
             | ParseResult::BOD(_)
             | ParseResult::DBK(_)
+            | ParseResult::DBS(_)
             | ParseResult::DPT(_)
             | ParseResult::GBS(_)
             | ParseResult::GST(_)
@@ -445,7 +446,7 @@ impl fmt::Display for Nmea {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Default)]
 struct SatsPack {
@@ -508,7 +509,7 @@ mod serde_deq {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Clone, PartialEq)]
 /// Satellite information
@@ -773,11 +774,10 @@ define_sentence_type_enum! {
     /// ### Vendor extensions
     ///
     /// - [`SentenceType::RMZ`]
-    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+    #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+    #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
     #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
     #[repr(u32)]
-    #[allow(rustdoc::bare_urls)]
     pub enum SentenceType {
         /// AAM - Waypoint Arrival Alarm
         ///
@@ -833,7 +833,7 @@ define_sentence_type_enum! {
         BWR,
         /// BWW - Bearing - Waypoint to Waypoint
         ///
-        /// https://gpsd.gitlab.io/gpsd/NMEA.html#_bww_bearing_waypoint_to_waypoint
+        /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_bww_bearing_waypoint_to_waypoint>
         ///
         /// Type: `Waypoints and tacks`
         BWW,
@@ -928,7 +928,7 @@ define_sentence_type_enum! {
         GSA,
         /// GST - GPS Pseudorange Noise Statistics
         ///
-        /// https://gpsd.gitlab.io/gpsd/NMEA.html#_gst_gps_pseudorange_noise_statistics
+        /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gst_gps_pseudorange_noise_statistics>
         GST,
         /// GSV - Satellites in view
         ///
@@ -1258,7 +1258,7 @@ define_sentence_type_enum! {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
 pub struct SentenceMask {

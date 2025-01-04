@@ -1,17 +1,15 @@
-use nom::bytes::complete::is_not;
-use nom::character::complete::char;
-use nom::combinator::map_res;
-use nom::combinator::opt;
-use nom::number::complete::double;
-use nom::IResult;
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+use nom::{
+    bytes::complete::is_not,
+    character::complete::char,
+    combinator::{map_res, opt},
+    number::complete::double,
+    IResult,
+};
 
-use crate::sentences::utils::parse_float_num;
-use crate::sentences::utils::parse_until_end;
-use crate::Error;
-use crate::ParseResult;
-use crate::SentenceType;
+use crate::{
+    sentences::utils::{parse_float_num, parse_until_end},
+    Error, ParseResult, SentenceType,
+};
 
 /// DPT - Depth of Water
 ///
@@ -34,7 +32,7 @@ use crate::SentenceType;
 /// * `$SDDPT,15.2,0.5*68`
 ///
 /// `$SDDPT` is the sentence identifier (`SD` for the talker ID, `DPT` for Depth)
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct DptData {

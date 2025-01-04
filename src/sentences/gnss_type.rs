@@ -1,9 +1,6 @@
 use crate::count_tts;
 use core::fmt;
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 macro_rules! define_enum_with_count {
     (
         $(#[$outer:meta])*
@@ -13,8 +10,8 @@ macro_rules! define_enum_with_count {
         ),* $(,)* }
     ) => {
         $(#[$outer])*
-        #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+        #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+        #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
         #[derive(PartialEq, Debug, Hash, Eq, Clone, Copy)]
         #[repr(u8)]
         pub enum $Name {

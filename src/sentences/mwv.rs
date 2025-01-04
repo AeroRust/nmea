@@ -6,9 +6,6 @@ use nom::{
     IResult,
 };
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 use crate::{parse::NmeaSentence, Error, SentenceType};
 
 /// MWV - Wind Speed and Angle
@@ -20,7 +17,7 @@ use crate::{parse::NmeaSentence, Error, SentenceType};
 ///        |   | |   | |
 /// $--MWV,x.x,a,x.x,a*hh<CR><LF>
 /// ```
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct MwvData {
@@ -31,7 +28,7 @@ pub struct MwvData {
     pub data_valid: bool,
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MwvReference {
@@ -39,7 +36,7 @@ pub enum MwvReference {
     Theoretical,
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MwvWindSpeedUnits {
