@@ -4,7 +4,6 @@ use std::io::Read;
 // from e.g. streamed/received bytes when \r\n ending is present.
 //
 // we should 'chunkinate' the bytes based on the \r\n ending
-// https://www.perplexity.ai/search/what-is-the-core-difference-be-P9yWefFfTP6DlB_f5vEl4w#12
 
 struct NmeaStreamParser {
     buffer: Vec<u8>,
