@@ -159,7 +159,7 @@ pub fn parse_gsv(sentence: NmeaSentence) -> Result<GsvData, Error> {
             "GL" => GnssType::Glonass,
             "BD" | "GB" => GnssType::Beidou,
             "GI" => GnssType::NavIC,
-            "PQ" | "QZ" => GnssType::Qzss,
+            "GQ" | "PQ" | "QZ" => GnssType::Qzss,
             _ => return Err(Error::UnknownGnssType(sentence.talker_id)),
         };
         let mut res = do_parse_gsv(sentence.data)?.1;
@@ -239,6 +239,18 @@ mod tests {
         })
         .unwrap();
         assert_eq!(data.gnss_type, GnssType::Glonass);
+        assert_eq!(data.number_of_sentences, 3);
+        assert_eq!(data.sentence_num, 3);
+        assert_eq!(data.sats_in_view, 10);
+
+        let data = parse_gsv(NmeaSentence {
+            talker_id: "GQ",
+            message_id: SentenceType::GSV,
+            data: "3,3,10,72,40,075,43,87,00,000,",
+            checksum: 0,
+        })
+        .unwrap();
+        assert_eq!(data.gnss_type, GnssType::Qzss);
         assert_eq!(data.number_of_sentences, 3);
         assert_eq!(data.sentence_num, 3);
         assert_eq!(data.sats_in_view, 10);
