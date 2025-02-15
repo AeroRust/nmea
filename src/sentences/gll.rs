@@ -35,7 +35,7 @@ pub struct GllData {
     pub latitude: Option<f64>,
     pub longitude: Option<f64>,
     #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
-    pub fix_time: NaiveTime,
+    pub fix_time: Option<NaiveTime>,
     pub valid: bool,
     pub faa_mode: Option<FaaMode>,
 }
@@ -69,7 +69,7 @@ pub fn parse_gll(sentence: NmeaSentence) -> Result<GllData, Error> {
 fn do_parse_gll(i: &str) -> IResult<&str, GllData> {
     let (i, lat_lon) = parse_lat_lon(i)?;
     let (i, _) = char(',')(i)?;
-    let (i, fix_time) = parse_hms(i)?;
+    let (i, fix_time) = opt(parse_hms)(i)?;
     let (i, _) = char(',')(i)?;
     let (i, valid) = one_of("AV")(i)?; // A: valid, V: invalid
     let valid = match valid {
@@ -120,16 +120,21 @@ mod tests {
         assert_relative_eq!(gll_data.longitude.unwrap(), -(114.0 + (2.3279144 / 60.0)));
         assert_eq!(
             gll_data.fix_time,
-            NaiveTime::from_hms_milli_opt(20, 54, 12, 0).expect("invalid time")
+            Some(NaiveTime::from_hms_milli_opt(20, 54, 12, 0).expect("invalid time"))
         );
         assert_eq!(gll_data.faa_mode, Some(FaaMode::Autonomous));
 
         let s = parse("$GNGLL,,,,,181604.00,V,N*5E", 0x5e);
         let gll_data = parse_gll(s).unwrap();
         assert_eq!(
-            NaiveTime::from_hms_milli_opt(18, 16, 4, 0).expect("invalid time"),
+            Some(NaiveTime::from_hms_milli_opt(18, 16, 4, 0).expect("invalid time")),
             gll_data.fix_time
         );
+        assert!(!gll_data.valid);
+
+        let s = parse("$GNGLL,,,,,,V,N*7A", 0x7a);
+        let gll_data = parse_gll(s).unwrap();
+        assert_eq!(gll_data.fix_time, None);
         assert!(!gll_data.valid);
     }
 }

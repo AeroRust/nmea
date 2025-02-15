@@ -222,7 +222,7 @@ impl<'a> Nmea {
     fn merge_gll_data(&mut self, gll: GllData) {
         self.latitude = gll.latitude;
         self.longitude = gll.longitude;
-        self.fix_time = Some(gll.fix_time);
+        self.fix_time = gll.fix_time;
         if let Some(faa_mode) = gll.faa_mode {
             self.fix_type = Some(faa_mode.into());
         } else {
@@ -359,7 +359,7 @@ impl<'a> Nmea {
                 self.sentences_for_this_time.insert(SentenceType::GGA);
             }
             ParseResult::GLL(gll_data) => {
-                if !self.update_fix_time(Some(gll_data.fix_time)) {
+                if !self.update_fix_time(gll_data.fix_time) {
                     return Ok(FixType::Invalid);
                 }
                 self.merge_gll_data(gll_data);
