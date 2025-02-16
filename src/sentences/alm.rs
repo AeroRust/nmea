@@ -20,18 +20,18 @@ use super::utils::number;
 ///         |   |   |  |   |  |    |  |    |    |      |      |      |      |   |    |
 ///  $--ALM,x.x,x.x,xx,x.x,hh,hhhh,hh,hhhh,hhhh,hhhhhh,hhhhhh,hhhhhh,hhhhhh,hhh,hhh*hh<CR><LF>
 /// ```
-///  
-///  Field Number:
-///  
-///  1. Total number of messages
-///  2. Sentence Number
-///  3. Satellite PRN number (01 to 32)
-///  4. GPS Week Number (range 0 to 2^13 - 1), where:
-///     - 0 is the week of the GPS Week Number epoch on January 6th 1980;
-///     - 8191 is the week that precedes the next rollover on January 6th 2137;
 ///
-///     Note: the legacy representation started at the same epoch, but
-///           the number is 10-bit wide only, with a rollover every 19.7 years.
+/// Field Number:
+///
+/// 1. Total number of messages
+/// 2. Sentence Number
+/// 3. Satellite PRN number (01 to 32)
+/// 4. GPS Week Number (range 0 to 2^13 - 1), where:
+/// - 0 is the week of the GPS Week Number epoch on January 6th 1980;
+/// - 8191 is the week that precedes the next rollover on January 6th 2137;
+///
+/// Note: the legacy representation started at the same epoch, but
+/// the number is 10-bit wide only, with a rollover every 19.7 years.
 ///  6. Eccentricity
 ///  7. Almanac Reference Time
 ///  8. Inclination Angle
@@ -43,8 +43,8 @@ use super::utils::number;
 /// 14. F0 Clock Parameter
 /// 15. F1 Clock Parameter
 /// 16. Checksum
-///  
-///  Fields 5 through 15 are dumped as raw hex.
+///
+/// Fields 5 through 15 are dumped as raw hex.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
