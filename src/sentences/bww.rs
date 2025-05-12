@@ -31,7 +31,7 @@ use crate::{
 /// Example: `$GPBWW,213.8,T,218.0,M,TOWPT,FROMWPT*42`
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BwwData {
     pub true_bearing: Option<f32>,
     pub magnetic_bearing: Option<f32>,

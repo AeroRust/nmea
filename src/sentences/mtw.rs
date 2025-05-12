@@ -22,7 +22,7 @@ use crate::{parse::NmeaSentence, Error, SentenceType};
 /// 3:  Mandatory NMEA checksum
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct MtwData {
     pub temperature: Option<f64>,
 }

@@ -90,7 +90,7 @@ pub enum TtmTypeOfAcquisition {
 /// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TtmData {
     /// Target number
     pub target_number: Option<u8>,

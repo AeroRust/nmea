@@ -29,9 +29,9 @@ use crate::{
 /// 4. K = Kilometers
 /// 5. Waypoint ID, Destination
 /// 6. Waypoint ID, Origin
-#[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct WncData {
     /// Distance, Nautical Miles
     pub distance_nautical_miles: Option<f32>,
