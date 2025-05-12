@@ -32,7 +32,7 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 /// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct AamData {
     pub arrival_circle_entered: Option<bool>,
     pub perpendicular_passed: Option<bool>,

@@ -28,7 +28,7 @@ use crate::{Error, NmeaSentence, ParseResult, SentenceType};
 ///
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct DbsData {
     pub water_depth_feet: Option<f32>,
     pub water_depth_meters: Option<f32>,

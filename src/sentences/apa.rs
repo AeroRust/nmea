@@ -46,7 +46,7 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ApaData {
     pub status_warning: Option<bool>,
     pub status_cycle_warning: Option<bool>,

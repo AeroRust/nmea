@@ -26,7 +26,7 @@ use super::utils::array_string;
 /// 4. Checksum
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ZtgData {
     #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
     pub fix_time: Option<NaiveTime>,

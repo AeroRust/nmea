@@ -22,7 +22,7 @@ use nom::{character::complete::char, combinator::opt, number::complete::float, I
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GstData {
     #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
     pub time: Option<NaiveTime>,
