@@ -55,7 +55,7 @@ pub struct Nmea {
     pub pdop: Option<f32>,
     /// Geoid separation in meters
     pub geoid_separation: Option<f32>,
-    pub fix_satellites_prns: Option<Vec<u32, 18>>,
+    pub fix_satellites_prns: Vec<(GnssType, u32), 18>,
     satellites_scan: [SatsPack; GnssType::COUNT],
     required_sentences_for_nav: SentenceMask,
     #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
@@ -208,7 +208,12 @@ impl<'a> Nmea {
     }
 
     fn merge_gsa_data(&mut self, gsa: GsaData) {
-        self.fix_satellites_prns = Some(gsa.fix_sats_prn);
+        for prn in gsa.fix_sats_prn {
+            let sat = (gsa.gnss_type, prn);
+            if !self.fix_satellites_prns.contains(&sat) {
+                let _ = self.fix_satellites_prns.push(sat);
+            }
+        }
         self.hdop = gsa.hdop;
         self.vdop = gsa.vdop;
         self.pdop = gsa.pdop;
@@ -291,6 +296,7 @@ impl<'a> Nmea {
         self.satellites_scan = old.satellites_scan;
         self.required_sentences_for_nav = old.required_sentences_for_nav;
         self.last_fix_time = old.last_fix_time;
+        self.fix_satellites_prns = Vec::new();
     }
 
     fn clear_position_info(&mut self) {

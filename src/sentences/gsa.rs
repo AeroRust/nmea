@@ -52,7 +52,7 @@ pub struct GsaData {
     pub pdop: Option<f32>,
     pub hdop: Option<f32>,
     pub vdop: Option<f32>,
-    pub gnss_type: Option<GnssType>,
+    pub gnss_type: GnssType,
 }
 
 /// This function is take from `nom`, see `nom::multi::many0`
@@ -141,7 +141,7 @@ fn do_parse_empty_gsa_tail(i: &str) -> IResult<&str, GsaTail> {
     )(i)
 }
 
-fn do_parse_gsa(i: &str) -> IResult<&str, GsaData> {
+fn do_parse_gsa<'a>(talker_id: &str, i: &'a str) -> IResult<&'a str, GsaData> {
     let (i, mode1) = one_of("MA")(i)?;
     let (i, _) = char(',')(i)?;
     let (i, mode2) = one_of("123")(i)?;
@@ -151,6 +151,18 @@ fn do_parse_gsa(i: &str) -> IResult<&str, GsaData> {
         do_parse_gsa_tail_with_gnss_type,
         do_parse_gsa_tail,
     ))(i)?;
+
+    let gnss_type = match talker_id {
+        "GA" => GnssType::Galileo,
+        "GP" => GnssType::Gps,
+        "GL" => GnssType::Glonass,
+        "BD" | "GB" => GnssType::Beidou,
+        "GI" => GnssType::NavIC,
+        "GQ" | "PQ" | "QZ" => GnssType::Qzss,
+        "GN" => tail.4.unwrap_or(GnssType::Gps),
+        _ => tail.4.unwrap_or(GnssType::Gps),
+    };
+
     Ok((
         i,
         GsaData {
@@ -178,7 +190,7 @@ fn do_parse_gsa(i: &str) -> IResult<&str, GsaData> {
             pdop: tail.1,
             hdop: tail.2,
             vdop: tail.3,
-            gnss_type: tail.4,
+            gnss_type,
         },
     ))
 }
@@ -237,7 +249,7 @@ pub fn parse_gsa(sentence: NmeaSentence) -> Result<GsaData, Error> {
             found: sentence.message_id,
         })
     } else {
-        Ok(do_parse_gsa(sentence.data)?.1)
+        Ok(do_parse_gsa(sentence.talker_id, sentence.data)?.1)
     }
 }
 
@@ -270,7 +282,7 @@ mod tests {
                 pdop: Some(3.6),
                 hdop: Some(2.1),
                 vdop: Some(2.2),
-                gnss_type: None
+                gnss_type: GnssType::Gps
             },
             gsa
         );
@@ -285,7 +297,7 @@ mod tests {
                 pdop: Some(3.45),
                 hdop: Some(1.87),
                 vdop: Some(2.89),
-                gnss_type: Some(GnssType::Gps)
+                gnss_type: GnssType::Gps
             },
             gsa
         );
