@@ -296,7 +296,6 @@ impl<'a> Nmea {
         self.satellites_scan = old.satellites_scan;
         self.required_sentences_for_nav = old.required_sentences_for_nav;
         self.last_fix_time = old.last_fix_time;
-        self.fix_satellites_prns = Vec::new();
     }
 
     fn clear_position_info(&mut self) {
