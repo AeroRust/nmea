@@ -2,6 +2,7 @@ use heapless::Vec;
 use nom::{
     character::complete::char,
     combinator::{cond, opt, rest_len},
+    number::complete::float,
     IResult,
 };
 
@@ -68,20 +69,20 @@ pub struct GsvData {
 fn parse_gsv_sat_info(i: &str) -> IResult<&str, Satellite> {
     let (i, prn) = number::<u32>(i)?;
     let (i, _) = char(',')(i)?;
-    let (i, elevation) = opt(number::<i32>)(i)?;
+    let (i, elevation) = opt(float)(i)?;
     let (i, _) = char(',')(i)?;
-    let (i, azimuth) = opt(number::<i32>)(i)?;
+    let (i, azimuth) = opt(float)(i)?;
     let (i, _) = char(',')(i)?;
-    let (i, snr) = opt(number::<i32>)(i)?;
+    let (i, snr) = opt(float)(i)?;
     let (i, _) = cond(rest_len(i)?.1 > 0, char(','))(i)?;
     Ok((
         i,
         Satellite {
             gnss_type: GnssType::Galileo,
             prn,
-            elevation: elevation.map(|v| v as f32),
-            azimuth: azimuth.map(|v| v as f32),
-            snr: snr.map(|v| v as f32),
+            elevation: elevation,
+            azimuth: azimuth,
+            snr: snr,
         },
     ))
 }
