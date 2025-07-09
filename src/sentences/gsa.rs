@@ -10,7 +10,11 @@ use nom::{
     Err, IResult, InputLength, Parser,
 };
 
-use crate::{parse::NmeaSentence, sentences::utils::number, Error, SentenceType};
+use crate::{
+    parse::NmeaSentence,
+    sentences::{utils::number, GnssType},
+    Error, SentenceType,
+};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
@@ -48,6 +52,7 @@ pub struct GsaData {
     pub pdop: Option<f32>,
     pub hdop: Option<f32>,
     pub vdop: Option<f32>,
+    pub gnss_type: GnssType,
 }
 
 /// This function is take from `nom`, see `nom::multi::many0`
@@ -85,7 +90,35 @@ fn gsa_prn_fields_parse(i: &str) -> IResult<&str, Vec<Option<u32>, 18>> {
     many0(terminated(opt(number::<u32>), char(',')))(i)
 }
 
-type GsaTail = (Vec<Option<u32>, 18>, Option<f32>, Option<f32>, Option<f32>);
+type GsaTail = (
+    Vec<Option<u32>, 18>,
+    Option<f32>,
+    Option<f32>,
+    Option<f32>,
+    Option<GnssType>,
+);
+
+fn do_parse_gsa_tail_with_gnss_type(i: &str) -> IResult<&str, GsaTail> {
+    let (i, prns) = gsa_prn_fields_parse(i)?;
+    let (i, pdop) = float(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, hdop) = float(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, vdop) = float(i)?;
+    let (i, _) = char(',')(i)?;
+    let (i, gnss_type) = number::<u8>(i)?;
+
+    let gnss_type = match gnss_type {
+        1 => Some(GnssType::Gps),
+        2 => Some(GnssType::Glonass),
+        3 => Some(GnssType::Galileo),
+        4 => Some(GnssType::Beidou),
+        5 => Some(GnssType::Qzss),
+        6 => Some(GnssType::NavIC),
+        _ => None,
+    };
+    Ok((i, (prns, Some(pdop), Some(hdop), Some(vdop), gnss_type)))
+}
 
 fn do_parse_gsa_tail(i: &str) -> IResult<&str, GsaTail> {
     let (i, prns) = gsa_prn_fields_parse(i)?;
@@ -94,7 +127,7 @@ fn do_parse_gsa_tail(i: &str) -> IResult<&str, GsaTail> {
     let (i, hdop) = float(i)?;
     let (i, _) = char(',')(i)?;
     let (i, vdop) = float(i)?;
-    Ok((i, (prns, Some(pdop), Some(hdop), Some(vdop))))
+    Ok((i, (prns, Some(pdop), Some(hdop), Some(vdop), None)))
 }
 
 fn is_comma(x: char) -> bool {
@@ -103,17 +136,33 @@ fn is_comma(x: char) -> bool {
 
 fn do_parse_empty_gsa_tail(i: &str) -> IResult<&str, GsaTail> {
     value(
-        (Vec::new(), None, None, None),
+        (Vec::new(), None, None, None, None),
         all_consuming(take_while1(is_comma)),
     )(i)
 }
 
-fn do_parse_gsa(i: &str) -> IResult<&str, GsaData> {
+fn do_parse_gsa<'a>(talker_id: &str, i: &'a str) -> IResult<&'a str, GsaData> {
     let (i, mode1) = one_of("MA")(i)?;
     let (i, _) = char(',')(i)?;
     let (i, mode2) = one_of("123")(i)?;
     let (i, _) = char(',')(i)?;
-    let (i, mut tail) = alt((do_parse_empty_gsa_tail, do_parse_gsa_tail))(i)?;
+    let (i, mut tail) = alt((
+        do_parse_empty_gsa_tail,
+        do_parse_gsa_tail_with_gnss_type,
+        do_parse_gsa_tail,
+    ))(i)?;
+
+    let gnss_type = match talker_id {
+        "GA" => GnssType::Galileo,
+        "GP" => GnssType::Gps,
+        "GL" => GnssType::Glonass,
+        "BD" | "GB" => GnssType::Beidou,
+        "GI" => GnssType::NavIC,
+        "GQ" | "PQ" | "QZ" => GnssType::Qzss,
+        "GN" => tail.4.unwrap_or(GnssType::Gps),
+        _ => tail.4.unwrap_or(GnssType::Gps),
+    };
+
     Ok((
         i,
         GsaData {
@@ -141,6 +190,7 @@ fn do_parse_gsa(i: &str) -> IResult<&str, GsaData> {
             pdop: tail.1,
             hdop: tail.2,
             vdop: tail.3,
+            gnss_type,
         },
     ))
 }
@@ -199,7 +249,7 @@ pub fn parse_gsa(sentence: NmeaSentence) -> Result<GsaData, Error> {
             found: sentence.message_id,
         })
     } else {
-        Ok(do_parse_gsa(sentence.data)?.1)
+        Ok(do_parse_gsa(sentence.talker_id, sentence.data)?.1)
     }
 }
 
@@ -232,6 +282,22 @@ mod tests {
                 pdop: Some(3.6),
                 hdop: Some(2.1),
                 vdop: Some(2.2),
+                gnss_type: GnssType::Gps
+            },
+            gsa
+        );
+        let s =
+            parse_nmea_sentence("$GNGSA,A,3,23,02,27,10,08,,,,,,,,3.45,1.87,2.89,1*01").unwrap();
+        let gsa = parse_gsa(s).unwrap();
+        assert_eq!(
+            GsaData {
+                mode1: GsaMode1::Automatic,
+                mode2: GsaMode2::Fix3D,
+                fix_sats_prn: Vec::from_slice(&[23, 2, 27, 10, 8]).unwrap(),
+                pdop: Some(3.45),
+                hdop: Some(1.87),
+                vdop: Some(2.89),
+                gnss_type: GnssType::Gps
             },
             gsa
         );
@@ -241,6 +307,8 @@ mod tests {
             "$BDGSA,A,3,214,,,,,,,,,,,,1.8,1.1,1.4*18",
             "$GNGSA,A,3,31,26,21,,,,,,,,,,3.77,2.55,2.77*1A",
             "$GNGSA,A,3,75,86,87,,,,,,,,,,3.77,2.55,2.77*1C",
+            "$GNGSA,A,3,23,02,27,10,08,,,,,,,,3.45,1.87,2.89,1*01",
+            "$GNGSA,A,3,,,,,,,,,,,,,3.45,1.87,2.89,4*0B",
             "$GPGSA,A,1,,,,*32",
         ];
         for line in &gsa_examples {
