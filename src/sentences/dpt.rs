@@ -33,7 +33,7 @@ use crate::{
 ///
 /// `$SDDPT` is the sentence identifier (`SD` for the talker ID, `DPT` for Depth)
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct DptData {
     pub water_depth: Option<f64>,

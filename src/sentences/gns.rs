@@ -25,10 +25,10 @@ use crate::{parse::NmeaSentence, Error, SentenceType};
 /// $--GNS,hhmmss.ss,ddmm.mm,a,dddmm.mm,a,c--c,xx,x.x,x.x,x.x,x.x,x.x*hh
 /// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct GnsData {
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub fix_time: Option<NaiveTime>,
     pub lat: Option<f64>,
     pub lon: Option<f64>,
@@ -41,7 +41,7 @@ pub struct GnsData {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum NavigationStatus {
     Safe,

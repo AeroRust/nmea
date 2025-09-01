@@ -17,10 +17,10 @@ use crate::{
 /// $--GBS,hhmmss.ss,x.x,x.x,x.x,x.x,x.x,x.x,x.x*hh<CR><LF>
 /// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GbsData {
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub time: Option<NaiveTime>,
     pub lat_error: Option<f64>,
     pub lon_error: Option<f64>,

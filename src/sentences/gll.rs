@@ -29,12 +29,12 @@ use crate::{
 ///  $--GLL,ddmm.mm,a,dddmm.mm,a,hhmmss.ss,a,m*hh<CR><LF>
 /// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GllData {
     pub latitude: Option<f64>,
     pub longitude: Option<f64>,
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub fix_time: Option<NaiveTime>,
     pub valid: bool,
     pub faa_mode: Option<FaaMode>,

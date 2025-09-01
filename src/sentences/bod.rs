@@ -19,14 +19,14 @@ use nom::{
 /// $--BOD,x.x,T,x.x,M,c--c,c--c*hh<CR><LF>
 /// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BodData {
     pub bearing_true: Option<f32>,
     pub bearing_magnetic: Option<f32>,
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub to_waypoint: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub from_waypoint: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 

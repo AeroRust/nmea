@@ -54,7 +54,7 @@ use crate::{
 /// Note: `$GNGSV` uses `PRN` in field 4. Other `$GxGSV` use the `satellite ID` in field 4.
 /// Jackson Labs, Quectel, Telit, and others get this wrong, in various conflicting ways.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct GsvData {
     pub gnss_type: GnssType,

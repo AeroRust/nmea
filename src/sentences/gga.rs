@@ -27,14 +27,14 @@ use crate::{
 ///  $--GGA,hhmmss.ss,ddmm.mm,a,ddmm.mm,a,x,xx,x.x,x.x,M,x.x,M,x.x,xxxx*hh<CR><LF>
 /// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct GgaData {
     #[cfg_attr(
         not(feature = "std"),
         cfg_attr(feature = "serde", serde(with = "serde_naive_time"))
     )]
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub fix_time: Option<NaiveTime>,
     pub fix_type: Option<FixType>,
     pub latitude: Option<f64>,

@@ -28,7 +28,7 @@ use crate::{parse::NmeaSentence, Error, ParseResult, SentenceType};
 ///
 /// Example: `$SDDBK,1330.5,f,0405.5,M,0221.6,F*2E`
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct DbkData {
     pub depth_feet: Option<f64>,

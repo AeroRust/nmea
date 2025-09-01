@@ -35,12 +35,12 @@ use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Serialize};
 ///
 /// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Default)]
 pub struct Nmea {
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub fix_time: Option<NaiveTime>,
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub fix_date: Option<NaiveDate>,
     pub fix_type: Option<FixType>,
     pub latitude: Option<f64>,
@@ -58,7 +58,7 @@ pub struct Nmea {
     pub fix_satellites_prns: Option<Vec<u32, 18>>,
     satellites_scan: [SatsPack; GnssType::COUNT],
     required_sentences_for_nav: SentenceMask,
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     last_fix_time: Option<NaiveTime>,
     last_txt: Option<TxtData>,
     sentences_for_this_time: SentenceMask,
@@ -446,7 +446,7 @@ impl fmt::Display for Nmea {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Default)]
 struct SatsPack {
     /// max number of visible GNSS satellites per hemisphere, assuming global coverage
@@ -456,7 +456,7 @@ struct SatsPack {
     /// Galileo: 12
     /// => 58 total Satellites => max 15 rows of data
     #[cfg_attr(feature = "serde", serde(with = "serde_deq"))]
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     data: Deque<Vec<Option<Satellite>, 4>, 15>,
     max_len: usize,
 }
@@ -509,7 +509,7 @@ mod serde_deq {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, PartialEq)]
 /// Satellite information
 pub struct Satellite {
@@ -774,7 +774,7 @@ define_sentence_type_enum! {
     ///
     /// - [`SentenceType::RMZ`]
     #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-    #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
     #[repr(u32)]
     pub enum SentenceType {
@@ -1258,7 +1258,7 @@ define_sentence_type_enum! {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
 pub struct SentenceMask {
     mask: u128,

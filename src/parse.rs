@@ -36,7 +36,7 @@ pub const TEXT_PARAMETER_MAX_LEN: usize = 64;
 
 /// A known and parsable Nmea sentence type.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct NmeaSentence<'a> {
     pub talker_id: &'a str,
     pub message_id: SentenceType,
@@ -103,7 +103,7 @@ pub fn parse_nmea_sentence(sentence: &str) -> core::result::Result<NmeaSentence<
 
 /// The result of parsing a single NMEA message.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub enum ParseResult {
     AAM(AamData),

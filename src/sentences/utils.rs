@@ -8,7 +8,7 @@ use nom::{
     character::complete::{char, digit1, one_of},
     combinator::{all_consuming, eof, map, map_parser, map_res},
     number::complete::{double, float},
-    sequence::{terminated, tuple},
+    sequence::terminated,
     IResult,
 };
 
@@ -20,11 +20,11 @@ use crate::Error;
 
 pub fn parse_hms(i: &str) -> IResult<&str, NaiveTime> {
     map_res(
-        tuple((
+        (
             map_res(take(2usize), parse_num::<u32>),
             map_res(take(2usize), parse_num::<u32>),
             map_parser(take_until(","), double),
-        )),
+        ),
         |(hour, minutes, sec)| -> core::result::Result<NaiveTime, &'static str> {
             if sec.is_sign_negative() {
                 return Err("Invalid time: second is negative");
@@ -59,11 +59,11 @@ const MILLISECS_PER_HOUR: u32 = 3600000;
 /// Parses values like `125619,` and `125619.5,` to [`Duration`]
 pub fn parse_duration_hms(i: &str) -> IResult<&str, Duration> {
     map_res(
-        tuple((
+        (
             map_res(take(2usize), parse_num::<u8>),
             map_res(take(2usize), parse_num::<u8>),
             map_parser(take_until(","), float),
-        )),
+        ),
         |(hours, minutes, seconds)| -> core::result::Result<Duration, &'static str> {
             if hours >= 24 {
                 return Err("Invalid time: hours >= 24");
@@ -148,11 +148,11 @@ pub(crate) fn parse_magnetic_variation(i: &str) -> IResult<&str, Option<f32>> {
 
 pub(crate) fn parse_date(i: &str) -> IResult<&str, NaiveDate> {
     map_res(
-        tuple((
+        (
             map_res(take(2usize), parse_num::<u8>),
             map_res(take(2usize), parse_num::<u8>),
             map_res(take(2usize), parse_num::<u8>),
-        )),
+        ),
         |data| -> Result<NaiveDate, &'static str> {
             let (day, month, year) = (u32::from(data.0), u32::from(data.1), i32::from(data.2));
 

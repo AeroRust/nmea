@@ -45,7 +45,7 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 /// Where the last "M" is the waypoint name
 ///
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq, Clone)]
 pub struct ApaData {
     pub status_warning: Option<bool>,
@@ -57,13 +57,13 @@ pub struct ApaData {
     pub status_passed: Option<bool>,
     pub bearing_origin_destination: Option<f32>,
     pub magnetic_true: Option<MagneticTrue>,
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum SteerDirection {
     Left,
     Right,
@@ -71,7 +71,7 @@ pub enum SteerDirection {
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum CrossTrackUnits {
     Nautical,
     Kilometers,
@@ -79,7 +79,7 @@ pub enum CrossTrackUnits {
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum MagneticTrue {
     Magnetic,
     True,

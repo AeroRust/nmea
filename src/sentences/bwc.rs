@@ -21,17 +21,17 @@ use crate::{
 /// $--BWC,hhmmss.ss,llll.ll,a,yyyyy.yy,a,x.x,T,x.x,M,x.x,N,c--c,m,*hh<CR><LF>
 /// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct BwcData {
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub fix_time: Option<NaiveTime>,
     pub latitude: Option<f64>,
     pub longitude: Option<f64>,
     pub true_bearing: Option<f32>,
     pub magnetic_bearing: Option<f32>,
     pub distance: Option<f32>,
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 

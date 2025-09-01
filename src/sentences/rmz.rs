@@ -7,7 +7,7 @@ use crate::sentences::utils::number;
 use crate::{parse::NmeaSentence, Error, SentenceType};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PgrmzFixType {
     NoFix,
@@ -32,7 +32,7 @@ pub enum PgrmzFixType {
 ///
 /// Example: `$PGRMZ,2282,f,3*21`
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PgrmzData {
     /// Current altitude in feet

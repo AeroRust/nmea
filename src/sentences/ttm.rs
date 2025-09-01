@@ -11,7 +11,7 @@ use super::utils::{parse_float_num, parse_hms, parse_number_in_range};
 use crate::{Error, NmeaSentence, SentenceType};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TtmReference {
     Relative,
@@ -19,7 +19,7 @@ pub enum TtmReference {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct TtmAngle {
     angle: f32,
@@ -27,7 +27,7 @@ pub struct TtmAngle {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TtmDistanceUnit {
     Kilometer,
@@ -36,7 +36,7 @@ pub enum TtmDistanceUnit {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TtmStatus {
     /// Tracked target has been lost
@@ -48,7 +48,7 @@ pub enum TtmStatus {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TtmTypeOfAcquisition {
     Automatic,
@@ -89,7 +89,7 @@ pub enum TtmTypeOfAcquisition {
 /// $RATTM,01,0.2,190.8,T,12.1,109.7,T,0.1,0.5,N,TGT01,T,,100021.00,A*79
 /// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct TtmData {
     /// Target number
@@ -115,7 +115,7 @@ pub struct TtmData {
     /// Set to true if target is a reference used to determine own-ship position or velocity
     pub is_target_reference: bool,
     /// Time of data
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub time_of_data: Option<NaiveTime>,
     /// Type of acquisition
     pub type_of_acquisition: Option<TtmTypeOfAcquisition>,

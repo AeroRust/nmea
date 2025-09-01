@@ -21,7 +21,7 @@ use crate::{Error, NmeaSentence, SentenceType};
 /// 2. T = True
 /// 3. Checksum
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct HdtData {
     /// Heading, degrees True

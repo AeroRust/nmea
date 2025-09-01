@@ -31,17 +31,17 @@ use crate::{
 /// 6. Waypoint ID, Origin
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct WncData {
     /// Distance, Nautical Miles
     pub distance_nautical_miles: Option<f32>,
     /// Distance, Kilometers
     pub distance_kilometers: Option<f32>,
     /// Waypoint ID, Destination
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub waypoint_id_destination: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
     /// Waypoint ID, Origin
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub waypoint_id_origin: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 

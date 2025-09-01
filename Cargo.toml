@@ -33,8 +33,8 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 arrayvec = { version = "0.7", default-features = false }
 chrono = { version = "0.4", default-features = false }
-heapless = "0.8"
-nom = { version = "7.1", default-features = false }
+heapless = "0.9"
+nom = { version = "8", default-features = false }
 
 # we include num-traits only when `std` is not enabled
 # because of `fract()` and `trunc()` methods
@@ -43,7 +43,7 @@ cfg-if = "1"
 serde = { version = "1.0", default-features = false, optional = true }
 serde_with = { version = "~3.11", default-features = false, optional = true }
 
-defmt = { version = "0.3", optional = true }
+defmt = { version = "1", optional = true }
 document-features = { version = "0.2", optional = true }
 
 [dev-dependencies]
@@ -69,7 +69,7 @@ serde = [
 ]
 
 ## Enable derives of `defmt@0.3` formatting for embedded platforms
-defmt-03 = ["dep:defmt", "heapless/defmt-03"]
+defmt = ["dep:defmt", "heapless/defmt"]
 
 ## Enable the documentation of features (disabled by default to remove unnecessary to the functionality dependencies)
 features-docs = ["dep:document-features"]

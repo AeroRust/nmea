@@ -46,7 +46,7 @@ use super::utils::number;
 ///
 /// Fields 5 through 15 are dumped as raw hex.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AlmData {
     pub total_number_of_messages: Option<u16>,

@@ -64,13 +64,13 @@ fn do_parse_txt(i: &str) -> IResult<&str, TxtData0<'_>> {
 
 /// TXT - Text
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct TxtData {
     pub count: u8,
     pub seq: u8,
     pub text_ident: u8,
-    #[cfg_attr(feature = "defmt-03", defmt(Display2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Display2Format))]
     pub text: ArrayString<TEXT_PARAMETER_MAX_LEN>,
 }
 

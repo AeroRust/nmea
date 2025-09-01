@@ -21,10 +21,10 @@ use nom::{character::complete::char, combinator::opt, number::complete::float, I
 /// 9. Checksum
 ///
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct GstData {
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub time: Option<NaiveTime>,
     pub rms_sd: Option<f32>,
     pub ellipse_semi_major_sd: Option<f32>,

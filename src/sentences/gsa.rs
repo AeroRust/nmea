@@ -7,13 +7,13 @@ use nom::{
     error::{ErrorKind, ParseError},
     number::complete::float,
     sequence::terminated,
-    Err, IResult, InputLength, Parser,
+    Err, IResult, Input, Parser,
 };
 
 use crate::{parse::NmeaSentence, sentences::utils::number, Error, SentenceType};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GsaMode1 {
     Manual,
@@ -21,7 +21,7 @@ pub enum GsaMode1 {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GsaMode2 {
     NoFix,
@@ -39,7 +39,7 @@ pub enum GsaMode2 {
 /// $--GSA,a,a,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x.x,x.x,x.x*hh<CR><LF>
 /// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct GsaData {
     pub mode1: GsaMode1,
@@ -55,8 +55,8 @@ pub struct GsaData {
 /// because we want `no_std` & no `alloc`
 fn many0<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O, 18>, E>
 where
-    I: Clone + InputLength,
-    F: Parser<I, O, E>,
+    I: Clone + Input,
+    F: Parser<I, Output = O, Error = E>,
     E: ParseError<I>,
     O: core::fmt::Debug,
 {

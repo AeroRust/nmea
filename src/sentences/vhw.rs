@@ -32,7 +32,7 @@ use super::utils::parse_float_num;
 /// > [[GLOBALSAT](https://gpsd.gitlab.io/gpsd/NMEA.html#GLOBALSAT)] describes a different format in which the first three fields are water-temperature measurements.
 /// > It’s not clear which is correct.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, PartialEq, Debug)]
 pub struct VhwData {
     /// Heading degrees, True
