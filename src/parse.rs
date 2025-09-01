@@ -1,16 +1,16 @@
 use core::str;
 
 use nom::{
+    IResult, Parser as _,
     bytes::complete::{take, take_until},
     character::complete::char,
     combinator::map_res,
     sequence::preceded,
-    IResult, Parser as _,
 };
 
 use cfg_if::cfg_if;
 
-use crate::{sentences::*, Error, SentenceType};
+use crate::{Error, SentenceType, sentences::*};
 
 /// The maximum message length parsable by the crate.
 ///

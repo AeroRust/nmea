@@ -1,10 +1,10 @@
 use chrono::NaiveTime;
 use nom::{
+    IResult, Parser as _,
     bytes::complete::take_until,
     character::complete::{char, one_of},
     combinator::{map_res, opt},
     error::ErrorKind,
-    IResult, Parser as _,
 };
 
 use super::utils::{parse_float_num, parse_hms, parse_number_in_range};

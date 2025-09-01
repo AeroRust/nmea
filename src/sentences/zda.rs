@@ -1,12 +1,12 @@
 use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime};
 use nom::{
+    IResult, Parser as _,
     bytes::complete::take,
     character::complete::char,
     combinator::{map_res, opt},
-    IResult, Parser as _,
 };
 
-use crate::{parse::NmeaSentence, sentences::utils::parse_hms, Error, SentenceType};
+use crate::{Error, SentenceType, parse::NmeaSentence, sentences::utils::parse_hms};
 
 use super::utils::{parse_num, parse_number_in_range};
 

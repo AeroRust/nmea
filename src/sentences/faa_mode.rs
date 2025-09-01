@@ -1,6 +1,6 @@
-use nom::{character::complete::anychar, combinator::opt, IResult, Parser as _};
+use nom::{IResult, Parser as _, character::complete::anychar, combinator::opt};
 
-use super::{nom_parse_failure, FixType};
+use super::{FixType, nom_parse_failure};
 
 /// for now let's handle only two GPS and GLONASS
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

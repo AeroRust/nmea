@@ -1,6 +1,6 @@
 use core::fmt;
 
-use crate::{sentences::GnssType, SentenceType};
+use crate::{SentenceType, sentences::GnssType};
 
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]

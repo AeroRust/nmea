@@ -1,14 +1,14 @@
 use arrayvec::ArrayString;
 use chrono::{Duration, NaiveTime};
-use nom::{bytes::complete::is_not, character::complete::char, combinator::opt, Parser as _};
+use nom::{Parser as _, bytes::complete::is_not, character::complete::char, combinator::opt};
 
 #[cfg(feature = "serde")]
 use serde_with::As;
 
 use crate::{
+    Error, SentenceType,
     parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
     sentences::utils::{array_string, parse_duration_hms, parse_hms},
-    Error, SentenceType,
 };
 
 /// ZFO - UTC & Time from origin Waypoint
@@ -77,7 +77,7 @@ pub fn parse_zfo(sentence: NmeaSentence<'_>) -> Result<ZfoData, Error<'_>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{parse::parse_nmea_sentence, Error};
+    use crate::{Error, parse::parse_nmea_sentence};
 
     fn run_parse_zfo(line: &str) -> Result<ZfoData, Error<'_>> {
         let s = parse_nmea_sentence(line).expect("ZFO sentence initial parse failed");

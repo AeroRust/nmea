@@ -1,15 +1,15 @@
 use chrono::NaiveTime;
 use nom::{
+    IResult, Parser as _,
     character::complete::{anychar, char, one_of},
     combinator::opt,
-    IResult, Parser as _,
 };
 
-use super::{faa_mode::parse_faa_mode, nom_parse_failure, FaaMode};
+use super::{FaaMode, faa_mode::parse_faa_mode, nom_parse_failure};
 use crate::{
+    Error, SentenceType,
     parse::NmeaSentence,
     sentences::utils::{parse_hms, parse_lat_lon},
-    Error, SentenceType,
 };
 
 /// GLL - Geographic Position - Latitude/Longitude

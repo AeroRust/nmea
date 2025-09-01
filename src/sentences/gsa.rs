@@ -1,5 +1,6 @@
 use heapless::Vec;
 use nom::{
+    Check, Err, IResult, Input, Mode, OutputM, OutputMode, PResult, Parser,
     branch::alt,
     bytes::complete::take_while1,
     character::complete::{char, one_of},
@@ -7,10 +8,9 @@ use nom::{
     error::{ErrorKind, ParseError},
     number::complete::float,
     sequence::terminated,
-    Check, Err, IResult, Input, Mode, OutputM, OutputMode, PResult, Parser,
 };
 
-use crate::{parse::NmeaSentence, sentences::utils::number, Error, SentenceType};
+use crate::{Error, SentenceType, parse::NmeaSentence, sentences::utils::number};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]

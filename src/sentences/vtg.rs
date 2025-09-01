@@ -1,8 +1,8 @@
 use nom::{
-    character::complete::char, combinator::opt, number::complete::float, IResult, Parser as _,
+    IResult, Parser as _, character::complete::char, combinator::opt, number::complete::float,
 };
 
-use crate::{parse::NmeaSentence, Error, SentenceType};
+use crate::{Error, SentenceType, parse::NmeaSentence};
 
 /// VTG - Track made good and Ground speed
 ///
@@ -103,7 +103,7 @@ pub fn parse_vtg(sentence: NmeaSentence<'_>) -> Result<VtgData, Error<'_>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{parse::parse_nmea_sentence, Error};
+    use crate::{Error, parse::parse_nmea_sentence};
 
     fn run_parse_vtg(line: &str) -> Result<VtgData, Error<'_>> {
         let s = parse_nmea_sentence(line).expect("VTG sentence initial parse failed");

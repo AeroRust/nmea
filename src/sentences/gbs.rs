@@ -1,12 +1,12 @@
 use chrono::NaiveTime;
 use nom::{
-    character::complete::char, combinator::opt, number::complete::float, IResult, Parser as _,
+    IResult, Parser as _, character::complete::char, combinator::opt, number::complete::float,
 };
 
 use crate::{
+    Error, SentenceType,
     parse::NmeaSentence,
     sentences::utils::{number, parse_hms, parse_lat_lon},
-    Error, SentenceType,
 };
 
 /// GBS - GPS Satellite Fault Detection

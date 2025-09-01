@@ -1,13 +1,13 @@
 use arrayvec::ArrayString;
 use nom::{
-    bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
-    Parser as _,
+    Parser as _, bytes::complete::is_not, character::complete::char, combinator::opt,
+    number::complete::float,
 };
 
 use super::utils::array_string;
 use crate::{
-    parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
     Error, SentenceType,
+    parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
 };
 
 /// WNC - Distance - Waypoint to Waypoint
@@ -87,7 +87,7 @@ pub fn parse_wnc(sentence: NmeaSentence<'_>) -> Result<WncData, Error<'_>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{parse::parse_nmea_sentence, Error};
+    use crate::{Error, parse::parse_nmea_sentence};
     use approx::assert_relative_eq;
 
     fn run_parse_wnc(line: &str) -> Result<WncData, Error<'_>> {

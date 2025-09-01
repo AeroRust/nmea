@@ -1,8 +1,8 @@
 use nom::{
-    character::complete::char, combinator::opt, number::complete::float, IResult, Parser as _,
+    IResult, Parser as _, character::complete::char, combinator::opt, number::complete::float,
 };
 
-use crate::{parse::NmeaSentence, Error, SentenceType};
+use crate::{Error, SentenceType, parse::NmeaSentence};
 
 /// MDA - Meterological Composite
 ///

@@ -1,14 +1,14 @@
 use nom::{
+    IResult, Parser as _,
     bytes::complete::is_not,
     character::complete::char,
     combinator::{map_res, opt},
     number::complete::double,
-    IResult, Parser as _,
 };
 
 use crate::{
-    sentences::utils::{parse_float_num, parse_until_end},
     Error, ParseResult, SentenceType,
+    sentences::utils::{parse_float_num, parse_until_end},
 };
 
 /// DPT - Depth of Water

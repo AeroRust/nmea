@@ -1,10 +1,10 @@
 use nom::{
-    character::complete::{char, one_of},
     IResult, Parser as _,
+    character::complete::{char, one_of},
 };
 
 use crate::sentences::utils::number;
-use crate::{parse::NmeaSentence, Error, SentenceType};
+use crate::{Error, SentenceType, parse::NmeaSentence};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]

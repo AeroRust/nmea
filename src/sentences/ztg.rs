@@ -1,14 +1,14 @@
 use arrayvec::ArrayString;
 use chrono::{Duration, NaiveTime};
-use nom::{bytes::complete::is_not, character::complete::char, combinator::opt, Parser as _};
+use nom::{Parser as _, bytes::complete::is_not, character::complete::char, combinator::opt};
 
 #[cfg(feature = "serde")]
 use serde_with::As;
 
 use crate::{
+    Error, SentenceType,
     parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
     sentences::utils::{parse_duration_hms, parse_hms},
-    Error, SentenceType,
 };
 
 use super::utils::array_string;
@@ -79,7 +79,7 @@ pub fn parse_ztg(sentence: NmeaSentence<'_>) -> Result<ZtgData, Error<'_>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{parse::parse_nmea_sentence, Error};
+    use crate::{Error, parse::parse_nmea_sentence};
 
     fn run_parse_ztg(line: &str) -> Result<ZtgData, Error<'_>> {
         let s = parse_nmea_sentence(line).expect("ZTG sentence initial parse failed");

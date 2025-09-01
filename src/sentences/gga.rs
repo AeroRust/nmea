@@ -1,19 +1,19 @@
 use chrono::NaiveTime;
 use nom::{
+    IResult, Parser as _,
     bytes::complete::take_until,
     character::complete::{char, one_of},
     combinator::{map_res, opt},
     number::complete::float,
-    IResult, Parser as _,
 };
 
 use crate::{
+    Error, SentenceType,
     parse::NmeaSentence,
     sentences::{
-        utils::{number, parse_float_num, parse_hms, parse_lat_lon},
         FixType,
+        utils::{number, parse_float_num, parse_hms, parse_lat_lon},
     },
-    Error, SentenceType,
 };
 
 /// GGA - Global Positioning System Fix Data

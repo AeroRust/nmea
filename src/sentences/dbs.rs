@@ -1,4 +1,4 @@
-use nom::{character::complete::char, combinator::opt, number::complete::float, Parser as _};
+use nom::{Parser as _, character::complete::char, combinator::opt, number::complete::float};
 
 use crate::{Error, NmeaSentence, ParseResult, SentenceType};
 

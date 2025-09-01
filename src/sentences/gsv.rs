@@ -1,14 +1,14 @@
 use heapless::Vec;
 use nom::{
+    IResult, Parser as _,
     character::complete::char,
     combinator::{cond, opt, rest_len},
-    IResult, Parser as _,
 };
 
 use crate::{
-    parse::NmeaSentence,
-    sentences::{utils::number, GnssType},
     Error, Satellite, SentenceType,
+    parse::NmeaSentence,
+    sentences::{GnssType, utils::number},
 };
 
 /// GSV - Satellites in view

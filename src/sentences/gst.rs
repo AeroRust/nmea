@@ -1,7 +1,7 @@
-use crate::{parse::NmeaSentence, sentences::utils::parse_hms, Error, SentenceType};
+use crate::{Error, SentenceType, parse::NmeaSentence, sentences::utils::parse_hms};
 use chrono::NaiveTime;
 use nom::{
-    character::complete::char, combinator::opt, number::complete::float, IResult, Parser as _,
+    IResult, Parser as _, character::complete::char, combinator::opt, number::complete::float,
 };
 
 /// GST - GPS Pseudorange Noise Statistics
@@ -89,7 +89,7 @@ pub fn parse_gst(sentence: NmeaSentence<'_>) -> Result<GstData, Error<'_>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{parse::parse_nmea_sentence, Error};
+    use crate::{Error, parse::parse_nmea_sentence};
 
     fn run_parse_gst(line: &str) -> Result<GstData, Error<'_>> {
         let s = parse_nmea_sentence(line).expect("GST sentence initial parse failed");

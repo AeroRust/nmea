@@ -1,18 +1,18 @@
 use chrono::{NaiveDate, NaiveTime};
 use nom::{
+    IResult, Parser as _,
     character::complete::{anychar, char, one_of},
     combinator::{cond, map_res, opt},
     number::complete::float,
-    IResult, Parser as _,
 };
 
 use crate::{
+    Error, SentenceType,
     parse::NmeaSentence,
     sentences::utils::{parse_date, parse_hms, parse_lat_lon},
-    Error, SentenceType,
 };
 
-use super::{faa_mode::parse_faa_mode, utils::parse_magnetic_variation, FaaMode};
+use super::{FaaMode, faa_mode::parse_faa_mode, utils::parse_magnetic_variation};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]

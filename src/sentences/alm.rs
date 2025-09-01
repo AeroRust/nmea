@@ -1,11 +1,11 @@
 use crate::sentences::utils::parse_number_in_range;
 use nom::{
+    IResult, Parser as _,
     character::{
         complete::{char, hex_digit0},
         streaming::hex_digit1,
     },
     combinator::{map_res, opt},
-    IResult, Parser as _,
 };
 
 use crate::{Error, NmeaSentence, SentenceType};

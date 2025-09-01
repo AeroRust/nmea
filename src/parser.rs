@@ -6,9 +6,8 @@ use chrono::{NaiveDate, NaiveTime};
 use heapless::{Deque, Vec};
 
 use crate::{
-    parse_str,
+    Error, ParseResult, parse_str,
     sentences::{rmc::RmcStatusOfFix, *},
-    Error, ParseResult,
 };
 
 #[cfg(feature = "serde")]
@@ -1300,7 +1299,7 @@ impl BitOr<SentenceType> for SentenceMask {
 mod tests {
     use core::convert::TryFrom;
 
-    use crate::{parse::checksum, sentences::FixType, Error, SentenceType};
+    use crate::{Error, SentenceType, parse::checksum, sentences::FixType};
 
     #[cfg(feature = "GGA")]
     fn check_parsing_lat_lon_in_gga(lat: f64, lon: f64) -> quickcheck::TestResult {

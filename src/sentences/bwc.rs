@@ -1,14 +1,14 @@
 use arrayvec::ArrayString;
 use chrono::NaiveTime;
 use nom::{
-    bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
-    Parser as _,
+    Parser as _, bytes::complete::is_not, character::complete::char, combinator::opt,
+    number::complete::float,
 };
 
 use crate::{
+    Error, SentenceType,
     parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
     sentences::utils::{parse_hms, parse_lat_lon},
-    Error, SentenceType,
 };
 
 /// BWC - Bearing & Distance to Waypoint - Great Circle

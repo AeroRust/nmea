@@ -1,13 +1,13 @@
-use crate::{parse::*, sentences::utils::array_string, Error, SentenceType};
+use crate::{Error, SentenceType, parse::*, sentences::utils::array_string};
 
 use arrayvec::ArrayString;
 use nom::{
+    Parser as _,
     bytes::complete::{is_not, take_until},
     character::complete::char,
     combinator::{map_parser, opt},
     number::complete::float,
     sequence::preceded,
-    Parser as _,
 };
 
 /// BOD - Bearing - Waypoint to Waypoint

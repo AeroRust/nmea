@@ -1,19 +1,19 @@
 use chrono::NaiveTime;
 use nom::{
+    IResult, Parser as _,
     bytes::complete::{take_until, take_while},
     character::complete::{char, one_of},
     combinator::{map_parser, opt},
     number::complete::float,
     sequence::preceded,
-    IResult, Parser as _,
 };
 
 use super::{
+    FaaModes,
     faa_mode::parse_faa_modes,
     utils::{number, parse_hms, parse_lat_lon},
-    FaaModes,
 };
-use crate::{parse::NmeaSentence, Error, SentenceType};
+use crate::{Error, SentenceType, parse::NmeaSentence};
 
 /// GNS - Fix data
 ///

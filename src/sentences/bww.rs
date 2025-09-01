@@ -1,13 +1,13 @@
 use arrayvec::ArrayString;
 use nom::{
-    bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
-    Parser as _,
+    Parser as _, bytes::complete::is_not, character::complete::char, combinator::opt,
+    number::complete::float,
 };
 
 use crate::{
+    Error, SentenceType,
     parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
     sentences::utils::array_string,
-    Error, SentenceType,
 };
 
 /// BWW - Bearing - Waypoint to Waypoint

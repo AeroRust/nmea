@@ -2,14 +2,14 @@ use crate::parse::TEXT_PARAMETER_MAX_LEN;
 
 use arrayvec::ArrayString;
 use nom::{
+    Parser as _,
     bytes::complete::is_not,
     character::complete::{char, one_of},
     combinator::opt,
     number::complete::float,
-    Parser as _,
 };
 
-use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, SentenceType};
+use crate::{Error, SentenceType, parse::NmeaSentence, sentences::utils::array_string};
 
 /// APA - Autopilot Sentence "A"
 ///
@@ -184,7 +184,7 @@ mod tests {
     use approx::assert_relative_eq;
 
     use super::*;
-    use crate::{parse::parse_nmea_sentence, SentenceType};
+    use crate::{SentenceType, parse::parse_nmea_sentence};
 
     #[test]
     fn parse_apa_with_nmea_sentence_struct() {

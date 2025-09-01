@@ -3,13 +3,13 @@ use core::str;
 use arrayvec::ArrayString;
 use chrono::{Duration, NaiveDate, NaiveTime};
 use nom::{
+    IResult, Parser as _,
     branch::alt,
     bytes::complete::{tag, take, take_until, take_while},
     character::complete::{char, digit1, one_of},
     combinator::{all_consuming, eof, map, map_parser, map_res},
     number::complete::{double, float},
     sequence::terminated,
-    IResult, Parser as _,
 };
 
 #[cfg(not(feature = "std"))]

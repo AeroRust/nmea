@@ -1,8 +1,8 @@
 use nom::{
+    IResult, Parser as _,
     bytes::complete::take_until,
     character::complete::char,
     combinator::{map_res, opt},
-    IResult, Parser as _,
 };
 
 use crate::{Error, NmeaSentence, SentenceType};

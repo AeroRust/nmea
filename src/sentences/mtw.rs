@@ -1,12 +1,12 @@
 use nom::{
+    IResult, Parser as _,
     character::complete::{char, one_of},
     combinator::opt,
     number::complete::double,
     sequence::preceded,
-    IResult, Parser as _,
 };
 
-use crate::{parse::NmeaSentence, Error, SentenceType};
+use crate::{Error, SentenceType, parse::NmeaSentence};
 
 /// MTW - Mean Temperature of Water
 ///

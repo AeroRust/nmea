@@ -1,12 +1,12 @@
 use nom::{
+    IResult, Parser as _,
     character::complete::{char, one_of},
     combinator::opt,
     number::complete::double,
     sequence::preceded,
-    IResult, Parser as _,
 };
 
-use crate::{parse::NmeaSentence, Error, ParseResult, SentenceType};
+use crate::{Error, ParseResult, SentenceType, parse::NmeaSentence};
 
 /// DBK - Depth Below Keel
 ///
