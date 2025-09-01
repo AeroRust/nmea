@@ -1,8 +1,8 @@
 use nom::{
+    IResult, Parser as _,
     bytes::complete::take_until,
     character::complete::char,
     combinator::{map_res, opt},
-    IResult,
 };
 
 use super::utils::parse_float_num;
@@ -21,7 +21,7 @@ use crate::{Error, NmeaSentence, SentenceType};
 /// 2. T = True
 /// 3. Checksum
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct HdtData {
     /// Heading, degrees True
@@ -41,7 +41,7 @@ pub struct HdtData {
 /// The only data field is true heading in degrees.
 /// The following field is required to be 'T' indicating a true heading.
 /// It is followed by a mandatory nmea_checksum.
-pub fn parse_hdt(sentence: NmeaSentence) -> Result<HdtData, Error> {
+pub fn parse_hdt(sentence: NmeaSentence<'_>) -> Result<HdtData, Error<'_>> {
     if sentence.message_id != SentenceType::HDT {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::HDT,
@@ -53,9 +53,9 @@ pub fn parse_hdt(sentence: NmeaSentence) -> Result<HdtData, Error> {
 }
 
 fn do_parse_hdt(i: &str) -> IResult<&str, HdtData> {
-    let (i, heading) = opt(map_res(take_until(","), parse_float_num::<f32>))(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _) = char('T')(i)?;
+    let (i, heading) = opt(map_res(take_until(","), parse_float_num::<f32>)).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _) = char('T').parse(i)?;
     Ok((i, HdtData { heading }))
 }
 

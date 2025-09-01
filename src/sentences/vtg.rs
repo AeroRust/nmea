@@ -1,6 +1,8 @@
-use nom::{character::complete::char, combinator::opt, number::complete::float, IResult};
+use nom::{
+    IResult, Parser as _, character::complete::char, combinator::opt, number::complete::float,
+};
 
-use crate::{parse::NmeaSentence, Error, SentenceType};
+use crate::{Error, SentenceType, parse::NmeaSentence};
 
 /// VTG - Track made good and Ground speed
 ///
@@ -18,7 +20,7 @@ use crate::{parse::NmeaSentence, Error, SentenceType};
 ///  $--VTG,x.x,T,x.x,M,x.x,N,x.x,K,m*hh<CR><LF>
 /// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct VtgData {
     pub true_course: Option<f32>,
@@ -26,20 +28,20 @@ pub struct VtgData {
 }
 
 fn do_parse_vtg(i: &str) -> IResult<&str, VtgData> {
-    let (i, true_course) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _) = opt(char('T'))(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _magn_course) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _) = opt(char('M'))(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, knots_ground_speed) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _) = opt(char('N'))(i)?;
-    let (i, kph_ground_speed) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _) = opt(char('K'))(i)?;
+    let (i, true_course) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _) = opt(char('T')).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _magn_course) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _) = opt(char('M')).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, knots_ground_speed) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _) = opt(char('N')).parse(i)?;
+    let (i, kph_ground_speed) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _) = opt(char('K')).parse(i)?;
 
     Ok((
         i,
@@ -87,7 +89,7 @@ fn do_parse_vtg(i: &str) -> IResult<&str, VtgData> {
 /// x.x,M = Track, degrees Magnetic
 /// x.x,N = Speed, knots
 /// x.x,K = Speed, Km/hr
-pub fn parse_vtg(sentence: NmeaSentence) -> Result<VtgData, Error> {
+pub fn parse_vtg(sentence: NmeaSentence<'_>) -> Result<VtgData, Error<'_>> {
     if sentence.message_id != SentenceType::VTG {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::VTG,
@@ -101,9 +103,9 @@ pub fn parse_vtg(sentence: NmeaSentence) -> Result<VtgData, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{parse::parse_nmea_sentence, Error};
+    use crate::{Error, parse::parse_nmea_sentence};
 
-    fn run_parse_vtg(line: &str) -> Result<VtgData, Error> {
+    fn run_parse_vtg(line: &str) -> Result<VtgData, Error<'_>> {
         let s = parse_nmea_sentence(line).expect("VTG sentence initial parse failed");
         assert_eq!(s.checksum, s.calc_checksum());
         parse_vtg(s)

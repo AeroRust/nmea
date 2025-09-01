@@ -1,16 +1,16 @@
 use core::str;
 
 use nom::{
+    IResult, Parser as _,
     bytes::complete::{take, take_until},
     character::complete::char,
     combinator::map_res,
     sequence::preceded,
-    IResult,
 };
 
 use cfg_if::cfg_if;
 
-use crate::{sentences::*, Error, SentenceType};
+use crate::{Error, SentenceType, sentences::*};
 
 /// The maximum message length parsable by the crate.
 ///
@@ -36,7 +36,7 @@ pub const TEXT_PARAMETER_MAX_LEN: usize = 64;
 
 /// A known and parsable Nmea sentence type.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct NmeaSentence<'a> {
     pub talker_id: &'a str,
     pub message_id: SentenceType,
@@ -66,20 +66,21 @@ fn parse_hex(data: &str) -> Result<u8, &'static str> {
 }
 
 fn parse_checksum(i: &str) -> IResult<&str, u8> {
-    map_res(preceded(char('*'), take(2usize)), parse_hex)(i)
+    map_res(preceded(char('*'), take(2usize)), parse_hex).parse(i)
 }
 
 fn parse_sentence_type(i: &str) -> IResult<&str, SentenceType> {
     map_res(take(3usize), |sentence_type: &str| {
         SentenceType::try_from(sentence_type).map_err(|_| "Unknown sentence type")
-    })(i)
+    })
+    .parse(i)
 }
 
-fn do_parse_nmea_sentence(i: &str) -> IResult<&str, NmeaSentence> {
-    let (i, talker_id) = preceded(char('$'), take(2usize))(i)?;
+fn do_parse_nmea_sentence(i: &str) -> IResult<&str, NmeaSentence<'_>> {
+    let (i, talker_id) = preceded(char('$'), take(2usize)).parse(i)?;
     let (i, message_id) = parse_sentence_type(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, data) = take_until("*")(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, data) = take_until("*").parse(i)?;
     let (i, checksum) = parse_checksum(i)?;
 
     Ok((
@@ -93,7 +94,7 @@ fn do_parse_nmea_sentence(i: &str) -> IResult<&str, NmeaSentence> {
     ))
 }
 
-pub fn parse_nmea_sentence(sentence: &str) -> core::result::Result<NmeaSentence, Error<'_>> {
+pub fn parse_nmea_sentence(sentence: &str) -> core::result::Result<NmeaSentence<'_>, Error<'_>> {
     if sentence.len() > SENTENCE_MAX_LEN {
         Err(Error::SentenceLength(sentence.len()))
     } else {
@@ -103,7 +104,7 @@ pub fn parse_nmea_sentence(sentence: &str) -> core::result::Result<NmeaSentence,
 
 /// The result of parsing a single NMEA message.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub enum ParseResult {
     AAM(AamData),
@@ -184,7 +185,7 @@ impl From<&ParseResult> for SentenceType {
 ///
 /// Apart from errors returned by the message parsing itself, it will return
 /// [`Error::Utf8Decoding`] when the bytes are not a valid UTF-8 string.
-pub fn parse_bytes(sentence_input: &[u8]) -> Result<ParseResult, Error> {
+pub fn parse_bytes(sentence_input: &[u8]) -> Result<ParseResult, Error<'_>> {
     let string = core::str::from_utf8(sentence_input).map_err(|_err| Error::Utf8Decoding)?;
 
     parse_str(string)
@@ -197,7 +198,7 @@ pub fn parse_bytes(sentence_input: &[u8]) -> Result<ParseResult, Error> {
 /// # Errors
 ///
 /// - [`Error::ASCII`] when string contains non-ASCII characters.
-pub fn parse_str(sentence_input: &str) -> Result<ParseResult, Error> {
+pub fn parse_str(sentence_input: &str) -> Result<ParseResult, Error<'_>> {
     if !sentence_input.is_ascii() {
         return Err(Error::ASCII);
     }

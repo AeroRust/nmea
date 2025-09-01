@@ -1,11 +1,11 @@
 use crate::sentences::utils::parse_number_in_range;
 use nom::{
+    IResult, Parser as _,
     character::{
         complete::{char, hex_digit0},
         streaming::hex_digit1,
     },
     combinator::{map_res, opt},
-    IResult,
 };
 
 use crate::{Error, NmeaSentence, SentenceType};
@@ -46,7 +46,7 @@ use super::utils::number;
 ///
 /// Fields 5 through 15 are dumped as raw hex.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AlmData {
     pub total_number_of_messages: Option<u16>,
@@ -76,7 +76,7 @@ impl AlmData {
     }
 }
 
-pub fn parse_alm(sentence: NmeaSentence) -> Result<AlmData, Error> {
+pub fn parse_alm(sentence: NmeaSentence<'_>) -> Result<AlmData, Error<'_>> {
     if sentence.message_id != SentenceType::ALM {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::ALM,
@@ -89,57 +89,64 @@ pub fn parse_alm(sentence: NmeaSentence) -> Result<AlmData, Error> {
 
 fn do_parse_alm(i: &str) -> IResult<&str, AlmData> {
     // 1. Total number of messages
-    let (i, total_number_of_messages) = opt(number)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, total_number_of_messages) = opt(number).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 2. Sentence number
-    let (i, sentence_number) = opt(number)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, sentence_number) = opt(number).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     //  3. Satellite PRN number (01 to 32)
-    let (i, satellite_prn_number) = opt(|i| parse_number_in_range::<u8>(i, 1, 32))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, satellite_prn_number) = opt(|i| parse_number_in_range::<u8>(i, 1, 32)).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     //  4. GPS Week Number (0 to 8191)
-    let (i, gps_week_number) = opt(|i| parse_number_in_range::<u16>(i, 0, 8191))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, gps_week_number) = opt(|i| parse_number_in_range::<u16>(i, 0, 8191)).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     //  5. SV health, bits 17-24 of each almanac page
-    let (i, sv_health) = opt(map_res(hex_digit1, |s| u8::from_str_radix(s, 16)))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, sv_health) = opt(map_res(hex_digit1, |s| u8::from_str_radix(s, 16))).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     //  6. Eccentricity
-    let (i, eccentricity) = opt(map_res(hex_digit1, |s| u16::from_str_radix(s, 16)))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, eccentricity) = opt(map_res(hex_digit1, |s| u16::from_str_radix(s, 16))).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     //  7. Almanac Reference Time
-    let (i, almanac_reference_time) = opt(map_res(hex_digit1, |s| u8::from_str_radix(s, 16)))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, almanac_reference_time) =
+        opt(map_res(hex_digit1, |s| u8::from_str_radix(s, 16))).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     //  8. Inclination Angle
-    let (i, inclination_angle) = opt(map_res(hex_digit1, |s| u16::from_str_radix(s, 16)))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, inclination_angle) =
+        opt(map_res(hex_digit1, |s| u16::from_str_radix(s, 16))).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     //  9. Rate of Right Ascension
-    let (i, rate_of_right_ascension) = opt(map_res(hex_digit1, |s| u16::from_str_radix(s, 16)))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, rate_of_right_ascension) =
+        opt(map_res(hex_digit1, |s| u16::from_str_radix(s, 16))).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 10. Root of semi-major axis
-    let (i, root_of_semi_major_axis) = opt(map_res(hex_digit1, |s| u32::from_str_radix(s, 16)))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, root_of_semi_major_axis) =
+        opt(map_res(hex_digit1, |s| u32::from_str_radix(s, 16))).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 11. Argument of perigee
-    let (i, argument_of_perigee) = opt(map_res(hex_digit1, |s| u32::from_str_radix(s, 16)))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, argument_of_perigee) =
+        opt(map_res(hex_digit1, |s| u32::from_str_radix(s, 16))).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 12. Longitude of ascension node
     let (i, longitude_of_ascension_node) =
-        opt(map_res(hex_digit1, |s| u32::from_str_radix(s, 16)))(i)?;
-    let (i, _) = char(',')(i)?;
+        opt(map_res(hex_digit1, |s| u32::from_str_radix(s, 16))).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 13. Mean anomaly
-    let (i, mean_anomaly) = opt(map_res(hex_digit1, |s| u32::from_str_radix(s, 16)))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, mean_anomaly) = opt(map_res(hex_digit1, |s| u32::from_str_radix(s, 16))).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 14. F0 Clock Parameter
-    let (i, f0_clock_parameter) = opt(map_res(hex_digit0, |s| u16::from_str_radix(s, 16)))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, f0_clock_parameter) =
+        opt(map_res(hex_digit0, |s| u16::from_str_radix(s, 16))).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 15. F1 Clock Parameter
-    let (i, f1_clock_parameter) = opt(map_res(hex_digit0, |s| u16::from_str_radix(s, 16)))(i)?;
+    let (i, f1_clock_parameter) =
+        opt(map_res(hex_digit0, |s| u16::from_str_radix(s, 16))).parse(i)?;
 
     Ok((
         i,

@@ -1,6 +1,8 @@
-use crate::{parse::NmeaSentence, sentences::utils::parse_hms, Error, SentenceType};
+use crate::{Error, SentenceType, parse::NmeaSentence, sentences::utils::parse_hms};
 use chrono::NaiveTime;
-use nom::{character::complete::char, combinator::opt, number::complete::float, IResult};
+use nom::{
+    IResult, Parser as _, character::complete::char, combinator::opt, number::complete::float,
+};
 
 /// GST - GPS Pseudorange Noise Statistics
 /// ```text
@@ -19,12 +21,12 @@ use nom::{character::complete::char, combinator::opt, number::complete::float, I
 /// 7. Standard deviation (meters) of longitude error
 /// 8. Standard deviation (meters) of altitude error
 /// 9. Checksum
-
+///
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct GstData {
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub time: Option<NaiveTime>,
     pub rms_sd: Option<f32>,
     pub ellipse_semi_major_sd: Option<f32>,
@@ -36,28 +38,28 @@ pub struct GstData {
 }
 
 fn do_parse_gst(i: &str) -> IResult<&str, GstData> {
-    let (i, time) = opt(parse_hms)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, time) = opt(parse_hms).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, rms_sd) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, rms_sd) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, ellipse_semi_major_sd) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, ellipse_semi_major_sd) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, ellipse_semi_minor_sd) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, ellipse_semi_minor_sd) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, err_ellipse_orientation) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, err_ellipse_orientation) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, lat_sd) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, lat_sd) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, long_sd) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, long_sd) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, alt_sd) = opt(float)(i)?;
+    let (i, alt_sd) = opt(float).parse(i)?;
 
     Ok((
         i,
@@ -73,7 +75,7 @@ fn do_parse_gst(i: &str) -> IResult<&str, GstData> {
         },
     ))
 }
-pub fn parse_gst(sentence: NmeaSentence) -> Result<GstData, Error> {
+pub fn parse_gst(sentence: NmeaSentence<'_>) -> Result<GstData, Error<'_>> {
     if sentence.message_id != SentenceType::GST {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::GST,
@@ -87,9 +89,9 @@ pub fn parse_gst(sentence: NmeaSentence) -> Result<GstData, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{parse::parse_nmea_sentence, Error};
+    use crate::{Error, parse::parse_nmea_sentence};
 
-    fn run_parse_gst(line: &str) -> Result<GstData, Error> {
+    fn run_parse_gst(line: &str) -> Result<GstData, Error<'_>> {
         let s = parse_nmea_sentence(line).expect("GST sentence initial parse failed");
         assert_eq!(s.checksum, s.calc_checksum());
         parse_gst(s)

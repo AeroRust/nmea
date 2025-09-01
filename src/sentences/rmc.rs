@@ -1,21 +1,21 @@
 use chrono::{NaiveDate, NaiveTime};
 use nom::{
+    IResult, Parser as _,
     character::complete::{anychar, char, one_of},
     combinator::{cond, map_res, opt},
     number::complete::float,
-    IResult,
 };
 
 use crate::{
+    Error, SentenceType,
     parse::NmeaSentence,
     sentences::utils::{parse_date, parse_hms, parse_lat_lon},
-    Error, SentenceType,
 };
 
-use super::{faa_mode::parse_faa_mode, utils::parse_magnetic_variation, FaaMode};
+use super::{FaaMode, faa_mode::parse_faa_mode, utils::parse_magnetic_variation};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RmcStatusOfFix {
     Autonomous,
@@ -24,7 +24,7 @@ pub enum RmcStatusOfFix {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RmcNavigationStatus {
     Autonomous,
@@ -77,12 +77,12 @@ pub enum RmcNavigationStatus {
 ///     `A` = autonomous, `D` = differential, `E` = Estimated,
 ///     `M` = Manual input mode, `N` = not valid, `S` = Simulator, `V` = Valid
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RmcData {
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub fix_time: Option<NaiveTime>,
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub fix_date: Option<NaiveDate>,
     pub status_of_fix: RmcStatusOfFix,
     pub lat: Option<f64>,
@@ -96,46 +96,47 @@ pub struct RmcData {
 
 fn do_parse_rmc(i: &str) -> IResult<&str, RmcData> {
     // 1.  UTC of position fix, `hh` is hours, `mm` is minutes, `ss.ss` is seconds.
-    let (i, fix_time) = opt(parse_hms)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, fix_time) = opt(parse_hms).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 2.  Status, `A` = Valid, `V` = Warning
-    let (i, status_of_fix) = one_of("ADV")(i)?;
+    let (i, status_of_fix) = one_of("ADV").parse(i)?;
     let status_of_fix = match status_of_fix {
         'A' => RmcStatusOfFix::Autonomous,
         'D' => RmcStatusOfFix::Differential,
         'V' => RmcStatusOfFix::Invalid,
         _ => unreachable!(),
     };
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 3.  Latitude, `dd` is degrees. `mm.mm` is minutes.
     // 4.  `N` or `S`
     // 5.  Longitude, `ddd` is degrees. `mm.mm` is minutes.
     // 6.  `E` or `W`
     let (i, lat_lon) = parse_lat_lon(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 7.  Speed over ground, knots
-    let (i, speed_over_ground) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, speed_over_ground) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 8.  Track made good, degrees true
-    let (i, true_course) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, true_course) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 9.  Date, `ddmmyy`
-    let (i, fix_date) = opt(parse_date)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, fix_date) = opt(parse_date).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 10. Magnetic Variation, degrees
     // // 11. `E` or `W`
     let (i, magnetic_variation) = parse_magnetic_variation(i)?;
-    let (i, next) = opt(char(','))(i)?;
+    let (i, next) = opt(char(',')).parse(i)?;
     // 12. FAA mode indicator (NMEA 2.3 and later)
     let (i, faa_mode) = cond(
         next.is_some(),
         opt(map_res(anychar, |c| parse_faa_mode(c).ok_or("argh"))),
-    )(i)?;
-    let (i, next) = opt(char(','))(i)?;
+    )
+    .parse(i)?;
+    let (i, next) = opt(char(',')).parse(i)?;
     // 13. Nav Status (NMEA 4.1 and later)
     //     `A` = autonomous, `D` = differential, `E` = Estimated,
     //     `M` = Manual input mode, `N` = not valid, `S` = Simulator, `V` = Valid
-    let (i, nav_status) = cond(next.is_some(), opt(parse_navigation_status))(i)?;
+    let (i, nav_status) = cond(next.is_some(), opt(parse_navigation_status)).parse(i)?;
 
     Ok((
         i,
@@ -155,7 +156,7 @@ fn do_parse_rmc(i: &str) -> IResult<&str, RmcData> {
 }
 
 fn parse_navigation_status(i: &str) -> IResult<&str, RmcNavigationStatus> {
-    let (i, c) = one_of("ADEMNSV")(i)?;
+    let (i, c) = one_of("ADEMNSV").parse(i)?;
     let status = match c {
         'A' => RmcNavigationStatus::Autonomous,
         'D' => RmcNavigationStatus::Differential,
@@ -190,7 +191,7 @@ fn parse_navigation_status(i: &str) -> IResult<&str, RmcNavigationStatus> {
 /// *68        mandatory nmea_checksum
 ///
 /// SiRF chipsets don't return either Mode Indicator or magnetic variation.
-pub fn parse_rmc(sentence: NmeaSentence) -> Result<RmcData, Error> {
+pub fn parse_rmc(sentence: NmeaSentence<'_>) -> Result<RmcData, Error<'_>> {
     if sentence.message_id != SentenceType::RMC {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::RMC,

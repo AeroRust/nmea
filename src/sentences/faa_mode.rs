@@ -1,10 +1,10 @@
-use nom::{character::complete::anychar, combinator::opt, IResult};
+use nom::{IResult, Parser as _, character::complete::anychar, combinator::opt};
 
-use super::{nom_parse_failure, FixType};
+use super::{FixType, nom_parse_failure};
 
 /// for now let's handle only two GPS and GLONASS
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct FaaModes {
     sys_state0: FaaMode,
@@ -27,7 +27,7 @@ impl From<FaaModes> for FixType {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FaaMode {
     /// A - Autonomous mode
@@ -82,7 +82,7 @@ pub(crate) fn parse_faa_modes(i: &str) -> IResult<&str, FaaModes> {
         sys_state1: None,
     };
 
-    let (rest2, sym) = opt(anychar)(rest)?;
+    let (rest2, sym) = opt(anychar).parse(rest)?;
 
     match sym {
         Some(sym) => {

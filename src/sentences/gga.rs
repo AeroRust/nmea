@@ -1,19 +1,19 @@
 use chrono::NaiveTime;
 use nom::{
+    IResult, Parser as _,
     bytes::complete::take_until,
     character::complete::{char, one_of},
     combinator::{map_res, opt},
     number::complete::float,
-    IResult,
 };
 
 use crate::{
+    Error, SentenceType,
     parse::NmeaSentence,
     sentences::{
-        utils::{number, parse_float_num, parse_hms, parse_lat_lon},
         FixType,
+        utils::{number, parse_float_num, parse_hms, parse_lat_lon},
     },
-    Error, SentenceType,
 };
 
 /// GGA - Global Positioning System Fix Data
@@ -27,14 +27,14 @@ use crate::{
 ///  $--GGA,hhmmss.ss,ddmm.mm,a,ddmm.mm,a,x,xx,x.x,x.x,M,x.x,M,x.x,xxxx*hh<CR><LF>
 /// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct GgaData {
     #[cfg_attr(
         not(feature = "std"),
         cfg_attr(feature = "serde", serde(with = "serde_naive_time"))
     )]
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub fix_time: Option<NaiveTime>,
     pub fix_type: Option<FixType>,
     pub latitude: Option<f64>,
@@ -46,23 +46,23 @@ pub struct GgaData {
 }
 
 fn do_parse_gga(i: &str) -> IResult<&str, GgaData> {
-    let (i, fix_time) = opt(parse_hms)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, fix_time) = opt(parse_hms).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     let (i, lat_lon) = parse_lat_lon(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, fix_quality) = one_of("012345678")(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, fix_satellites) = opt(number::<u32>)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, hdop) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, altitude) = opt(map_res(take_until(","), parse_float_num::<f32>))(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _) = opt(char('M'))(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, geoid_height) = opt(map_res(take_until(","), parse_float_num::<f32>))(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _) = opt(char('M'))(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, fix_quality) = one_of("012345678").parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, fix_satellites) = opt(number::<u32>).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, hdop) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, altitude) = opt(map_res(take_until(","), parse_float_num::<f32>)).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _) = opt(char('M')).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, geoid_height) = opt(map_res(take_until(","), parse_float_num::<f32>)).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _) = opt(char('M')).parse(i)?;
 
     Ok((
         i,
@@ -98,7 +98,7 @@ fn do_parse_gga(i: &str) -> IResult<&str, GgaData> {
 /// ellipsoid, in Meters
 /// (empty field) time in seconds since last DGPS update
 /// (empty field) DGPS station ID number (0000-1023)
-pub fn parse_gga(sentence: NmeaSentence) -> Result<GgaData, Error> {
+pub fn parse_gga(sentence: NmeaSentence<'_>) -> Result<GgaData, Error<'_>> {
     if sentence.message_id != SentenceType::GGA {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::GGA,

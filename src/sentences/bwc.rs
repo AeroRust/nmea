@@ -1,13 +1,14 @@
 use arrayvec::ArrayString;
 use chrono::NaiveTime;
 use nom::{
-    bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
+    Parser as _, bytes::complete::is_not, character::complete::char, combinator::opt,
+    number::complete::float,
 };
 
 use crate::{
+    Error, SentenceType,
     parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
     sentences::utils::{parse_hms, parse_lat_lon},
-    Error, SentenceType,
 };
 
 /// BWC - Bearing & Distance to Waypoint - Great Circle
@@ -21,17 +22,17 @@ use crate::{
 /// $--BWC,hhmmss.ss,llll.ll,a,yyyyy.yy,a,x.x,T,x.x,M,x.x,N,c--c,m,*hh<CR><LF>
 /// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct BwcData {
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub fix_time: Option<NaiveTime>,
     pub latitude: Option<f64>,
     pub longitude: Option<f64>,
     pub true_bearing: Option<f32>,
     pub magnetic_bearing: Option<f32>,
     pub distance: Option<f32>,
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 
@@ -42,41 +43,41 @@ pub struct BwcData {
 ///         |         |       | |        | |   | |   | |   | |    |   |
 /// $--BWC,hhmmss.ss,llll.ll,a,yyyyy.yy,a,x.x,T,x.x,M,x.x,N,c--c,m,*hh<CR><LF>
 /// ```
-fn do_parse_bwc(i: &str) -> Result<BwcData, Error> {
+fn do_parse_bwc(i: &str) -> Result<BwcData, Error<'_>> {
     // 1. UTC Time or observation
-    let (i, fix_time) = opt(parse_hms)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, fix_time) = opt(parse_hms).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 2. Waypoint Latitude
     // 3. N = North, S = South
     // 4. Waypoint Longitude
     // 5. E = East, W = West
     let (i, lat_lon) = parse_lat_lon(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 6. Bearing, degrees True
-    let (i, true_bearing) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, true_bearing) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 7. T = True
-    let (i, _) = opt(char('T'))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = opt(char('T')).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 8. Bearing, degrees Magnetic
-    let (i, magnetic_bearing) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, magnetic_bearing) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 9. M = Magnetic
-    let (i, _) = opt(char('M'))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = opt(char('M')).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 10. Distance, Nautical Miles
-    let (i, distance) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, distance) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 11. N = Nautical Miles
-    let (i, _) = opt(char('N'))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = opt(char('N')).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 12. Waypoint ID
-    let (_i, waypoint_id) = opt(is_not(",*"))(i)?;
+    let (_i, waypoint_id) = opt(is_not(",*")).parse(i)?;
 
     // 13. FAA mode indicator (NMEA 2.3 and later, optional)
 
@@ -103,7 +104,7 @@ fn do_parse_bwc(i: &str) -> Result<BwcData, Error> {
 /// # Parse BWC message
 ///
 /// See: <https://gpsd.gitlab.io/gpsd/NMEA.html#_bwc_bearing_distance_to_waypoint_great_circle>
-pub fn parse_bwc(sentence: NmeaSentence) -> Result<BwcData, Error> {
+pub fn parse_bwc(sentence: NmeaSentence<'_>) -> Result<BwcData, Error<'_>> {
     if sentence.message_id != SentenceType::BWC {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::BWC,

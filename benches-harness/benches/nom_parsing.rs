@@ -1,8 +1,10 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use std::hint::black_box;
+
+use criterion::{Criterion, criterion_group, criterion_main};
 
 use nmea::Error;
 use nom::{
-    bytes::complete::*, character::complete::*, combinator::*, number::complete::*,
+    Parser as _, bytes::complete::*, character::complete::*, combinator::*, number::complete::*,
     sequence::preceded,
 };
 
@@ -22,13 +24,13 @@ fn parsing_combinators_benchmark(c: &mut Criterion) {
      */
     let mut bench_group = c.benchmark_group("comma-separated parsing");
 
-    bench_group.bench_function("let (i, ...) = preceded(char(','), ...)(i)?", |b| {
+    bench_group.bench_function("let (i, ...) = preceded(char(','), ...).parse(i)?", |b| {
         b.iter(|| {
             _ = parse_bod_with_preceded(black_box(BOD_SENTENCE)).unwrap();
         })
     });
 
-    bench_group.bench_function("let (i, _) = char(',')(i)?", |b| {
+    bench_group.bench_function("let (i, _) = char(',').parse(i)?", |b| {
         b.iter(|| {
             _ = parse_bod_discard_comma(black_box(BOD_SENTENCE)).unwrap();
         })
@@ -39,7 +41,7 @@ fn parsing_combinators_benchmark(c: &mut Criterion) {
     bench_group.bench_function("lite bench: preceded(char(','),...)", |b| {
         b.iter(|| {
             let (i, something) = take_until::<_, _, ()>(",")(test_2).unwrap();
-            let (_, another) = preceded(char::<_, ()>(','), rest)(i).unwrap();
+            let (_, another) = preceded(char::<_, ()>(','), rest).parse(i).unwrap();
             black_box((something, another))
         })
     });
@@ -47,36 +49,36 @@ fn parsing_combinators_benchmark(c: &mut Criterion) {
     bench_group.bench_function("lite bench: char(',')", |b| {
         b.iter(|| {
             let (i, something) = take_until::<_, _, ()>(",")(test_2).unwrap();
-            let (i, _) = char::<_, ()>(',')(i).unwrap();
+            let (i, _) = char::<_, ()>(',').parse(i).unwrap();
             let (_, another) = rest::<_, ()>(i).unwrap();
             black_box((something, another))
         })
     });
 }
 
-fn parse_bod_discard_comma(i: &str) -> Result<MockBodData, Error> {
+fn parse_bod_discard_comma(i: &str) -> Result<MockBodData<'_>, Error<'_>> {
     // 1. Bearing Degrees, True
-    let (i, bearing_true) = opt(map_parser(take_until(","), float))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, bearing_true) = opt(map_parser(take_until(","), float)).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 2. T = True
-    let (i, _) = char('T')(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char('T').parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 3. Bearing Degrees, Magnetic
-    let (i, bearing_magnetic) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, bearing_magnetic) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 4. M = Magnetic
-    let (i, _) = char('M')(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char('M').parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 5. Destination Waypoint
-    let (i, to_waypoint) = opt(is_not(",*"))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, to_waypoint) = opt(is_not(",*")).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 6. origin Waypoint
-    let from_waypoint = opt(is_not("*"))(i)?.1;
+    let from_waypoint = opt(is_not("*")).parse(i)?.1;
 
     // 7. Checksum
 
@@ -88,24 +90,24 @@ fn parse_bod_discard_comma(i: &str) -> Result<MockBodData, Error> {
     })
 }
 
-fn parse_bod_with_preceded(i: &str) -> Result<MockBodData, Error> {
+fn parse_bod_with_preceded(i: &str) -> Result<MockBodData<'_>, Error<'_>> {
     // 1. Bearing Degrees, True
-    let (i, bearing_true) = opt(map_parser(take_until(","), float))(i)?;
+    let (i, bearing_true) = opt(map_parser(take_until(","), float)).parse(i)?;
 
     // 2. T = True
-    let (i, _) = preceded(char(','), char('T'))(i)?;
+    let (i, _) = preceded(char(','), char('T')).parse(i)?;
 
     // 3. Bearing Degrees, Magnetic
-    let (i, bearing_magnetic) = preceded(char(','), opt(float))(i)?;
+    let (i, bearing_magnetic) = preceded(char(','), opt(float)).parse(i)?;
 
     // 4. M = Magnetic
-    let (i, _) = preceded(char(','), char('M'))(i)?;
+    let (i, _) = preceded(char(','), char('M')).parse(i)?;
 
     // 5. Destination Waypoint
-    let (i, to_waypoint) = preceded(char(','), opt(is_not(",*")))(i)?;
+    let (i, to_waypoint) = preceded(char(','), opt(is_not(",*"))).parse(i)?;
 
     // 6. origin Waypoint
-    let from_waypoint = opt(preceded(char(','), is_not("*")))(i)?.1;
+    let from_waypoint = opt(preceded(char(','), is_not("*"))).parse(i)?.1;
 
     // 7. Checksum
 

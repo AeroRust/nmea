@@ -1,4 +1,4 @@
-use nom::{character::complete::char, combinator::opt, number::complete::float};
+use nom::{Parser as _, character::complete::char, combinator::opt, number::complete::float};
 
 use crate::{Error, NmeaSentence, ParseResult, SentenceType};
 
@@ -27,7 +27,7 @@ use crate::{Error, NmeaSentence, ParseResult, SentenceType};
 /// * `$DBS,x.x,f,x.x,M,x.x,F*hh<CR><LF>`
 ///
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct DbsData {
     pub water_depth_feet: Option<f32>,
@@ -41,7 +41,7 @@ impl From<DbsData> for ParseResult {
     }
 }
 
-pub fn parse_dbs(sentence: NmeaSentence) -> Result<DbsData, Error> {
+pub fn parse_dbs(sentence: NmeaSentence<'_>) -> Result<DbsData, Error<'_>> {
     if sentence.message_id != SentenceType::DBS {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::DBS,
@@ -52,20 +52,20 @@ pub fn parse_dbs(sentence: NmeaSentence) -> Result<DbsData, Error> {
     }
 }
 
-fn do_parse_dbs(i: &str) -> Result<DbsData, Error> {
-    let (i, water_depth_feet) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _) = char('f')(i)?;
-    let (i, _) = char(',')(i)?;
+fn do_parse_dbs(i: &str) -> Result<DbsData, Error<'_>> {
+    let (i, water_depth_feet) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _) = char('f').parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, water_depth_meters) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _) = char('M')(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, water_depth_meters) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _) = char('M').parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, water_depth_fathoms) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (_, _) = char('F')(i)?;
+    let (i, water_depth_fathoms) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (_, _) = char('F').parse(i)?;
 
     if water_depth_feet.is_none() && water_depth_meters.is_none() && water_depth_fathoms.is_none() {
         return Err(Error::Unknown(

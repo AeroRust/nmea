@@ -1,5 +1,6 @@
 use heapless::Vec;
 use nom::{
+    Check, Err, IResult, Input, Mode, OutputM, OutputMode, PResult, Parser,
     branch::alt,
     bytes::complete::take_while1,
     character::complete::{char, one_of},
@@ -7,13 +8,12 @@ use nom::{
     error::{ErrorKind, ParseError},
     number::complete::float,
     sequence::terminated,
-    Err, IResult, InputLength, Parser,
 };
 
-use crate::{parse::NmeaSentence, sentences::utils::number, Error, SentenceType};
+use crate::{Error, SentenceType, parse::NmeaSentence, sentences::utils::number};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GsaMode1 {
     Manual,
@@ -21,7 +21,7 @@ pub enum GsaMode1 {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GsaMode2 {
     NoFix,
@@ -39,7 +39,7 @@ pub enum GsaMode2 {
 /// $--GSA,a,a,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x.x,x.x,x.x*hh<CR><LF>
 /// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct GsaData {
     pub mode1: GsaMode1,
@@ -50,31 +50,60 @@ pub struct GsaData {
     pub vdop: Option<f32>,
 }
 
-/// This function is take from `nom`, see `nom::multi::many0`
+/// This function is take from `nom`, see `nom::multi::many0` (requires `alloc`)
 /// with one difference - we use a [`heapless::Vec`]
-/// because we want `no_std` & no `alloc`
-fn many0<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O, 18>, E>
+/// because we want `no_std` & no `alloc`.
+///
+/// If you try to parse more than 18 items, it will silently drop them
+pub fn many0<I, F>(
+    f: F,
+) -> impl Parser<I, Output = Vec<<F as Parser<I>>::Output, 18>, Error = <F as Parser<I>>::Error>
 where
-    I: Clone + InputLength,
-    F: Parser<I, O, E>,
-    E: ParseError<I>,
-    O: core::fmt::Debug,
+    I: Clone + Input,
+    F: Parser<I>,
 {
-    move |mut i: I| {
-        let mut acc = Vec::<_, 18>::new();
+    Many0 { parser: f }
+}
+
+/// Parser implementation for the [many0] combinator
+pub struct Many0<F> {
+    parser: F,
+}
+
+impl<I, F> Parser<I> for Many0<F>
+where
+    I: Clone + Input,
+    F: Parser<I>,
+    // <F as Parser<I>>::Output: core::fmt::Debug,
+{
+    type Output = Vec<<F as Parser<I>>::Output, 18>;
+    type Error = <F as Parser<I>>::Error;
+
+    fn process<OM: OutputMode>(&mut self, mut i: I) -> PResult<OM, I, Self::Output, Self::Error> {
+        let mut acc = OM::Output::bind(Vec::<_, 18>::new);
         loop {
             let len = i.input_len();
-            match f.parse(i.clone()) {
+            let process_result = self
+                .parser
+                .process::<OutputM<OM::Output, Check, OM::Incomplete>>(i.clone());
+            match process_result {
                 Err(Err::Error(_)) => return Ok((i, acc)),
-                Err(e) => return Err(e),
+                Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+                Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
                 Ok((i1, o)) => {
                     // infinite loop check: the parser must always consume
                     if i1.input_len() == len {
-                        return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many0)));
+                        return Err(Err::Error(OM::Error::bind(|| {
+                            <F as Parser<I>>::Error::from_error_kind(i, ErrorKind::Many0)
+                        })));
                     }
 
                     i = i1;
-                    acc.push(o).unwrap();
+
+                    acc = OM::Output::combine(acc, o, |mut acc, o| {
+                        let _ = acc.push(o);
+                        acc
+                    })
                 }
             }
         }
@@ -82,7 +111,7 @@ where
 }
 
 fn gsa_prn_fields_parse(i: &str) -> IResult<&str, Vec<Option<u32>, 18>> {
-    many0(terminated(opt(number::<u32>), char(',')))(i)
+    many0(terminated(opt(number::<u32>), char(','))).parse(i)
 }
 
 type GsaTail = (Vec<Option<u32>, 18>, Option<f32>, Option<f32>, Option<f32>);
@@ -90,9 +119,9 @@ type GsaTail = (Vec<Option<u32>, 18>, Option<f32>, Option<f32>, Option<f32>);
 fn do_parse_gsa_tail(i: &str) -> IResult<&str, GsaTail> {
     let (i, prns) = gsa_prn_fields_parse(i)?;
     let (i, pdop) = float(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
     let (i, hdop) = float(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
     let (i, vdop) = float(i)?;
     Ok((i, (prns, Some(pdop), Some(hdop), Some(vdop))))
 }
@@ -105,15 +134,16 @@ fn do_parse_empty_gsa_tail(i: &str) -> IResult<&str, GsaTail> {
     value(
         (Vec::new(), None, None, None),
         all_consuming(take_while1(is_comma)),
-    )(i)
+    )
+    .parse(i)
 }
 
 fn do_parse_gsa(i: &str) -> IResult<&str, GsaData> {
-    let (i, mode1) = one_of("MA")(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, mode2) = one_of("123")(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, mut tail) = alt((do_parse_empty_gsa_tail, do_parse_gsa_tail))(i)?;
+    let (i, mode1) = one_of("MA").parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, mode2) = one_of("123").parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, mut tail) = alt((do_parse_empty_gsa_tail, do_parse_gsa_tail)).parse(i)?;
     Ok((
         i,
         GsaData {
@@ -192,7 +222,7 @@ fn do_parse_gsa(i: &str) -> IResult<&str, GsaData> {
 /// - it claims to be a valid sentence (A flag) when it isn't
 ///
 /// Alarmingly, it's possible this error may be generic to SiRFstarIII
-pub fn parse_gsa(sentence: NmeaSentence) -> Result<GsaData, Error> {
+pub fn parse_gsa(sentence: NmeaSentence<'_>) -> Result<GsaData, Error<'_>> {
     if sentence.message_id != SentenceType::GSA {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::GSA,

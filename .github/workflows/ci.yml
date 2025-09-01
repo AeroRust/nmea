@@ -28,7 +28,7 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # use nightly for rustfmt & clippy checks
       - name: Install Rust nightly toolchain
@@ -50,9 +50,9 @@ jobs:
 
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        rust: ["1.70", stable, beta]
+        rust: ["1.87", stable, beta]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Rust toolchain
         # When passing an explicit toolchain as an input instead of @rev,
@@ -72,10 +72,10 @@ jobs:
         # this includes default features, `std` and `all-sentences`
         run: cargo test -F serde
 
-      - name: Test feature defmt-03
+      - name: Test feature defmt
         # this includes default features, `std` and `all-sentences`
         if: ${{ matrix.os != 'windows-latest' }}
-        run: cargo test -F defmt-03
+        run: cargo test -F defmt
 
       - name: Test (Release)
         run: cargo test --release --no-default-features
@@ -84,16 +84,16 @@ jobs:
         # this includes default features, `std` and `all-sentences`
         run: cargo test --release -F serde
 
-      - name: Test (Release) feature defmt-03
+      - name: Test (Release) feature defmt
         if: ${{ matrix.os != 'windows-latest' }}
         # this includes default features, `std` and `all-sentences`
-        run: cargo test --release -F defmt-03
+        run: cargo test --release -F defmt
 
   bench:
     name: Benches
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -108,7 +108,7 @@ jobs:
     env:
       RUSTDOCFLAGS: "-D warnings"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       # Docs.rs uses nightly, which allows for easier syntax for linking to functions.
       - uses: dtolnay/rust-toolchain@nightly
         with:
@@ -127,7 +127,7 @@ jobs:
       options: --security-opt seccomp=unconfined
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Generate code coverage
         # this includes default features, `std` and `all-sentences`
