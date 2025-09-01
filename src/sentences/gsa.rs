@@ -80,13 +80,13 @@ where
     type Error = <F as Parser<I>>::Error;
 
     fn process<OM: OutputMode>(&mut self, mut i: I) -> PResult<OM, I, Self::Output, Self::Error> {
-        let mut acc = OM::Output::bind(|| Vec::<_, 18>::new());
+        let mut acc = OM::Output::bind(Vec::<_, 18>::new);
         loop {
             let len = i.input_len();
-            match self
+            let process_result = self
                 .parser
-                .process::<OutputM<OM::Output, Check, OM::Incomplete>>(i.clone())
-            {
+                .process::<OutputM<OM::Output, Check, OM::Incomplete>>(i.clone());
+            match process_result {
                 Err(Err::Error(_)) => return Ok((i, acc)),
                 Err(Err::Failure(e)) => return Err(Err::Failure(e)),
                 Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
