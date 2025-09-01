@@ -6,7 +6,7 @@ use std::{
 };
 
 use helpers::format_satellites;
-use nmea::{parse_str, Nmea};
+use nmea::{Nmea, parse_str};
 
 mod helpers;
 

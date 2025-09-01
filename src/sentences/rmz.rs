@@ -1,13 +1,13 @@
 use nom::{
+    IResult, Parser as _,
     character::complete::{char, one_of},
-    IResult,
 };
 
 use crate::sentences::utils::number;
-use crate::{parse::NmeaSentence, Error, SentenceType};
+use crate::{Error, SentenceType, parse::NmeaSentence};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PgrmzFixType {
     NoFix,
@@ -32,7 +32,7 @@ pub enum PgrmzFixType {
 ///
 /// Example: `$PGRMZ,2282,f,3*21`
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PgrmzData {
     /// Current altitude in feet
@@ -42,10 +42,10 @@ pub struct PgrmzData {
 
 fn do_parse_pgrmz(i: &str) -> IResult<&str, PgrmzData> {
     let (i, altitude) = number::<u32>(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _) = char('f')(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, fix_type) = one_of("123")(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _) = char('f').parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, fix_type) = one_of("123").parse(i)?;
     let fix_type = match fix_type {
         '1' => PgrmzFixType::NoFix,
         '2' => PgrmzFixType::TwoDimensional,
@@ -60,7 +60,7 @@ fn do_parse_pgrmz(i: &str) -> IResult<&str, PgrmzData> {
 /// Example:
 ///
 /// `$PGRMZ,2282,f,3*21`
-pub fn parse_pgrmz(sentence: NmeaSentence) -> Result<PgrmzData, Error> {
+pub fn parse_pgrmz(sentence: NmeaSentence<'_>) -> Result<PgrmzData, Error<'_>> {
     if sentence.message_id != SentenceType::RMZ {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::RMZ,

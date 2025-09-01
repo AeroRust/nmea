@@ -1,8 +1,8 @@
 use nom::{
+    IResult, Parser as _,
     bytes::complete::take_until,
     character::complete::char,
     combinator::{map_res, opt},
-    IResult,
 };
 
 use crate::{Error, NmeaSentence, SentenceType};
@@ -32,7 +32,7 @@ use super::utils::parse_float_num;
 /// > [[GLOBALSAT](https://gpsd.gitlab.io/gpsd/NMEA.html#GLOBALSAT)] describes a different format in which the first three fields are water-temperature measurements.
 /// > It’s not clear which is correct.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, PartialEq, Debug)]
 pub struct VhwData {
     /// Heading degrees, True
@@ -62,7 +62,7 @@ pub struct VhwData {
 /// Each is considered as a pair of a float value and a single character,
 /// and if the float value exists but the single character is not correct, it is treated as `None`.
 /// For example, if 1 is "100.5" and 2 is not "T", then heading_true is `None`.
-pub fn parse_vhw(sentence: NmeaSentence) -> Result<VhwData, Error> {
+pub fn parse_vhw(sentence: NmeaSentence<'_>) -> Result<VhwData, Error<'_>> {
     if sentence.message_id == SentenceType::VHW {
         Ok(do_parse_vhw(sentence.data)?.1)
     } else {
@@ -76,14 +76,14 @@ pub fn parse_vhw(sentence: NmeaSentence) -> Result<VhwData, Error> {
 /// Parses a float value
 /// and returns `None` if the float value can be parsed but the next field does not match the specified character.
 fn do_parse_float_with_char(c: char, i: &str) -> IResult<&str, Option<f64>> {
-    let (i, value) = opt(map_res(take_until(","), parse_float_num::<f64>))(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, tag) = opt(char(c))(i)?;
+    let (i, value) = opt(map_res(take_until(","), parse_float_num::<f64>)).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, tag) = opt(char(c)).parse(i)?;
     Ok((i, tag.and(value)))
 }
 
 fn do_parse_vhw(i: &str) -> IResult<&str, VhwData> {
-    let comma = char(',');
+    let mut comma = char(',');
 
     let (i, heading_true) = do_parse_float_with_char('T', i)?;
     let (i, _) = comma(i)?;

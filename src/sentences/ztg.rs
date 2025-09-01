@@ -1,14 +1,14 @@
 use arrayvec::ArrayString;
 use chrono::{Duration, NaiveTime};
-use nom::{bytes::complete::is_not, character::complete::char, combinator::opt};
+use nom::{Parser as _, bytes::complete::is_not, character::complete::char, combinator::opt};
 
 #[cfg(feature = "serde")]
 use serde_with::As;
 
 use crate::{
+    Error, SentenceType,
     parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
     sentences::utils::{parse_duration_hms, parse_hms},
-    Error, SentenceType,
 };
 
 use super::utils::array_string;
@@ -25,31 +25,31 @@ use super::utils::array_string;
 /// 3. Destination Waypoint ID
 /// 4. Checksum
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq, Eq)]
 pub struct ZtgData {
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub fix_time: Option<NaiveTime>,
     #[cfg_attr(
         feature = "serde",
         serde(with = "As::<Option<serde_with::DurationSecondsWithFrac<f64>>>")
     )]
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub fix_duration: Option<Duration>,
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 
-fn do_parse_ztg(i: &str) -> Result<ZtgData, Error> {
+fn do_parse_ztg(i: &str) -> Result<ZtgData, Error<'_>> {
     // 1. UTC Time or observation
-    let (i, fix_time) = opt(parse_hms)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, fix_time) = opt(parse_hms).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 2. Duration
-    let (i, fix_duration) = opt(parse_duration_hms)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, fix_duration) = opt(parse_duration_hms).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 12. Waypoint ID
-    let (_i, waypoint_id) = opt(is_not(",*"))(i)?;
+    let (_i, waypoint_id) = opt(is_not(",*")).parse(i)?;
 
     let waypoint_id = waypoint_id
         .map(array_string::<TEXT_PARAMETER_MAX_LEN>)
@@ -65,7 +65,7 @@ fn do_parse_ztg(i: &str) -> Result<ZtgData, Error> {
 /// # Parse ZTG message
 ///
 /// See: <https://gpsd.gitlab.io/gpsd/NMEA.html#_ztg_utc_time_to_destination_waypoint>
-pub fn parse_ztg(sentence: NmeaSentence) -> Result<ZtgData, Error> {
+pub fn parse_ztg(sentence: NmeaSentence<'_>) -> Result<ZtgData, Error<'_>> {
     if sentence.message_id != SentenceType::ZTG {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::ZTG,
@@ -79,9 +79,9 @@ pub fn parse_ztg(sentence: NmeaSentence) -> Result<ZtgData, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{parse::parse_nmea_sentence, Error};
+    use crate::{Error, parse::parse_nmea_sentence};
 
-    fn run_parse_ztg(line: &str) -> Result<ZtgData, Error> {
+    fn run_parse_ztg(line: &str) -> Result<ZtgData, Error<'_>> {
         let s = parse_nmea_sentence(line).expect("ZTG sentence initial parse failed");
         assert_eq!(s.checksum, s.calc_checksum());
         parse_ztg(s)

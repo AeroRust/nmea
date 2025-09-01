@@ -1,12 +1,12 @@
 use nom::{
+    IResult, Parser as _,
     character::complete::{char, one_of},
     combinator::opt,
     number::complete::double,
     sequence::preceded,
-    IResult,
 };
 
-use crate::{parse::NmeaSentence, Error, ParseResult, SentenceType};
+use crate::{Error, ParseResult, SentenceType, parse::NmeaSentence};
 
 /// DBK - Depth Below Keel
 ///
@@ -28,7 +28,7 @@ use crate::{parse::NmeaSentence, Error, ParseResult, SentenceType};
 ///
 /// Example: `$SDDBK,1330.5,f,0405.5,M,0221.6,F*2E`
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct DbkData {
     pub depth_feet: Option<f64>,
@@ -61,7 +61,7 @@ impl From<DbkData> for ParseResult {
 /// 5:    0221.6 Depth Fathoms
 /// 6:    F      Units: F = Fathoms
 /// 7:    2E     CRC Checksum of NMEA data
-pub fn parse_dbk(sentence: NmeaSentence) -> Result<DbkData, Error> {
+pub fn parse_dbk(sentence: NmeaSentence<'_>) -> Result<DbkData, Error<'_>> {
     if sentence.message_id != SentenceType::DBK {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::DBK,
@@ -73,14 +73,14 @@ pub fn parse_dbk(sentence: NmeaSentence) -> Result<DbkData, Error> {
 }
 
 fn do_parse_dbk(i: &str) -> IResult<&str, DbkData> {
-    let (i, depth_feet_value) = opt(double)(i)?;
-    let (i, _) = preceded(char(','), one_of("f"))(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, depth_meters_value) = opt(double)(i)?;
-    let (i, _) = preceded(char(','), one_of("M"))(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, depth_fathoms_value) = opt(double)(i)?;
-    let (i, _) = preceded(char(','), one_of("F"))(i)?;
+    let (i, depth_feet_value) = opt(double).parse(i)?;
+    let (i, _) = preceded(char(','), one_of("f")).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, depth_meters_value) = opt(double).parse(i)?;
+    let (i, _) = preceded(char(','), one_of("M")).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, depth_fathoms_value) = opt(double).parse(i)?;
+    let (i, _) = preceded(char(','), one_of("F")).parse(i)?;
     Ok((
         i,
         DbkData {

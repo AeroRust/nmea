@@ -2,13 +2,14 @@ use crate::parse::TEXT_PARAMETER_MAX_LEN;
 
 use arrayvec::ArrayString;
 use nom::{
+    Parser as _,
     bytes::complete::is_not,
     character::complete::{char, one_of},
     combinator::opt,
     number::complete::float,
 };
 
-use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, SentenceType};
+use crate::{Error, SentenceType, parse::NmeaSentence, sentences::utils::array_string};
 
 /// AAM - Waypoint Arrival Alarm
 ///
@@ -31,19 +32,19 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 /// WPTNME is the waypoint name.
 /// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct AamData {
     pub arrival_circle_entered: Option<bool>,
     pub perpendicular_passed: Option<bool>,
     pub arrival_circle_radius: Option<f32>,
     pub radius_units: Option<char>,
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 
 /// Parse AAM message
-pub fn parse_aam(sentence: NmeaSentence) -> Result<AamData, Error> {
+pub fn parse_aam(sentence: NmeaSentence<'_>) -> Result<AamData, Error<'_>> {
     if sentence.message_id != SentenceType::AAM {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::AAM,
@@ -54,30 +55,30 @@ pub fn parse_aam(sentence: NmeaSentence) -> Result<AamData, Error> {
     }
 }
 
-fn do_parse_aam(i: &str) -> Result<AamData, Error> {
-    let (i, arrival_circle_entered) = one_of("AV")(i)?;
+fn do_parse_aam(i: &str) -> Result<AamData, Error<'_>> {
+    let (i, arrival_circle_entered) = one_of("AV").parse(i)?;
     let arrival_circle_entered = match arrival_circle_entered {
         'A' => Some(true),
         'V' => Some(false),
         _ => unreachable!(),
     };
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, perpendicular_passed) = one_of("AV")(i)?;
+    let (i, perpendicular_passed) = one_of("AV").parse(i)?;
     let perpendicular_passed = match perpendicular_passed {
         'A' => Some(true),
         'V' => Some(false),
         _ => unreachable!(),
     };
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, arrival_circle_radius) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, arrival_circle_radius) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, radius_units) = opt(char('N'))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, radius_units) = opt(char('N')).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (_i, waypoint_id) = opt(is_not("*"))(i)?;
+    let (_i, waypoint_id) = opt(is_not("*")).parse(i)?;
 
     Ok(AamData {
         arrival_circle_entered,
@@ -95,7 +96,7 @@ mod tests {
     use approx::assert_relative_eq;
 
     use super::*;
-    use crate::{parse::parse_nmea_sentence, SentenceType};
+    use crate::{SentenceType, parse::parse_nmea_sentence};
 
     #[test]
     fn parse_aam_with_nmea_sentence_struct() {

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use nmea::{parse_str, Error, Nmea, SentenceType};
+use nmea::{Error, Nmea, SentenceType, parse_str};
 
 #[test]
 fn test_all_supported_messages() {

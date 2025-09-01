@@ -1,12 +1,13 @@
 use arrayvec::ArrayString;
 use nom::{
-    bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
+    Parser as _, bytes::complete::is_not, character::complete::char, combinator::opt,
+    number::complete::float,
 };
 
 use crate::{
+    Error, SentenceType,
     parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
     sentences::utils::array_string,
-    Error, SentenceType,
 };
 
 /// BWW - Bearing - Waypoint to Waypoint
@@ -30,42 +31,42 @@ use crate::{
 ///
 /// Example: `$GPBWW,213.8,T,218.0,M,TOWPT,FROMWPT*42`
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct BwwData {
     pub true_bearing: Option<f32>,
     pub magnetic_bearing: Option<f32>,
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub to_waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub from_waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 
-fn do_parse_bww(i: &str) -> Result<BwwData, Error> {
+fn do_parse_bww(i: &str) -> Result<BwwData, Error<'_>> {
     // 1. Bearing, degrees True
-    let (i, true_bearing) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, true_bearing) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 2. T = True
-    let (i, _) = opt(char('T'))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = opt(char('T')).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 3. Bearing, degrees Magnetic
-    let (i, magnetic_bearing) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, magnetic_bearing) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 4. M = Magnetic
-    let (i, _) = opt(char('M'))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = opt(char('M')).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 5. TO Waypoint ID
-    let (i, to_waypoint_id) = opt(is_not(","))(i)?;
+    let (i, to_waypoint_id) = opt(is_not(",")).parse(i)?;
 
     let to_waypoint_id = to_waypoint_id
         .map(array_string::<TEXT_PARAMETER_MAX_LEN>)
         .transpose()?;
 
     // 6. FROM Waypoint ID
-    let (i, _) = char(',')(i)?;
-    let (_i, from_waypoint_id) = opt(is_not(",*"))(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (_i, from_waypoint_id) = opt(is_not(",*")).parse(i)?;
 
     let from_waypoint_id = from_waypoint_id
         .map(array_string::<TEXT_PARAMETER_MAX_LEN>)
@@ -82,7 +83,7 @@ fn do_parse_bww(i: &str) -> Result<BwwData, Error> {
 /// # Parse BWW message
 ///
 /// See: <https://gpsd.gitlab.io/gpsd/NMEA.html#_bww_bearing_waypoint_to_waypoint>
-pub fn parse_bww(sentence: NmeaSentence) -> Result<BwwData, Error> {
+pub fn parse_bww(sentence: NmeaSentence<'_>) -> Result<BwwData, Error<'_>> {
     if sentence.message_id != SentenceType::BWW {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::BWW,

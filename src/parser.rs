@@ -6,13 +6,12 @@ use chrono::{NaiveDate, NaiveTime};
 use heapless::{Deque, Vec};
 
 use crate::{
-    parse_str,
+    Error, ParseResult, parse_str,
     sentences::{rmc::RmcStatusOfFix, *},
-    Error, ParseResult,
 };
 
 #[cfg(feature = "serde")]
-use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Serialize};
+use serde::{de::Visitor, ser::SerializeSeq};
 
 /// NMEA parser
 ///
@@ -35,12 +34,12 @@ use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Serialize};
 ///
 /// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Default)]
 pub struct Nmea {
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub fix_time: Option<NaiveTime>,
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub fix_date: Option<NaiveDate>,
     pub fix_type: Option<FixType>,
     pub latitude: Option<f64>,
@@ -58,7 +57,7 @@ pub struct Nmea {
     pub fix_satellites_prns: Option<Vec<u32, 18>>,
     satellites_scan: [SatsPack; GnssType::COUNT],
     required_sentences_for_nav: SentenceMask,
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     last_fix_time: Option<NaiveTime>,
     last_txt: Option<TxtData>,
     sentences_for_this_time: SentenceMask,
@@ -446,7 +445,7 @@ impl fmt::Display for Nmea {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Default)]
 struct SatsPack {
     /// max number of visible GNSS satellites per hemisphere, assuming global coverage
@@ -456,7 +455,7 @@ struct SatsPack {
     /// Galileo: 12
     /// => 58 total Satellites => max 15 rows of data
     #[cfg_attr(feature = "serde", serde(with = "serde_deq"))]
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     data: Deque<Vec<Option<Satellite>, 4>, 15>,
     max_len: usize,
 }
@@ -509,7 +508,7 @@ mod serde_deq {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, PartialEq)]
 /// Satellite information
 pub struct Satellite {
@@ -774,7 +773,7 @@ define_sentence_type_enum! {
     ///
     /// - [`SentenceType::RMZ`]
     #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-    #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
     #[repr(u32)]
     pub enum SentenceType {
@@ -1258,7 +1257,7 @@ define_sentence_type_enum! {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
 pub struct SentenceMask {
     mask: u128,
@@ -1300,12 +1299,13 @@ impl BitOr<SentenceType> for SentenceMask {
 mod tests {
     use core::convert::TryFrom;
 
-    use quickcheck::{QuickCheck, TestResult};
-
-    use crate::{parse::checksum, sentences::FixType, Error, Nmea, SentenceType};
+    use crate::{Error, SentenceType, parse::checksum, sentences::FixType};
 
     #[cfg(feature = "GGA")]
-    fn check_parsing_lat_lon_in_gga(lat: f64, lon: f64) -> TestResult {
+    fn check_parsing_lat_lon_in_gga(lat: f64, lon: f64) -> quickcheck::TestResult {
+        use crate::Nmea;
+        use quickcheck::TestResult;
+
         fn scale(val: f64, max: f64) -> f64 {
             val % max
         }
@@ -1375,6 +1375,8 @@ mod tests {
     // FIXME: remove dependency on GGA and instead use quickcheck for `do_parse_lat_lon` parser
     #[cfg(feature = "GGA")]
     fn test_parsing_lat_lon_in_gga() {
+        use quickcheck::{QuickCheck, TestResult};
+
         // regressions found by quickcheck,
         // explicit because of quickcheck use random gen
         assert!(!check_parsing_lat_lon_in_gga(0., 57.89528).is_failure());

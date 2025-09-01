@@ -1,19 +1,19 @@
 use chrono::NaiveTime;
 use nom::{
+    IResult, Parser as _,
     bytes::complete::{take_until, take_while},
     character::complete::{char, one_of},
     combinator::{map_parser, opt},
     number::complete::float,
     sequence::preceded,
-    IResult,
 };
 
 use super::{
+    FaaModes,
     faa_mode::parse_faa_modes,
     utils::{number, parse_hms, parse_lat_lon},
-    FaaModes,
 };
-use crate::{parse::NmeaSentence, Error, SentenceType};
+use crate::{Error, SentenceType, parse::NmeaSentence};
 
 /// GNS - Fix data
 ///
@@ -25,10 +25,10 @@ use crate::{parse::NmeaSentence, Error, SentenceType};
 /// $--GNS,hhmmss.ss,ddmm.mm,a,dddmm.mm,a,c--c,xx,x.x,x.x,x.x,x.x,x.x*hh
 /// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct GnsData {
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub fix_time: Option<NaiveTime>,
     pub lat: Option<f64>,
     pub lon: Option<f64>,
@@ -41,7 +41,7 @@ pub struct GnsData {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum NavigationStatus {
     Safe,
@@ -91,7 +91,7 @@ pub enum NavigationStatus {
 ///                   U = Unsafe
 ///                   V = Not valid for navigation
 /// 8:   *6A          Mandatory NMEA checksum
-pub fn parse_gns(sentence: NmeaSentence) -> Result<GnsData, Error> {
+pub fn parse_gns(sentence: NmeaSentence<'_>) -> Result<GnsData, Error<'_>> {
     if sentence.message_id != SentenceType::GNS {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::GNS,
@@ -103,24 +103,24 @@ pub fn parse_gns(sentence: NmeaSentence) -> Result<GnsData, Error> {
 }
 
 fn do_parse_gns(i: &str) -> IResult<&str, GnsData> {
-    let (i, fix_time) = opt(parse_hms)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, fix_time) = opt(parse_hms).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     let (i, lat_lon) = parse_lat_lon(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, faa_modes) = map_parser(take_until(","), parse_faa_modes)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, faa_modes) = map_parser(take_until(","), parse_faa_modes).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     let (i, nsattelites) = number::<u16>(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, hdop) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, alt) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, geoid_separation) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _age_of_diff) = take_until(",")(i)?; // TODO parse age of diff. corr.
-    let (i, _) = char(',')(i)?;
-    let (i, _station_id) = take_while(|c| c != ',')(i)?;
-    let (i, nav_status) = opt(preceded(char(','), one_of("SCUV")))(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, hdop) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, alt) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, geoid_separation) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _age_of_diff) = take_until(",").parse(i)?; // TODO parse age of diff. corr.
+    let (i, _) = char(',').parse(i)?;
+    let (i, _station_id) = take_while(|c| c != ',').parse(i)?;
+    let (i, nav_status) = opt(preceded(char(','), one_of("SCUV"))).parse(i)?;
     let nav_status = nav_status.map(|ch| match ch {
         'S' => NavigationStatus::Safe,
         'C' => NavigationStatus::Caution,

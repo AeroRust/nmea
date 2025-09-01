@@ -1,15 +1,15 @@
 use chrono::NaiveTime;
 use nom::{
+    IResult, Parser as _,
     character::complete::{anychar, char, one_of},
     combinator::opt,
-    IResult,
 };
 
-use super::{faa_mode::parse_faa_mode, nom_parse_failure, FaaMode};
+use super::{FaaMode, faa_mode::parse_faa_mode, nom_parse_failure};
 use crate::{
+    Error, SentenceType,
     parse::NmeaSentence,
     sentences::utils::{parse_hms, parse_lat_lon},
-    Error, SentenceType,
 };
 
 /// GLL - Geographic Position - Latitude/Longitude
@@ -29,12 +29,12 @@ use crate::{
 ///  $--GLL,ddmm.mm,a,dddmm.mm,a,hhmmss.ss,a,m*hh<CR><LF>
 /// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GllData {
     pub latitude: Option<f64>,
     pub longitude: Option<f64>,
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub fix_time: Option<NaiveTime>,
     pub valid: bool,
     pub faa_mode: Option<FaaMode>,
@@ -55,7 +55,7 @@ pub struct GllData {
 /// | 7     | data status | Data status: A = Data valid, V = Data invalid
 /// | 8     | mode ind    | Positioning system mode indicator, see `PosSystemIndicator`
 /// | 9     | *xx         | Check sum
-pub fn parse_gll(sentence: NmeaSentence) -> Result<GllData, Error> {
+pub fn parse_gll(sentence: NmeaSentence<'_>) -> Result<GllData, Error<'_>> {
     if sentence.message_id != SentenceType::GLL {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::GLL,
@@ -68,17 +68,17 @@ pub fn parse_gll(sentence: NmeaSentence) -> Result<GllData, Error> {
 
 fn do_parse_gll(i: &str) -> IResult<&str, GllData> {
     let (i, lat_lon) = parse_lat_lon(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, fix_time) = opt(parse_hms)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, valid) = one_of("AV")(i)?; // A: valid, V: invalid
+    let (i, _) = char(',').parse(i)?;
+    let (i, fix_time) = opt(parse_hms).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, valid) = one_of("AV").parse(i)?; // A: valid, V: invalid
     let valid = match valid {
         'A' => true,
         'V' => false,
         _ => unreachable!(),
     };
-    let (i, _) = char(',')(i)?;
-    let (rest, mode) = opt(anychar)(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (rest, mode) = opt(anychar).parse(i)?;
     let faa_mode = mode
         .map(|mode| parse_faa_mode(mode).ok_or_else(|| nom_parse_failure(i)))
         .transpose()?;

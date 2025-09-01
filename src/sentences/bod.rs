@@ -1,7 +1,8 @@
-use crate::{parse::*, sentences::utils::array_string, Error, SentenceType};
+use crate::{Error, SentenceType, parse::*, sentences::utils::array_string};
 
 use arrayvec::ArrayString;
 use nom::{
+    Parser as _,
     bytes::complete::{is_not, take_until},
     character::complete::char,
     combinator::{map_parser, opt},
@@ -19,14 +20,14 @@ use nom::{
 /// $--BOD,x.x,T,x.x,M,c--c,c--c*hh<CR><LF>
 /// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BodData {
     pub bearing_true: Option<f32>,
     pub bearing_magnetic: Option<f32>,
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub to_waypoint: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub from_waypoint: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 
@@ -37,28 +38,28 @@ pub struct BodData {
 ///        |   | |   | |    |    |
 /// $--BOD,x.x,T,x.x,M,c--c,c--c*hh<CR><LF>
 /// ```
-fn do_parse_bod(i: &str) -> Result<BodData, Error> {
+fn do_parse_bod(i: &str) -> Result<BodData, Error<'_>> {
     // 1. Bearing Degrees, True
-    let (i, bearing_true) = opt(map_parser(take_until(","), float))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, bearing_true) = opt(map_parser(take_until(","), float)).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 2. T = True
-    let (i, _) = char('T')(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char('T').parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 3. Bearing Degrees, Magnetic
-    let (i, bearing_magnetic) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, bearing_magnetic) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 4. M = Magnetic
-    let (i, _) = char('M')(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char('M').parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 5. Destination Waypoint
-    let (i, to_waypoint) = opt(is_not(",*"))(i)?;
+    let (i, to_waypoint) = opt(is_not(",*")).parse(i)?;
 
     // 6. origin Waypoint
-    let from_waypoint = opt(preceded(char(','), is_not("*")))(i)?.1;
+    let from_waypoint = opt(preceded(char(','), is_not("*"))).parse(i)?.1;
 
     // 7. Checksum
 
@@ -77,7 +78,7 @@ fn do_parse_bod(i: &str) -> Result<BodData, Error> {
 /// # Parse BOD message
 ///
 /// See: <https://gpsd.gitlab.io/gpsd/NMEA.html#_bod_bearing_waypoint_to_waypoint>
-pub fn parse_bod(sentence: NmeaSentence) -> Result<BodData, Error> {
+pub fn parse_bod(sentence: NmeaSentence<'_>) -> Result<BodData, Error<'_>> {
     if sentence.message_id != SentenceType::BOD {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::BOD,

@@ -1,12 +1,12 @@
 use nom::{
+    IResult, Parser as _,
     character::complete::{char, one_of},
     combinator::opt,
     number::complete::float,
     sequence::preceded,
-    IResult,
 };
 
-use crate::{parse::NmeaSentence, Error, SentenceType};
+use crate::{Error, SentenceType, parse::NmeaSentence};
 
 /// MWV - Wind Speed and Angle
 ///
@@ -18,7 +18,7 @@ use crate::{parse::NmeaSentence, Error, SentenceType};
 /// $--MWV,x.x,a,x.x,a*hh<CR><LF>
 /// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct MwvData {
     pub wind_direction: Option<f32>,
@@ -29,7 +29,7 @@ pub struct MwvData {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MwvReference {
     Relative,
@@ -37,7 +37,7 @@ pub enum MwvReference {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MwvWindSpeedUnits {
     KilometersPerHour,
@@ -64,7 +64,7 @@ pub enum MwvWindSpeedUnits {
 /// 4:  N             Wind speed units (Knots)
 /// 5:  A             Data is OK
 /// 6:  *16           Mandatory NMEA checksum
-pub fn parse_mwv(sentence: NmeaSentence) -> Result<MwvData, Error> {
+pub fn parse_mwv(sentence: NmeaSentence<'_>) -> Result<MwvData, Error<'_>> {
     if sentence.message_id != SentenceType::MWV {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::MWV,
@@ -76,16 +76,16 @@ pub fn parse_mwv(sentence: NmeaSentence) -> Result<MwvData, Error> {
 }
 
 fn do_parse_mwv(i: &str) -> IResult<&str, MwvData> {
-    let (i, direction) = opt(float)(i)?;
-    let (i, reference_type) = opt(preceded(char(','), one_of("RT")))(i)?;
+    let (i, direction) = opt(float).parse(i)?;
+    let (i, reference_type) = opt(preceded(char(','), one_of("RT"))).parse(i)?;
     let reference_type = reference_type.map(|ch| match ch {
         'R' => MwvReference::Relative,
         'T' => MwvReference::Theoretical,
         _ => unreachable!(),
     });
-    let (i, _) = char(',')(i)?;
-    let (i, speed) = opt(float)(i)?;
-    let (i, wind_speed_type) = opt(preceded(char(','), one_of("KMNS")))(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, speed) = opt(float).parse(i)?;
+    let (i, wind_speed_type) = opt(preceded(char(','), one_of("KMNS"))).parse(i)?;
     let wind_speed_type = wind_speed_type.map(|ch| match ch {
         'K' => MwvWindSpeedUnits::KilometersPerHour,
         'M' => MwvWindSpeedUnits::MetersPerSecond,
@@ -93,7 +93,7 @@ fn do_parse_mwv(i: &str) -> IResult<&str, MwvData> {
         'S' => MwvWindSpeedUnits::MilesPerHour,
         _ => unreachable!(),
     });
-    let (i, is_data_valid) = preceded(char(','), one_of("AV"))(i)?;
+    let (i, is_data_valid) = preceded(char(','), one_of("AV")).parse(i)?;
     let is_data_valid = match is_data_valid {
         'A' => true,
         'V' => false,

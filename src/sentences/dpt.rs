@@ -1,14 +1,14 @@
 use nom::{
+    IResult, Parser as _,
     bytes::complete::is_not,
     character::complete::char,
     combinator::{map_res, opt},
     number::complete::double,
-    IResult,
 };
 
 use crate::{
-    sentences::utils::{parse_float_num, parse_until_end},
     Error, ParseResult, SentenceType,
+    sentences::utils::{parse_float_num, parse_until_end},
 };
 
 /// DPT - Depth of Water
@@ -33,7 +33,7 @@ use crate::{
 ///
 /// `$SDDPT` is the sentence identifier (`SD` for the talker ID, `DPT` for Depth)
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct DptData {
     pub water_depth: Option<f64>,
@@ -47,7 +47,7 @@ impl From<DptData> for ParseResult {
     }
 }
 
-pub fn parse_dpt(sentence: crate::NmeaSentence) -> Result<DptData, crate::Error> {
+pub fn parse_dpt(sentence: crate::NmeaSentence<'_>) -> Result<DptData, crate::Error<'_>> {
     if sentence.message_id != crate::SentenceType::DPT {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::DPT,
@@ -74,15 +74,15 @@ fn parse_positive_f64(input: &str) -> IResult<&str, f64> {
 }
 
 fn take_and_make_f64(input: &str) -> IResult<&str, f64> {
-    map_res(is_not(","), parse_float_num)(input)
+    map_res(is_not(","), parse_float_num).parse(input)
 }
 
 fn do_parse_dpt(i: &str) -> IResult<&str, DptData> {
-    let (i, water_depth) = opt(parse_positive_f64)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, offset) = opt(parse_positive_f64)(i)?;
-    let (i, _) = opt(char(','))(i)?;
-    let (i, max_range_scale) = opt(take_and_make_f64)(i)?;
+    let (i, water_depth) = opt(parse_positive_f64).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, offset) = opt(parse_positive_f64).parse(i)?;
+    let (i, _) = opt(char(',')).parse(i)?;
+    let (i, max_range_scale) = opt(take_and_make_f64).parse(i)?;
 
     let (i, leftover) = parse_until_end(i)?;
 

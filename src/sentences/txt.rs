@@ -1,10 +1,10 @@
 use arrayvec::ArrayString;
-use nom::{bytes::complete::take_while, character::complete::char, IResult};
+use nom::{IResult, Parser as _, bytes::complete::take_while, character::complete::char};
 
 use super::utils::number;
 use crate::{
-    parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
     Error, SentenceType,
+    parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
 };
 
 /// Parse TXT message from u-blox device
@@ -15,7 +15,7 @@ use crate::{
 /// 3   02  Text identifier, u-blox GPS receivers specify the severity of the message with this number. 00 = ERROR, 01 = WARNING, 02 = NOTICE, 07 = USER
 /// 4   u-blox AG - www.u-blox.com Any ASCII text
 /// *68        mandatory nmea_checksum
-pub fn parse_txt(s: NmeaSentence) -> Result<TxtData, Error> {
+pub fn parse_txt(s: NmeaSentence<'_>) -> Result<TxtData, Error<'_>> {
     if s.message_id != SentenceType::TXT {
         return Err(Error::WrongSentenceHeader {
             expected: SentenceType::TXT,
@@ -44,11 +44,11 @@ fn txt_str(s: &str) -> IResult<&str, &str> {
 
 fn do_parse_txt(i: &str) -> IResult<&str, TxtData0<'_>> {
     let (i, count) = number::<u8>(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
     let (i, seq) = number::<u8>(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
     let (i, text_ident) = number::<u8>(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
     let (i, text) = txt_str(i)?;
 
     Ok((
@@ -64,13 +64,13 @@ fn do_parse_txt(i: &str) -> IResult<&str, TxtData0<'_>> {
 
 /// TXT - Text
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct TxtData {
     pub count: u8,
     pub seq: u8,
     pub text_ident: u8,
-    #[cfg_attr(feature = "defmt-03", defmt(Display2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Display2Format))]
     pub text: ArrayString<TEXT_PARAMETER_MAX_LEN>,
 }
 

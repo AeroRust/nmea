@@ -1,12 +1,12 @@
 use nom::{
+    IResult, Parser as _,
     character::complete::{char, one_of},
     combinator::opt,
     number::complete::double,
     sequence::preceded,
-    IResult,
 };
 
-use crate::{parse::NmeaSentence, Error, SentenceType};
+use crate::{Error, SentenceType, parse::NmeaSentence};
 
 /// MTW - Mean Temperature of Water
 ///
@@ -21,14 +21,14 @@ use crate::{parse::NmeaSentence, Error, SentenceType};
 /// 2:  Unit of Measurement, (only) Celsius
 /// 3:  Mandatory NMEA checksum
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
 pub struct MtwData {
     pub temperature: Option<f64>,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MtwUnit {
     Celsius,
@@ -49,7 +49,7 @@ pub enum MtwUnit {
 /// 1:  17.9         Temperature, degrees
 /// 2:  C            Unit of Measurement, (only) Celsius
 /// 3:  *16          Mandatory NMEA checksum
-pub fn parse_mtw(sentence: NmeaSentence) -> Result<MtwData, Error> {
+pub fn parse_mtw(sentence: NmeaSentence<'_>) -> Result<MtwData, Error<'_>> {
     if sentence.message_id != SentenceType::MTW {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::MTW,
@@ -61,8 +61,8 @@ pub fn parse_mtw(sentence: NmeaSentence) -> Result<MtwData, Error> {
 }
 
 fn do_parse_mtw(i: &str) -> IResult<&str, MtwData> {
-    let (i, temperature_value) = opt(double)(i)?;
-    preceded(char(','), one_of("C"))(i)?;
+    let (i, temperature_value) = opt(double).parse(i)?;
+    preceded(char(','), one_of("C")).parse(i)?;
     Ok((
         i,
         MtwData {

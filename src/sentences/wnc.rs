@@ -1,12 +1,13 @@
 use arrayvec::ArrayString;
 use nom::{
-    bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
+    Parser as _, bytes::complete::is_not, character::complete::char, combinator::opt,
+    number::complete::float,
 };
 
 use super::utils::array_string;
 use crate::{
-    parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
     Error, SentenceType,
+    parse::{NmeaSentence, TEXT_PARAMETER_MAX_LEN},
 };
 
 /// WNC - Distance - Waypoint to Waypoint
@@ -31,35 +32,35 @@ use crate::{
 /// 6. Waypoint ID, Origin
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct WncData {
     /// Distance, Nautical Miles
     pub distance_nautical_miles: Option<f32>,
     /// Distance, Kilometers
     pub distance_kilometers: Option<f32>,
     /// Waypoint ID, Destination
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub waypoint_id_destination: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
     /// Waypoint ID, Origin
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub waypoint_id_origin: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 
-pub fn do_parse_wnc(i: &str) -> Result<WncData, Error> {
-    let (i, distance_nautical_miles) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _) = opt(char('N'))(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, distance_kilometers) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _) = opt(char('K'))(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, waypoint_id_destination) = opt(is_not(","))(i)?;
+pub fn do_parse_wnc(i: &str) -> Result<WncData, Error<'_>> {
+    let (i, distance_nautical_miles) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _) = opt(char('N')).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, distance_kilometers) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _) = opt(char('K')).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, waypoint_id_destination) = opt(is_not(",")).parse(i)?;
     let waypoint_id_destination = waypoint_id_destination
         .map(array_string::<TEXT_PARAMETER_MAX_LEN>)
         .transpose()?;
-    let (i, _) = char(',')(i)?;
-    let (_i, waypoint_id_origin) = opt(is_not(","))(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (_i, waypoint_id_origin) = opt(is_not(",")).parse(i)?;
     let waypoint_id_origin = waypoint_id_origin
         .map(array_string::<TEXT_PARAMETER_MAX_LEN>)
         .transpose()?;
@@ -72,7 +73,7 @@ pub fn do_parse_wnc(i: &str) -> Result<WncData, Error> {
     })
 }
 
-pub fn parse_wnc(sentence: NmeaSentence) -> Result<WncData, Error> {
+pub fn parse_wnc(sentence: NmeaSentence<'_>) -> Result<WncData, Error<'_>> {
     if sentence.message_id != SentenceType::WNC {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::WNC,
@@ -86,10 +87,10 @@ pub fn parse_wnc(sentence: NmeaSentence) -> Result<WncData, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{parse::parse_nmea_sentence, Error};
+    use crate::{Error, parse::parse_nmea_sentence};
     use approx::assert_relative_eq;
 
-    fn run_parse_wnc(line: &str) -> Result<WncData, Error> {
+    fn run_parse_wnc(line: &str) -> Result<WncData, Error<'_>> {
         let s = parse_nmea_sentence(line).expect("WNC sentence initial parse failed");
         assert_eq!(s.checksum, s.calc_checksum());
         parse_wnc(s)

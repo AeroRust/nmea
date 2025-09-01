@@ -1,12 +1,12 @@
 use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime};
 use nom::{
+    IResult, Parser as _,
     bytes::complete::take,
     character::complete::char,
     combinator::{map_res, opt},
-    IResult,
 };
 
-use crate::{parse::NmeaSentence, sentences::utils::parse_hms, Error, SentenceType};
+use crate::{Error, SentenceType, parse::NmeaSentence, sentences::utils::parse_hms};
 
 use super::utils::{parse_num, parse_number_in_range};
 
@@ -28,10 +28,10 @@ use super::utils::{parse_num, parse_number_in_range};
 /// 6. Local zone minutes description, 00 to 59, apply same sign as local hours
 /// 7. Checksum
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ZdaData {
-    #[cfg_attr(feature = "defmt-03", defmt(Debug2Format))]
+    #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     pub utc_time: Option<NaiveTime>,
     pub day: Option<u8>,
     pub month: Option<u8>,
@@ -101,7 +101,7 @@ impl ZdaData {
 /// Note: some devices, like the u-blox ANTARIS 4h, are known to ship ZDAs
 /// with some fields blank under poorly-understood circumstances (probably
 /// when they don't have satellite lock yet).
-pub fn parse_zda(sentence: NmeaSentence) -> Result<ZdaData, Error> {
+pub fn parse_zda(sentence: NmeaSentence<'_>) -> Result<ZdaData, Error<'_>> {
     if sentence.message_id != SentenceType::ZDA {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::ZDA,
@@ -113,21 +113,21 @@ pub fn parse_zda(sentence: NmeaSentence) -> Result<ZdaData, Error> {
 }
 
 fn do_parse_zda(i: &str) -> IResult<&str, ZdaData> {
-    let comma = char(',');
-    let (i, utc_time) = opt(parse_hms)(i)?;
+    let mut comma = char(',');
+    let (i, utc_time) = opt(parse_hms).parse(i)?;
     let (i, _) = comma(i)?;
-    let (i, day) = opt(|i| parse_number_in_range::<u8>(i, 1, 31))(i)?;
+    let (i, day) = opt(|i| parse_number_in_range::<u8>(i, 1, 31)).parse(i)?;
     let (i, _) = comma(i)?;
-    let (i, month) = opt(|i| parse_number_in_range::<u8>(i, 1, 12))(i)?;
+    let (i, month) = opt(|i| parse_number_in_range::<u8>(i, 1, 12)).parse(i)?;
     let (i, _) = comma(i)?;
-    let (i, year) = opt(map_res(take(4usize), parse_num::<u16>))(i)?;
+    let (i, year) = opt(map_res(take(4usize), parse_num::<u16>)).parse(i)?;
     let (i, _) = comma(i)?;
-    let (i, minus) = opt(char('-'))(i)?;
+    let (i, minus) = opt(char('-')).parse(i)?;
     let signum = minus.map(|_| -1).unwrap_or(1);
-    let (i, local_zone_hours) = opt(|i| parse_number_in_range::<i8>(i, 0, 13))(i)?;
+    let (i, local_zone_hours) = opt(|i| parse_number_in_range::<i8>(i, 0, 13)).parse(i)?;
     let local_zone_hours = local_zone_hours.map(|z| z * signum);
     let (i, _) = comma(i)?;
-    let (i, local_zone_minutes) = opt(|i| parse_number_in_range::<i8>(i, -59, 59))(i)?;
+    let (i, local_zone_minutes) = opt(|i| parse_number_in_range::<i8>(i, -59, 59)).parse(i)?;
     let local_zone_minutes = local_zone_minutes.map(|m| m * signum);
 
     Ok((
