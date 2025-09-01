@@ -1,5 +1,7 @@
 use chrono::NaiveTime;
-use nom::{character::complete::char, combinator::opt, number::complete::float, IResult};
+use nom::{
+    character::complete::char, combinator::opt, number::complete::float, IResult, Parser as _,
+};
 
 use crate::{
     parse::NmeaSentence,
@@ -40,31 +42,31 @@ pub struct GbsData {
 /// ```
 fn do_parse_gbs(i: &str) -> IResult<&str, GbsData> {
     // 1. UTC time of the GGA or GNS fix associated with this sentence. hh is hours, mm is minutes, ss.ss is seconds
-    let (i, time) = opt(parse_hms)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, time) = opt(parse_hms).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 2. Expected 1-sigma error in latitude (meters)
     // 3. Expected 1-sigma error in longitude (meters)
     let (i, lat_lon_errors) = parse_lat_lon(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 4. Expected 1-sigma error in altitude (meters)
-    let (i, alt_error) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, alt_error) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 5. ID of most likely failed satellite (1 to 138)
-    let (i, most_likely_failed_sat) = opt(number::<u8>)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, most_likely_failed_sat) = opt(number::<u8>).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 6. Probability of missed detection for most likely failed satellite
-    let (i, missed_probability) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, missed_probability) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 7. Estimate of bias in meters on most likely failed satellite
-    let (i, bias_estimate) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, bias_estimate) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 8. Standard deviation of bias estimate
-    let (i, bias_standard_deviation) = opt(float)(i)?;
+    let (i, bias_standard_deviation) = opt(float).parse(i)?;
     // 9. Checksum
 
     Ok((

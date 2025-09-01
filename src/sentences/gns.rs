@@ -5,7 +5,7 @@ use nom::{
     combinator::{map_parser, opt},
     number::complete::float,
     sequence::preceded,
-    IResult,
+    IResult, Parser as _,
 };
 
 use super::{
@@ -103,24 +103,24 @@ pub fn parse_gns(sentence: NmeaSentence<'_>) -> Result<GnsData, Error<'_>> {
 }
 
 fn do_parse_gns(i: &str) -> IResult<&str, GnsData> {
-    let (i, fix_time) = opt(parse_hms)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, fix_time) = opt(parse_hms).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     let (i, lat_lon) = parse_lat_lon(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, faa_modes) = map_parser(take_until(","), parse_faa_modes)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, faa_modes) = map_parser(take_until(","), parse_faa_modes).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     let (i, nsattelites) = number::<u16>(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, hdop) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, alt) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, geoid_separation) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _age_of_diff) = take_until(",")(i)?; // TODO parse age of diff. corr.
-    let (i, _) = char(',')(i)?;
-    let (i, _station_id) = take_while(|c| c != ',')(i)?;
-    let (i, nav_status) = opt(preceded(char(','), one_of("SCUV")))(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, hdop) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, alt) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, geoid_separation) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _age_of_diff) = take_until(",").parse(i)?; // TODO parse age of diff. corr.
+    let (i, _) = char(',').parse(i)?;
+    let (i, _station_id) = take_while(|c| c != ',').parse(i)?;
+    let (i, nav_status) = opt(preceded(char(','), one_of("SCUV"))).parse(i)?;
     let nav_status = nav_status.map(|ch| match ch {
         'S' => NavigationStatus::Safe,
         'C' => NavigationStatus::Caution,

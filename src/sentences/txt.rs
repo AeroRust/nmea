@@ -1,5 +1,5 @@
 use arrayvec::ArrayString;
-use nom::{bytes::complete::take_while, character::complete::char, IResult};
+use nom::{bytes::complete::take_while, character::complete::char, IResult, Parser as _};
 
 use super::utils::number;
 use crate::{
@@ -44,11 +44,11 @@ fn txt_str(s: &str) -> IResult<&str, &str> {
 
 fn do_parse_txt(i: &str) -> IResult<&str, TxtData0<'_>> {
     let (i, count) = number::<u8>(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
     let (i, seq) = number::<u8>(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
     let (i, text_ident) = number::<u8>(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
     let (i, text) = txt_str(i)?;
 
     Ok((

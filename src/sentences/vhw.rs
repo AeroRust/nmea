@@ -2,7 +2,7 @@ use nom::{
     bytes::complete::take_until,
     character::complete::char,
     combinator::{map_res, opt},
-    IResult,
+    IResult, Parser as _,
 };
 
 use crate::{Error, NmeaSentence, SentenceType};
@@ -76,14 +76,14 @@ pub fn parse_vhw(sentence: NmeaSentence<'_>) -> Result<VhwData, Error<'_>> {
 /// Parses a float value
 /// and returns `None` if the float value can be parsed but the next field does not match the specified character.
 fn do_parse_float_with_char(c: char, i: &str) -> IResult<&str, Option<f64>> {
-    let (i, value) = opt(map_res(take_until(","), parse_float_num::<f64>))(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, tag) = opt(char(c))(i)?;
+    let (i, value) = opt(map_res(take_until(","), parse_float_num::<f64>)).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, tag) = opt(char(c)).parse(i)?;
     Ok((i, tag.and(value)))
 }
 
 fn do_parse_vhw(i: &str) -> IResult<&str, VhwData> {
-    let comma = char(',');
+    let mut comma = char(',');
 
     let (i, heading_true) = do_parse_float_with_char('T', i)?;
     let (i, _) = comma(i)?;

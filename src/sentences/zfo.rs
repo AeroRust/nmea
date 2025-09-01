@@ -1,6 +1,6 @@
 use arrayvec::ArrayString;
 use chrono::{Duration, NaiveTime};
-use nom::{bytes::complete::is_not, character::complete::char, combinator::opt};
+use nom::{bytes::complete::is_not, character::complete::char, combinator::opt, Parser as _};
 
 #[cfg(feature = "serde")]
 use serde_with::As;
@@ -40,14 +40,14 @@ pub struct ZfoData {
 
 fn do_parse_zfo(i: &str) -> Result<ZfoData, Error<'_>> {
     // 1. UTC Time or observation
-    let (i, fix_time) = opt(parse_hms)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, fix_time) = opt(parse_hms).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 2. Duration
-    let (i, fix_duration) = opt(parse_duration_hms)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, fix_duration) = opt(parse_duration_hms).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 12. Waypoint ID
-    let (_i, waypoint_id) = opt(is_not(",*"))(i)?;
+    let (_i, waypoint_id) = opt(is_not(",*")).parse(i)?;
 
     let waypoint_id = waypoint_id
         .map(array_string::<TEXT_PARAMETER_MAX_LEN>)

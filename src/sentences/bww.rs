@@ -1,6 +1,7 @@
 use arrayvec::ArrayString;
 use nom::{
     bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
+    Parser as _,
 };
 
 use crate::{
@@ -43,29 +44,29 @@ pub struct BwwData {
 
 fn do_parse_bww(i: &str) -> Result<BwwData, Error<'_>> {
     // 1. Bearing, degrees True
-    let (i, true_bearing) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, true_bearing) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 2. T = True
-    let (i, _) = opt(char('T'))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = opt(char('T')).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 3. Bearing, degrees Magnetic
-    let (i, magnetic_bearing) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, magnetic_bearing) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 4. M = Magnetic
-    let (i, _) = opt(char('M'))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = opt(char('M')).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 5. TO Waypoint ID
-    let (i, to_waypoint_id) = opt(is_not(","))(i)?;
+    let (i, to_waypoint_id) = opt(is_not(",")).parse(i)?;
 
     let to_waypoint_id = to_waypoint_id
         .map(array_string::<TEXT_PARAMETER_MAX_LEN>)
         .transpose()?;
 
     // 6. FROM Waypoint ID
-    let (i, _) = char(',')(i)?;
-    let (_i, from_waypoint_id) = opt(is_not(",*"))(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (_i, from_waypoint_id) = opt(is_not(",*")).parse(i)?;
 
     let from_waypoint_id = from_waypoint_id
         .map(array_string::<TEXT_PARAMETER_MAX_LEN>)

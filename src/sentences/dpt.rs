@@ -3,7 +3,7 @@ use nom::{
     character::complete::char,
     combinator::{map_res, opt},
     number::complete::double,
-    IResult,
+    IResult, Parser as _,
 };
 
 use crate::{
@@ -74,15 +74,15 @@ fn parse_positive_f64(input: &str) -> IResult<&str, f64> {
 }
 
 fn take_and_make_f64(input: &str) -> IResult<&str, f64> {
-    map_res(is_not(","), parse_float_num)(input)
+    map_res(is_not(","), parse_float_num).parse(input)
 }
 
 fn do_parse_dpt(i: &str) -> IResult<&str, DptData> {
-    let (i, water_depth) = opt(parse_positive_f64)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, offset) = opt(parse_positive_f64)(i)?;
-    let (i, _) = opt(char(','))(i)?;
-    let (i, max_range_scale) = opt(take_and_make_f64)(i)?;
+    let (i, water_depth) = opt(parse_positive_f64).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, offset) = opt(parse_positive_f64).parse(i)?;
+    let (i, _) = opt(char(',')).parse(i)?;
+    let (i, max_range_scale) = opt(take_and_make_f64).parse(i)?;
 
     let (i, leftover) = parse_until_end(i)?;
 

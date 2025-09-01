@@ -6,6 +6,7 @@ use nom::{
     character::complete::{char, one_of},
     combinator::opt,
     number::complete::float,
+    Parser as _,
 };
 
 use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, SentenceType};
@@ -98,69 +99,69 @@ pub fn parse_apa(sentence: NmeaSentence<'_>) -> Result<ApaData, Error<'_>> {
 }
 
 fn do_parse_apa(i: &str) -> Result<ApaData, Error<'_>> {
-    let (i, status_warning) = one_of("AV")(i)?;
+    let (i, status_warning) = one_of("AV").parse(i)?;
     let status_warning = match status_warning {
         'A' => Some(true),
         'V' => Some(false),
         _ => unreachable!(),
     };
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, status_cycle_warning) = one_of("AV")(i)?;
+    let (i, status_cycle_warning) = one_of("AV").parse(i)?;
     let status_cycle_warning = match status_cycle_warning {
         'A' => Some(true),
         'V' => Some(false),
         _ => unreachable!(),
     };
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, cross_track_error_magnitude) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, cross_track_error_magnitude) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, steer_direction) = one_of("LR")(i)?;
+    let (i, steer_direction) = one_of("LR").parse(i)?;
     let steer_direction = match steer_direction {
         'L' => Some(SteerDirection::Left),
         'R' => Some(SteerDirection::Right),
         _ => unreachable!(),
     };
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, cross_track_units) = one_of("NK")(i)?;
+    let (i, cross_track_units) = one_of("NK").parse(i)?;
     let cross_track_units = match cross_track_units {
         'N' => Some(CrossTrackUnits::Nautical),
         'K' => Some(CrossTrackUnits::Kilometers),
         _ => unreachable!(),
     };
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, status_arrived) = one_of("AV")(i)?;
+    let (i, status_arrived) = one_of("AV").parse(i)?;
     let status_arrived = match status_arrived {
         'A' => Some(true),
         'V' => Some(false),
         _ => unreachable!(),
     };
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, status_passed) = one_of("AV")(i)?;
+    let (i, status_passed) = one_of("AV").parse(i)?;
     let status_passed = match status_passed {
         'A' => Some(true),
         'V' => Some(false),
         _ => unreachable!(),
     };
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, bearing_origin_destination) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, bearing_origin_destination) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, magnetic_true) = one_of("MT")(i)?;
+    let (i, magnetic_true) = one_of("MT").parse(i)?;
     let magnetic_true = match magnetic_true {
         'M' => Some(MagneticTrue::Magnetic),
         'T' => Some(MagneticTrue::True),
         _ => unreachable!(),
     };
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (_i, waypoint_id) = opt(is_not("*"))(i)?;
+    let (_i, waypoint_id) = opt(is_not("*")).parse(i)?;
 
     Ok(ApaData {
         status_warning,

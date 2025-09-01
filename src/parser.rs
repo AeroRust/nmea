@@ -12,7 +12,7 @@ use crate::{
 };
 
 #[cfg(feature = "serde")]
-use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Serialize};
+use serde::{de::Visitor, ser::SerializeSeq};
 
 /// NMEA parser
 ///
@@ -1300,12 +1300,13 @@ impl BitOr<SentenceType> for SentenceMask {
 mod tests {
     use core::convert::TryFrom;
 
-    use quickcheck::{QuickCheck, TestResult};
-
-    use crate::{parse::checksum, sentences::FixType, Error, Nmea, SentenceType};
+    use crate::{parse::checksum, sentences::FixType, Error, SentenceType};
 
     #[cfg(feature = "GGA")]
-    fn check_parsing_lat_lon_in_gga(lat: f64, lon: f64) -> TestResult {
+    fn check_parsing_lat_lon_in_gga(lat: f64, lon: f64) -> quickcheck::TestResult {
+        use crate::Nmea;
+        use quickcheck::TestResult;
+
         fn scale(val: f64, max: f64) -> f64 {
             val % max
         }
@@ -1375,6 +1376,8 @@ mod tests {
     // FIXME: remove dependency on GGA and instead use quickcheck for `do_parse_lat_lon` parser
     #[cfg(feature = "GGA")]
     fn test_parsing_lat_lon_in_gga() {
+        use quickcheck::{QuickCheck, TestResult};
+
         // regressions found by quickcheck,
         // explicit because of quickcheck use random gen
         assert!(!check_parsing_lat_lon_in_gga(0., 57.89528).is_failure());

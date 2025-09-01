@@ -2,6 +2,7 @@ use arrayvec::ArrayString;
 use chrono::NaiveTime;
 use nom::{
     bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
+    Parser as _,
 };
 
 use crate::{
@@ -44,39 +45,39 @@ pub struct BwcData {
 /// ```
 fn do_parse_bwc(i: &str) -> Result<BwcData, Error<'_>> {
     // 1. UTC Time or observation
-    let (i, fix_time) = opt(parse_hms)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, fix_time) = opt(parse_hms).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 2. Waypoint Latitude
     // 3. N = North, S = South
     // 4. Waypoint Longitude
     // 5. E = East, W = West
     let (i, lat_lon) = parse_lat_lon(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 6. Bearing, degrees True
-    let (i, true_bearing) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, true_bearing) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 7. T = True
-    let (i, _) = opt(char('T'))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = opt(char('T')).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 8. Bearing, degrees Magnetic
-    let (i, magnetic_bearing) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, magnetic_bearing) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 9. M = Magnetic
-    let (i, _) = opt(char('M'))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = opt(char('M')).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 10. Distance, Nautical Miles
-    let (i, distance) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, distance) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 11. N = Nautical Miles
-    let (i, _) = opt(char('N'))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = opt(char('N')).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 12. Waypoint ID
-    let (_i, waypoint_id) = opt(is_not(",*"))(i)?;
+    let (_i, waypoint_id) = opt(is_not(",*")).parse(i)?;
 
     // 13. FAA mode indicator (NMEA 2.3 and later, optional)
 

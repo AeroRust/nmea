@@ -2,7 +2,7 @@ use nom::{
     bytes::complete::take_until,
     character::complete::char,
     combinator::{map_res, opt},
-    IResult,
+    IResult, Parser as _,
 };
 
 use super::utils::parse_float_num;
@@ -53,9 +53,9 @@ pub fn parse_hdt(sentence: NmeaSentence<'_>) -> Result<HdtData, Error<'_>> {
 }
 
 fn do_parse_hdt(i: &str) -> IResult<&str, HdtData> {
-    let (i, heading) = opt(map_res(take_until(","), parse_float_num::<f32>))(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _) = char('T')(i)?;
+    let (i, heading) = opt(map_res(take_until(","), parse_float_num::<f32>)).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _) = char('T').parse(i)?;
     Ok((i, HdtData { heading }))
 }
 

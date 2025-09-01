@@ -82,7 +82,7 @@ where
 }
 
 fn gsa_prn_fields_parse(i: &str) -> IResult<&str, Vec<Option<u32>, 18>> {
-    many0(terminated(opt(number::<u32>), char(',')))(i)
+    many0(terminated(opt(number::<u32>), char(','))).parse(i)
 }
 
 type GsaTail = (Vec<Option<u32>, 18>, Option<f32>, Option<f32>, Option<f32>);
@@ -90,9 +90,9 @@ type GsaTail = (Vec<Option<u32>, 18>, Option<f32>, Option<f32>, Option<f32>);
 fn do_parse_gsa_tail(i: &str) -> IResult<&str, GsaTail> {
     let (i, prns) = gsa_prn_fields_parse(i)?;
     let (i, pdop) = float(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
     let (i, hdop) = float(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
     let (i, vdop) = float(i)?;
     Ok((i, (prns, Some(pdop), Some(hdop), Some(vdop))))
 }
@@ -105,15 +105,16 @@ fn do_parse_empty_gsa_tail(i: &str) -> IResult<&str, GsaTail> {
     value(
         (Vec::new(), None, None, None),
         all_consuming(take_while1(is_comma)),
-    )(i)
+    )
+    .parse(i)
 }
 
 fn do_parse_gsa(i: &str) -> IResult<&str, GsaData> {
-    let (i, mode1) = one_of("MA")(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, mode2) = one_of("123")(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, mut tail) = alt((do_parse_empty_gsa_tail, do_parse_gsa_tail))(i)?;
+    let (i, mode1) = one_of("MA").parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, mode2) = one_of("123").parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, mut tail) = alt((do_parse_empty_gsa_tail, do_parse_gsa_tail)).parse(i)?;
     Ok((
         i,
         GsaData {

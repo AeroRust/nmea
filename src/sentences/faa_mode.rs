@@ -1,4 +1,4 @@
-use nom::{character::complete::anychar, combinator::opt, IResult};
+use nom::{character::complete::anychar, combinator::opt, IResult, Parser as _};
 
 use super::{nom_parse_failure, FixType};
 
@@ -82,7 +82,7 @@ pub(crate) fn parse_faa_modes(i: &str) -> IResult<&str, FaaModes> {
         sys_state1: None,
     };
 
-    let (rest2, sym) = opt(anychar)(rest)?;
+    let (rest2, sym) = opt(anychar).parse(rest)?;
 
     match sym {
         Some(sym) => {

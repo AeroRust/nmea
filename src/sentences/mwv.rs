@@ -3,7 +3,7 @@ use nom::{
     combinator::opt,
     number::complete::float,
     sequence::preceded,
-    IResult,
+    IResult, Parser as _,
 };
 
 use crate::{parse::NmeaSentence, Error, SentenceType};
@@ -76,16 +76,16 @@ pub fn parse_mwv(sentence: NmeaSentence<'_>) -> Result<MwvData, Error<'_>> {
 }
 
 fn do_parse_mwv(i: &str) -> IResult<&str, MwvData> {
-    let (i, direction) = opt(float)(i)?;
-    let (i, reference_type) = opt(preceded(char(','), one_of("RT")))(i)?;
+    let (i, direction) = opt(float).parse(i)?;
+    let (i, reference_type) = opt(preceded(char(','), one_of("RT"))).parse(i)?;
     let reference_type = reference_type.map(|ch| match ch {
         'R' => MwvReference::Relative,
         'T' => MwvReference::Theoretical,
         _ => unreachable!(),
     });
-    let (i, _) = char(',')(i)?;
-    let (i, speed) = opt(float)(i)?;
-    let (i, wind_speed_type) = opt(preceded(char(','), one_of("KMNS")))(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, speed) = opt(float).parse(i)?;
+    let (i, wind_speed_type) = opt(preceded(char(','), one_of("KMNS"))).parse(i)?;
     let wind_speed_type = wind_speed_type.map(|ch| match ch {
         'K' => MwvWindSpeedUnits::KilometersPerHour,
         'M' => MwvWindSpeedUnits::MetersPerSecond,
@@ -93,7 +93,7 @@ fn do_parse_mwv(i: &str) -> IResult<&str, MwvData> {
         'S' => MwvWindSpeedUnits::MilesPerHour,
         _ => unreachable!(),
     });
-    let (i, is_data_valid) = preceded(char(','), one_of("AV"))(i)?;
+    let (i, is_data_valid) = preceded(char(','), one_of("AV")).parse(i)?;
     let is_data_valid = match is_data_valid {
         'A' => true,
         'V' => false,

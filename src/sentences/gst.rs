@@ -1,6 +1,8 @@
 use crate::{parse::NmeaSentence, sentences::utils::parse_hms, Error, SentenceType};
 use chrono::NaiveTime;
-use nom::{character::complete::char, combinator::opt, number::complete::float, IResult};
+use nom::{
+    character::complete::char, combinator::opt, number::complete::float, IResult, Parser as _,
+};
 
 /// GST - GPS Pseudorange Noise Statistics
 /// ```text
@@ -36,28 +38,28 @@ pub struct GstData {
 }
 
 fn do_parse_gst(i: &str) -> IResult<&str, GstData> {
-    let (i, time) = opt(parse_hms)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, time) = opt(parse_hms).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, rms_sd) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, rms_sd) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, ellipse_semi_major_sd) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, ellipse_semi_major_sd) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, ellipse_semi_minor_sd) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, ellipse_semi_minor_sd) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, err_ellipse_orientation) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, err_ellipse_orientation) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, lat_sd) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, lat_sd) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, long_sd) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, long_sd) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, alt_sd) = opt(float)(i)?;
+    let (i, alt_sd) = opt(float).parse(i)?;
 
     Ok((
         i,

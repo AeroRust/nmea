@@ -3,7 +3,7 @@ use nom::{
     combinator::opt,
     number::complete::double,
     sequence::preceded,
-    IResult,
+    IResult, Parser as _,
 };
 
 use crate::{parse::NmeaSentence, Error, SentenceType};
@@ -61,8 +61,8 @@ pub fn parse_mtw(sentence: NmeaSentence<'_>) -> Result<MtwData, Error<'_>> {
 }
 
 fn do_parse_mtw(i: &str) -> IResult<&str, MtwData> {
-    let (i, temperature_value) = opt(double)(i)?;
-    preceded(char(','), one_of("C"))(i)?;
+    let (i, temperature_value) = opt(double).parse(i)?;
+    preceded(char(','), one_of("C")).parse(i)?;
     Ok((
         i,
         MtwData {

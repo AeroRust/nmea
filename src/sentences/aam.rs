@@ -6,6 +6,7 @@ use nom::{
     character::complete::{char, one_of},
     combinator::opt,
     number::complete::float,
+    Parser as _,
 };
 
 use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, SentenceType};
@@ -55,29 +56,29 @@ pub fn parse_aam(sentence: NmeaSentence<'_>) -> Result<AamData, Error<'_>> {
 }
 
 fn do_parse_aam(i: &str) -> Result<AamData, Error<'_>> {
-    let (i, arrival_circle_entered) = one_of("AV")(i)?;
+    let (i, arrival_circle_entered) = one_of("AV").parse(i)?;
     let arrival_circle_entered = match arrival_circle_entered {
         'A' => Some(true),
         'V' => Some(false),
         _ => unreachable!(),
     };
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, perpendicular_passed) = one_of("AV")(i)?;
+    let (i, perpendicular_passed) = one_of("AV").parse(i)?;
     let perpendicular_passed = match perpendicular_passed {
         'A' => Some(true),
         'V' => Some(false),
         _ => unreachable!(),
     };
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, arrival_circle_radius) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, arrival_circle_radius) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, radius_units) = opt(char('N'))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, radius_units) = opt(char('N')).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (_i, waypoint_id) = opt(is_not("*"))(i)?;
+    let (_i, waypoint_id) = opt(is_not("*")).parse(i)?;
 
     Ok(AamData {
         arrival_circle_entered,

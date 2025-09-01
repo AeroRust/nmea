@@ -5,7 +5,7 @@ use nom::{
     character::complete::char,
     combinator::map_res,
     sequence::preceded,
-    IResult,
+    IResult, Parser as _,
 };
 
 use cfg_if::cfg_if;
@@ -66,20 +66,21 @@ fn parse_hex(data: &str) -> Result<u8, &'static str> {
 }
 
 fn parse_checksum(i: &str) -> IResult<&str, u8> {
-    map_res(preceded(char('*'), take(2usize)), parse_hex)(i)
+    map_res(preceded(char('*'), take(2usize)), parse_hex).parse(i)
 }
 
 fn parse_sentence_type(i: &str) -> IResult<&str, SentenceType> {
     map_res(take(3usize), |sentence_type: &str| {
         SentenceType::try_from(sentence_type).map_err(|_| "Unknown sentence type")
-    })(i)
+    })
+    .parse(i)
 }
 
 fn do_parse_nmea_sentence(i: &str) -> IResult<&str, NmeaSentence<'_>> {
-    let (i, talker_id) = preceded(char('$'), take(2usize))(i)?;
+    let (i, talker_id) = preceded(char('$'), take(2usize)).parse(i)?;
     let (i, message_id) = parse_sentence_type(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, data) = take_until("*")(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, data) = take_until("*").parse(i)?;
     let (i, checksum) = parse_checksum(i)?;
 
     Ok((

@@ -7,6 +7,7 @@ use nom::{
     combinator::{map_parser, opt},
     number::complete::float,
     sequence::preceded,
+    Parser as _,
 };
 
 /// BOD - Bearing - Waypoint to Waypoint
@@ -39,26 +40,26 @@ pub struct BodData {
 /// ```
 fn do_parse_bod(i: &str) -> Result<BodData, Error<'_>> {
     // 1. Bearing Degrees, True
-    let (i, bearing_true) = opt(map_parser(take_until(","), float))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, bearing_true) = opt(map_parser(take_until(","), float)).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 2. T = True
-    let (i, _) = char('T')(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char('T').parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 3. Bearing Degrees, Magnetic
-    let (i, bearing_magnetic) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, bearing_magnetic) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 4. M = Magnetic
-    let (i, _) = char('M')(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char('M').parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     // 5. Destination Waypoint
-    let (i, to_waypoint) = opt(is_not(",*"))(i)?;
+    let (i, to_waypoint) = opt(is_not(",*")).parse(i)?;
 
     // 6. origin Waypoint
-    let from_waypoint = opt(preceded(char(','), is_not("*")))(i)?.1;
+    let from_waypoint = opt(preceded(char(','), is_not("*"))).parse(i)?.1;
 
     // 7. Checksum
 

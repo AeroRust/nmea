@@ -4,7 +4,7 @@ use nom::{
     character::complete::{char, one_of},
     combinator::{map_res, opt},
     error::ErrorKind,
-    IResult,
+    IResult, Parser as _,
 };
 
 use super::utils::{parse_float_num, parse_hms, parse_number_in_range};
@@ -134,29 +134,29 @@ pub fn parse_ttm(sentence: NmeaSentence<'_>) -> Result<TtmData, Error<'_>> {
 }
 
 fn do_parse_ttm(i: &str) -> IResult<&str, TtmData> {
-    let (i, target_number) = opt(|i| parse_number_in_range::<u8>(i, 0, 99))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, target_number) = opt(|i| parse_number_in_range::<u8>(i, 0, 99)).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, target_distance) = opt(map_res(take_until(","), parse_float_num::<f32>))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, target_distance) = opt(map_res(take_until(","), parse_float_num::<f32>)).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     let (i, bearing_from_own_ship) = parse_ttm_angle(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, target_speed) = opt(map_res(take_until(","), parse_float_num::<f32>))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, target_speed) = opt(map_res(take_until(","), parse_float_num::<f32>)).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
     let (i, target_course) = parse_ttm_angle(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, distance_of_cpa) = opt(map_res(take_until(","), parse_float_num::<f32>))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, distance_of_cpa) = opt(map_res(take_until(","), parse_float_num::<f32>)).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, time_to_cpa) = opt(map_res(take_until(","), parse_float_num::<f32>))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, time_to_cpa) = opt(map_res(take_until(","), parse_float_num::<f32>)).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, unit_char) = opt(one_of("KNS"))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, unit_char) = opt(one_of("KNS")).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     let unit = unit_char.map(|unit| match unit {
         'K' => TtmDistanceUnit::Kilometer,
         'N' => TtmDistanceUnit::NauticalMile,
@@ -164,8 +164,8 @@ fn do_parse_ttm(i: &str) -> IResult<&str, TtmData> {
         _ => unreachable!(),
     });
 
-    let (i, target_name) = take_until(",")(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, target_name) = take_until(",").parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     let target_name = if target_name.is_empty() {
         None
     } else {
@@ -177,8 +177,8 @@ fn do_parse_ttm(i: &str) -> IResult<&str, TtmData> {
         })?)
     };
 
-    let (i, target_status_char) = opt(one_of("LQT"))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, target_status_char) = opt(one_of("LQT")).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     let target_status = target_status_char.map(|char| match char {
         'L' => TtmStatus::Lost,
         'Q' => TtmStatus::Query,
@@ -186,14 +186,14 @@ fn do_parse_ttm(i: &str) -> IResult<&str, TtmData> {
         _ => unreachable!(),
     });
 
-    let (i, is_target_reference_char) = opt(one_of("R"))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, is_target_reference_char) = opt(one_of("R")).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     let is_target_reference = is_target_reference_char.is_some();
 
-    let (i, time_of_data) = opt(parse_hms)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, time_of_data) = opt(parse_hms).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, type_of_acquisition_char) = opt(one_of("AMR"))(i)?;
+    let (i, type_of_acquisition_char) = opt(one_of("AMR")).parse(i)?;
     let type_of_acquisition = type_of_acquisition_char.map(|char| match char {
         'A' => TtmTypeOfAcquisition::Automatic,
         'M' => TtmTypeOfAcquisition::Manual,
@@ -222,10 +222,10 @@ fn do_parse_ttm(i: &str) -> IResult<&str, TtmData> {
 }
 
 fn parse_ttm_angle(i: &str) -> IResult<&str, Option<TtmAngle>> {
-    let (i, angle) = opt(map_res(take_until(","), parse_float_num::<f32>))(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, angle) = opt(map_res(take_until(","), parse_float_num::<f32>)).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
 
-    let (i, reference) = opt(one_of("RT"))(i)?;
+    let (i, reference) = opt(one_of("RT")).parse(i)?;
 
     Ok((
         i,

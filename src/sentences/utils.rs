@@ -9,7 +9,7 @@ use nom::{
     combinator::{all_consuming, eof, map, map_parser, map_res},
     number::complete::{double, float},
     sequence::terminated,
-    IResult,
+    IResult, Parser as _,
 };
 
 #[cfg(not(feature = "std"))]
@@ -46,7 +46,8 @@ pub fn parse_hms(i: &str) -> IResult<&str, NaiveTime> {
             )
             .ok_or("Invalid time")
         },
-    )(i)
+    )
+    .parse(i)
 }
 
 /// The number of milliseconds in a second.
@@ -90,19 +91,20 @@ pub fn parse_duration_hms(i: &str) -> IResult<&str, Duration> {
                     + (seconds.fract() * 1_000f32).round() as i64,
             ))
         },
-    )(i)
+    )
+    .parse(i)
 }
 
 pub fn do_parse_lat_lon(i: &str) -> IResult<&str, (f64, f64)> {
-    let (i, lat_deg) = map_res(take(2usize), parse_num::<u8>)(i)?;
+    let (i, lat_deg) = map_res(take(2usize), parse_num::<u8>).parse(i)?;
     let (i, lat_min) = double(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, lat_dir) = one_of("NS")(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, lon_deg) = map_res(take(3usize), parse_num::<u8>)(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, lat_dir) = one_of("NS").parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, lon_deg) = map_res(take(3usize), parse_num::<u8>).parse(i)?;
     let (i, lon_min) = double(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, lon_dir) = one_of("EW")(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, lon_dir) = one_of("EW").parse(i)?;
 
     let mut lat = f64::from(lat_deg) + lat_min / 60.;
     if lat_dir == 'S' {
@@ -125,8 +127,8 @@ pub fn do_parse_lat_lon(i: &str) -> IResult<&str, (f64, f64)> {
 /// "14.2,W" => -14.2 <br>
 pub fn do_parse_magnetic_variation(i: &str) -> IResult<&str, f32> {
     let (i, variation_deg) = float(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, direction) = one_of("EW")(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, direction) = one_of("EW").parse(i)?;
     let variation_deg = match direction {
         'E' => variation_deg,
         'W' => -variation_deg,
@@ -136,14 +138,15 @@ pub fn do_parse_magnetic_variation(i: &str) -> IResult<&str, f32> {
 }
 
 pub(crate) fn parse_lat_lon(i: &str) -> IResult<&str, Option<(f64, f64)>> {
-    alt((map(tag(",,,"), |_| None), map(do_parse_lat_lon, Some)))(i)
+    alt((map(tag(",,,"), |_| None), map(do_parse_lat_lon, Some))).parse(i)
 }
 
 pub(crate) fn parse_magnetic_variation(i: &str) -> IResult<&str, Option<f32>> {
     alt((
         map(tag(","), |_| None),
         map(do_parse_magnetic_variation, Some),
-    ))(i)
+    ))
+    .parse(i)
 }
 
 pub(crate) fn parse_date(i: &str) -> IResult<&str, NaiveDate> {
@@ -175,7 +178,8 @@ pub(crate) fn parse_date(i: &str) -> IResult<&str, NaiveDate> {
             }
             NaiveDate::from_ymd_opt(year, month, day).ok_or("Invalid date")
         },
-    )(i)
+    )
+    .parse(i)
 }
 
 pub(crate) fn parse_num<I: str::FromStr>(data: &str) -> Result<I, &'static str> {
@@ -187,7 +191,7 @@ pub(crate) fn parse_float_num<T: str::FromStr>(input: &str) -> Result<T, &'stati
 }
 
 pub(crate) fn number<T: str::FromStr>(i: &str) -> IResult<&str, T> {
-    map_res(digit1, parse_num)(i)
+    map_res(digit1, parse_num).parse(i)
 }
 
 pub(crate) fn parse_number_in_range<T>(
@@ -203,7 +207,8 @@ where
             return Err("Parsed number is outside of the expected range");
         }
         Ok(parsed_num)
-    })(i)
+    })
+    .parse(i)
 }
 
 /// Parses a given `&str` slice to an owned `ArrayString` with a given `MAX_LEN`.
@@ -221,7 +226,7 @@ pub(crate) fn array_string<const MAX_LEN: usize>(
 }
 
 pub(crate) fn parse_until_end(input: &str) -> IResult<&str, &str> {
-    all_consuming(terminated(take_while(|_| true), eof))(input)
+    all_consuming(terminated(take_while(|_| true), eof)).parse(input)
 }
 
 #[cfg(test)]

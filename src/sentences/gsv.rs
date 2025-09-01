@@ -2,7 +2,7 @@ use heapless::Vec;
 use nom::{
     character::complete::char,
     combinator::{cond, opt, rest_len},
-    IResult,
+    IResult, Parser as _,
 };
 
 use crate::{
@@ -67,13 +67,13 @@ pub struct GsvData {
 
 fn parse_gsv_sat_info(i: &str) -> IResult<&str, Satellite> {
     let (i, prn) = number::<u32>(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, elevation) = opt(number::<i32>)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, azimuth) = opt(number::<i32>)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, snr) = opt(number::<i32>)(i)?;
-    let (i, _) = cond(rest_len(i)?.1 > 0, char(','))(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, elevation) = opt(number::<i32>).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, azimuth) = opt(number::<i32>).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, snr) = opt(number::<i32>).parse(i)?;
+    let (i, _) = cond(rest_len(i)?.1 > 0, char(',')).parse(i)?;
     Ok((
         i,
         Satellite {
@@ -88,16 +88,16 @@ fn parse_gsv_sat_info(i: &str) -> IResult<&str, Satellite> {
 
 fn do_parse_gsv(i: &str) -> IResult<&str, GsvData> {
     let (i, number_of_sentences) = number::<u16>(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
     let (i, sentence_num) = number::<u16>(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
     let (i, sats_in_view) = number::<u16>(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
     let sats = Vec::<Option<Satellite>, 4>::new();
 
     // We loop through the indices and parse the satellite data
     let (i, sats) = (0..4).try_fold((i, sats), |(i, mut sats), sat_index| {
-        let (i, sat) = opt(parse_gsv_sat_info)(i)?;
+        let (i, sat) = opt(parse_gsv_sat_info).parse(i)?;
 
         sats.insert(sat_index, sat).unwrap();
 

@@ -68,7 +68,7 @@ serde = [
     "arrayvec/serde"
 ]
 
-## Enable derives of `defmt@0.3` formatting for embedded platforms
+## Enable derives of `defmt@1.0` formatting for embedded platforms
 defmt = ["dep:defmt", "heapless/defmt"]
 
 ## Enable the documentation of features (disabled by default to remove unnecessary to the functionality dependencies)

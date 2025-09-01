@@ -72,10 +72,10 @@ jobs:
         # this includes default features, `std` and `all-sentences`
         run: cargo test -F serde
 
-      - name: Test feature defmt-03
+      - name: Test feature defmt
         # this includes default features, `std` and `all-sentences`
         if: ${{ matrix.os != 'windows-latest' }}
-        run: cargo test -F defmt-03
+        run: cargo test -F defmt
 
       - name: Test (Release)
         run: cargo test --release --no-default-features
@@ -84,10 +84,10 @@ jobs:
         # this includes default features, `std` and `all-sentences`
         run: cargo test --release -F serde
 
-      - name: Test (Release) feature defmt-03
+      - name: Test (Release) feature defmt
         if: ${{ matrix.os != 'windows-latest' }}
         # this includes default features, `std` and `all-sentences`
-        run: cargo test --release -F defmt-03
+        run: cargo test --release -F defmt
 
   bench:
     name: Benches

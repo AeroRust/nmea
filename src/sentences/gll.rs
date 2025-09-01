@@ -2,7 +2,7 @@ use chrono::NaiveTime;
 use nom::{
     character::complete::{anychar, char, one_of},
     combinator::opt,
-    IResult,
+    IResult, Parser as _,
 };
 
 use super::{faa_mode::parse_faa_mode, nom_parse_failure, FaaMode};
@@ -68,17 +68,17 @@ pub fn parse_gll(sentence: NmeaSentence<'_>) -> Result<GllData, Error<'_>> {
 
 fn do_parse_gll(i: &str) -> IResult<&str, GllData> {
     let (i, lat_lon) = parse_lat_lon(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, fix_time) = opt(parse_hms)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, valid) = one_of("AV")(i)?; // A: valid, V: invalid
+    let (i, _) = char(',').parse(i)?;
+    let (i, fix_time) = opt(parse_hms).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, valid) = one_of("AV").parse(i)?; // A: valid, V: invalid
     let valid = match valid {
         'A' => true,
         'V' => false,
         _ => unreachable!(),
     };
-    let (i, _) = char(',')(i)?;
-    let (rest, mode) = opt(anychar)(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (rest, mode) = opt(anychar).parse(i)?;
     let faa_mode = mode
         .map(|mode| parse_faa_mode(mode).ok_or_else(|| nom_parse_failure(i)))
         .transpose()?;

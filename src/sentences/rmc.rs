@@ -3,7 +3,7 @@ use nom::{
     character::complete::{anychar, char, one_of},
     combinator::{cond, map_res, opt},
     number::complete::float,
-    IResult,
+    IResult, Parser as _,
 };
 
 use crate::{
@@ -96,46 +96,47 @@ pub struct RmcData {
 
 fn do_parse_rmc(i: &str) -> IResult<&str, RmcData> {
     // 1.  UTC of position fix, `hh` is hours, `mm` is minutes, `ss.ss` is seconds.
-    let (i, fix_time) = opt(parse_hms)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, fix_time) = opt(parse_hms).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 2.  Status, `A` = Valid, `V` = Warning
-    let (i, status_of_fix) = one_of("ADV")(i)?;
+    let (i, status_of_fix) = one_of("ADV").parse(i)?;
     let status_of_fix = match status_of_fix {
         'A' => RmcStatusOfFix::Autonomous,
         'D' => RmcStatusOfFix::Differential,
         'V' => RmcStatusOfFix::Invalid,
         _ => unreachable!(),
     };
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 3.  Latitude, `dd` is degrees. `mm.mm` is minutes.
     // 4.  `N` or `S`
     // 5.  Longitude, `ddd` is degrees. `mm.mm` is minutes.
     // 6.  `E` or `W`
     let (i, lat_lon) = parse_lat_lon(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 7.  Speed over ground, knots
-    let (i, speed_over_ground) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, speed_over_ground) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 8.  Track made good, degrees true
-    let (i, true_course) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, true_course) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 9.  Date, `ddmmyy`
-    let (i, fix_date) = opt(parse_date)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, fix_date) = opt(parse_date).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     // 10. Magnetic Variation, degrees
     // // 11. `E` or `W`
     let (i, magnetic_variation) = parse_magnetic_variation(i)?;
-    let (i, next) = opt(char(','))(i)?;
+    let (i, next) = opt(char(',')).parse(i)?;
     // 12. FAA mode indicator (NMEA 2.3 and later)
     let (i, faa_mode) = cond(
         next.is_some(),
         opt(map_res(anychar, |c| parse_faa_mode(c).ok_or("argh"))),
-    )(i)?;
-    let (i, next) = opt(char(','))(i)?;
+    )
+    .parse(i)?;
+    let (i, next) = opt(char(',')).parse(i)?;
     // 13. Nav Status (NMEA 4.1 and later)
     //     `A` = autonomous, `D` = differential, `E` = Estimated,
     //     `M` = Manual input mode, `N` = not valid, `S` = Simulator, `V` = Valid
-    let (i, nav_status) = cond(next.is_some(), opt(parse_navigation_status))(i)?;
+    let (i, nav_status) = cond(next.is_some(), opt(parse_navigation_status)).parse(i)?;
 
     Ok((
         i,
@@ -155,7 +156,7 @@ fn do_parse_rmc(i: &str) -> IResult<&str, RmcData> {
 }
 
 fn parse_navigation_status(i: &str) -> IResult<&str, RmcNavigationStatus> {
-    let (i, c) = one_of("ADEMNSV")(i)?;
+    let (i, c) = one_of("ADEMNSV").parse(i)?;
     let status = match c {
         'A' => RmcNavigationStatus::Autonomous,
         'D' => RmcNavigationStatus::Differential,

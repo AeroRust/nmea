@@ -1,4 +1,6 @@
-use nom::{character::complete::char, combinator::opt, number::complete::float, IResult};
+use nom::{
+    character::complete::char, combinator::opt, number::complete::float, IResult, Parser as _,
+};
 
 use crate::{parse::NmeaSentence, Error, SentenceType};
 
@@ -26,20 +28,20 @@ pub struct VtgData {
 }
 
 fn do_parse_vtg(i: &str) -> IResult<&str, VtgData> {
-    let (i, true_course) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _) = opt(char('T'))(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _magn_course) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _) = opt(char('M'))(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, knots_ground_speed) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _) = opt(char('N'))(i)?;
-    let (i, kph_ground_speed) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _) = opt(char('K'))(i)?;
+    let (i, true_course) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _) = opt(char('T')).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _magn_course) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _) = opt(char('M')).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, knots_ground_speed) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _) = opt(char('N')).parse(i)?;
+    let (i, kph_ground_speed) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _) = opt(char('K')).parse(i)?;
 
     Ok((
         i,

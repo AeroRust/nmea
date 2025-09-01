@@ -4,7 +4,7 @@ use nom::{
     character::complete::{char, one_of},
     combinator::{map_res, opt},
     number::complete::float,
-    IResult,
+    IResult, Parser as _,
 };
 
 use crate::{
@@ -46,23 +46,23 @@ pub struct GgaData {
 }
 
 fn do_parse_gga(i: &str) -> IResult<&str, GgaData> {
-    let (i, fix_time) = opt(parse_hms)(i)?;
-    let (i, _) = char(',')(i)?;
+    let (i, fix_time) = opt(parse_hms).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
     let (i, lat_lon) = parse_lat_lon(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, fix_quality) = one_of("012345678")(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, fix_satellites) = opt(number::<u32>)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, hdop) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, altitude) = opt(map_res(take_until(","), parse_float_num::<f32>))(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _) = opt(char('M'))(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, geoid_height) = opt(map_res(take_until(","), parse_float_num::<f32>))(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _) = opt(char('M'))(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, fix_quality) = one_of("012345678").parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, fix_satellites) = opt(number::<u32>).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, hdop) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, altitude) = opt(map_res(take_until(","), parse_float_num::<f32>)).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _) = opt(char('M')).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, geoid_height) = opt(map_res(take_until(","), parse_float_num::<f32>)).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _) = opt(char('M')).parse(i)?;
 
     Ok((
         i,

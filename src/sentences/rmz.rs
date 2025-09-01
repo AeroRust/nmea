@@ -1,6 +1,6 @@
 use nom::{
     character::complete::{char, one_of},
-    IResult,
+    IResult, Parser as _,
 };
 
 use crate::sentences::utils::number;
@@ -42,10 +42,10 @@ pub struct PgrmzData {
 
 fn do_parse_pgrmz(i: &str) -> IResult<&str, PgrmzData> {
     let (i, altitude) = number::<u32>(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _) = char('f')(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, fix_type) = one_of("123")(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _) = char('f').parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, fix_type) = one_of("123").parse(i)?;
     let fix_type = match fix_type {
         '1' => PgrmzFixType::NoFix,
         '2' => PgrmzFixType::TwoDimensional,

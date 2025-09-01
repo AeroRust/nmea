@@ -1,6 +1,7 @@
 use arrayvec::ArrayString;
 use nom::{
     bytes::complete::is_not, character::complete::char, combinator::opt, number::complete::float,
+    Parser as _,
 };
 
 use super::utils::array_string;
@@ -46,20 +47,20 @@ pub struct WncData {
 }
 
 pub fn do_parse_wnc(i: &str) -> Result<WncData, Error<'_>> {
-    let (i, distance_nautical_miles) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _) = opt(char('N'))(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, distance_kilometers) = opt(float)(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, _) = opt(char('K'))(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, waypoint_id_destination) = opt(is_not(","))(i)?;
+    let (i, distance_nautical_miles) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _) = opt(char('N')).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, distance_kilometers) = opt(float).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, _) = opt(char('K')).parse(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (i, waypoint_id_destination) = opt(is_not(",")).parse(i)?;
     let waypoint_id_destination = waypoint_id_destination
         .map(array_string::<TEXT_PARAMETER_MAX_LEN>)
         .transpose()?;
-    let (i, _) = char(',')(i)?;
-    let (_i, waypoint_id_origin) = opt(is_not(","))(i)?;
+    let (i, _) = char(',').parse(i)?;
+    let (_i, waypoint_id_origin) = opt(is_not(",")).parse(i)?;
     let waypoint_id_origin = waypoint_id_origin
         .map(array_string::<TEXT_PARAMETER_MAX_LEN>)
         .transpose()?;
