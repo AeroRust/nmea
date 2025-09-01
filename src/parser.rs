@@ -49,6 +49,8 @@ pub struct Nmea {
     pub speed_over_ground: Option<f32>,
     pub true_course: Option<f32>,
     pub num_of_fix_satellites: Option<u32>,
+    pub gsa_mode1: Option<gsa::GsaMode1>,
+    pub gsa_mode2: Option<gsa::GsaMode2>,
     pub hdop: Option<f32>,
     pub vdop: Option<f32>,
     pub pdop: Option<f32>,
@@ -208,6 +210,8 @@ impl<'a> Nmea {
 
     fn merge_gsa_data(&mut self, gsa: GsaData) {
         self.fix_satellites_prns = Some(gsa.fix_sats_prn);
+        self.gsa_mode1 = Some(gsa.mode1);
+        self.gsa_mode2 = Some(gsa.mode2);
         self.hdop = gsa.hdop;
         self.vdop = gsa.vdop;
         self.pdop = gsa.pdop;
