@@ -50,7 +50,7 @@ pub struct GsaData {
     pub vdop: Option<f32>,
 }
 
-/// This function is take from `nom`, see [`nom::multi::many0`]
+/// This function is take from `nom`, see `nom::multi::many0` (requires `alloc`)
 /// with one difference - we use a [`heapless::Vec`]
 /// because we want `no_std` & no `alloc`.
 ///
@@ -109,34 +109,6 @@ where
         }
     }
 }
-
-// fn many0<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O, 18>, E>
-// where
-//     I: Clone + Input,
-//     F: Parser<I, Output = O, Error = E>,
-//     E: ParseError<I>,
-//     O: core::fmt::Debug,
-// {
-//     move |mut i: I| {
-//         let mut acc = Vec::<_, 18>::new();
-//         loop {
-//             let len = i.input_len();
-//             match f.parse(i.clone()) {
-//                 Err(Err::Error(_)) => return Ok((i, acc)),
-//                 Err(e) => return Err(e),
-//                 Ok((i1, o)) => {
-//                     // infinite loop check: the parser must always consume
-//                     if i1.input_len() == len {
-//                         return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many0)));
-//                     }
-
-//                     i = i1;
-//                     acc.push(o).unwrap();
-//                 }
-//             }
-//         }
-//     }
-// }
 
 fn gsa_prn_fields_parse(i: &str) -> IResult<&str, Vec<Option<u32>, 18>> {
     many0(terminated(opt(number::<u32>), char(','))).parse(i)
