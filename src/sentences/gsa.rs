@@ -7,7 +7,7 @@ use nom::{
     error::{ErrorKind, ParseError},
     number::complete::float,
     sequence::terminated,
-    Err, IResult, Input, Parser,
+    Check, Err, IResult, Input, Mode, OutputM, OutputMode, PResult, Parser,
 };
 
 use crate::{parse::NmeaSentence, sentences::utils::number, Error, SentenceType};
@@ -50,36 +50,93 @@ pub struct GsaData {
     pub vdop: Option<f32>,
 }
 
-/// This function is take from `nom`, see `nom::multi::many0`
+/// This function is take from `nom`, see [`nom::multi::many0`]
 /// with one difference - we use a [`heapless::Vec`]
-/// because we want `no_std` & no `alloc`
-fn many0<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O, 18>, E>
+/// because we want `no_std` & no `alloc`.
+///
+/// If you try to parse more than 18 items, it will silently drop them
+pub fn many0<I, F>(
+    f: F,
+) -> impl Parser<I, Output = Vec<<F as Parser<I>>::Output, 18>, Error = <F as Parser<I>>::Error>
 where
     I: Clone + Input,
-    F: Parser<I, Output = O, Error = E>,
-    E: ParseError<I>,
-    O: core::fmt::Debug,
+    F: Parser<I>,
 {
-    move |mut i: I| {
-        let mut acc = Vec::<_, 18>::new();
+    Many0 { parser: f }
+}
+
+/// Parser implementation for the [many0] combinator
+pub struct Many0<F> {
+    parser: F,
+}
+
+impl<I, F> Parser<I> for Many0<F>
+where
+    I: Clone + Input,
+    F: Parser<I>,
+    // <F as Parser<I>>::Output: core::fmt::Debug,
+{
+    type Output = Vec<<F as Parser<I>>::Output, 18>;
+    type Error = <F as Parser<I>>::Error;
+
+    fn process<OM: OutputMode>(&mut self, mut i: I) -> PResult<OM, I, Self::Output, Self::Error> {
+        let mut acc = OM::Output::bind(|| Vec::<_, 18>::new());
         loop {
             let len = i.input_len();
-            match f.parse(i.clone()) {
+            match self
+                .parser
+                .process::<OutputM<OM::Output, Check, OM::Incomplete>>(i.clone())
+            {
                 Err(Err::Error(_)) => return Ok((i, acc)),
-                Err(e) => return Err(e),
+                Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+                Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
                 Ok((i1, o)) => {
                     // infinite loop check: the parser must always consume
                     if i1.input_len() == len {
-                        return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many0)));
+                        return Err(Err::Error(OM::Error::bind(|| {
+                            <F as Parser<I>>::Error::from_error_kind(i, ErrorKind::Many0)
+                        })));
                     }
 
                     i = i1;
-                    acc.push(o).unwrap();
+
+                    acc = OM::Output::combine(acc, o, |mut acc, o| {
+                        let _ = acc.push(o);
+                        acc
+                    })
                 }
             }
         }
     }
 }
+
+// fn many0<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O, 18>, E>
+// where
+//     I: Clone + Input,
+//     F: Parser<I, Output = O, Error = E>,
+//     E: ParseError<I>,
+//     O: core::fmt::Debug,
+// {
+//     move |mut i: I| {
+//         let mut acc = Vec::<_, 18>::new();
+//         loop {
+//             let len = i.input_len();
+//             match f.parse(i.clone()) {
+//                 Err(Err::Error(_)) => return Ok((i, acc)),
+//                 Err(e) => return Err(e),
+//                 Ok((i1, o)) => {
+//                     // infinite loop check: the parser must always consume
+//                     if i1.input_len() == len {
+//                         return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many0)));
+//                     }
+
+//                     i = i1;
+//                     acc.push(o).unwrap();
+//                 }
+//             }
+//         }
+//     }
+// }
 
 fn gsa_prn_fields_parse(i: &str) -> IResult<&str, Vec<Option<u32>, 18>> {
     many0(terminated(opt(number::<u32>), char(','))).parse(i)
