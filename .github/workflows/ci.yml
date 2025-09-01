@@ -50,7 +50,7 @@ jobs:
 
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        rust: ["1.70", stable, beta]
+        rust: ["1.87", stable, beta]
     steps:
       - uses: actions/checkout@v4
 

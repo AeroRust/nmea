@@ -23,8 +23,7 @@ readme = "README.md"
 
 edition = "2021"
 # Update README.md and ci.yml when updating the MSRV!
-# When bumping MSRV to 1.81, make sure to use core::error::Error.
-rust-version = "1.70.0"
+rust-version = "1.87.0"
 
 [package.metadata.docs.rs]
 all-features = true

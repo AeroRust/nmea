@@ -108,6 +108,4 @@ impl fmt::Display for Error<'_> {
     }
 }
 
-#[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-impl std::error::Error for Error<'_> {}
+impl core::error::Error for Error<'_> {}
