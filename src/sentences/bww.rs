@@ -41,7 +41,7 @@ pub struct BwwData {
     pub from_waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 
-fn do_parse_bww(i: &str) -> Result<BwwData, Error> {
+fn do_parse_bww(i: &str) -> Result<BwwData, Error<'_>> {
     // 1. Bearing, degrees True
     let (i, true_bearing) = opt(float)(i)?;
     let (i, _) = char(',')(i)?;
@@ -82,7 +82,7 @@ fn do_parse_bww(i: &str) -> Result<BwwData, Error> {
 /// # Parse BWW message
 ///
 /// See: <https://gpsd.gitlab.io/gpsd/NMEA.html#_bww_bearing_waypoint_to_waypoint>
-pub fn parse_bww(sentence: NmeaSentence) -> Result<BwwData, Error> {
+pub fn parse_bww(sentence: NmeaSentence<'_>) -> Result<BwwData, Error<'_>> {
     if sentence.message_id != SentenceType::BWW {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::BWW,

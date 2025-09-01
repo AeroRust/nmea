@@ -146,7 +146,7 @@ fn do_parse_gsv(i: &str) -> IResult<&str, GsvData> {
 /// GL may be (incorrectly) used when GSVs are mixed containing
 /// GLONASS, GN may be (incorrectly) used when GSVs contain GLONASS
 /// only.  Usage is inconsistent.
-pub fn parse_gsv(sentence: NmeaSentence) -> Result<GsvData, Error> {
+pub fn parse_gsv(sentence: NmeaSentence<'_>) -> Result<GsvData, Error<'_>> {
     if sentence.message_id != SentenceType::GSV {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::GSV,

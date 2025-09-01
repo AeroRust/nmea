@@ -47,7 +47,7 @@ impl From<DptData> for ParseResult {
     }
 }
 
-pub fn parse_dpt(sentence: crate::NmeaSentence) -> Result<DptData, crate::Error> {
+pub fn parse_dpt(sentence: crate::NmeaSentence<'_>) -> Result<DptData, crate::Error<'_>> {
     if sentence.message_id != crate::SentenceType::DPT {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::DPT,

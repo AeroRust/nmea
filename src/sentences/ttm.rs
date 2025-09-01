@@ -122,7 +122,7 @@ pub struct TtmData {
 }
 
 /// # Parse TTM message
-pub fn parse_ttm(sentence: NmeaSentence) -> Result<TtmData, Error> {
+pub fn parse_ttm(sentence: NmeaSentence<'_>) -> Result<TtmData, Error<'_>> {
     if sentence.message_id != SentenceType::TTM {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::TTM,

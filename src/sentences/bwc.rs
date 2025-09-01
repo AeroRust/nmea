@@ -42,7 +42,7 @@ pub struct BwcData {
 ///         |         |       | |        | |   | |   | |   | |    |   |
 /// $--BWC,hhmmss.ss,llll.ll,a,yyyyy.yy,a,x.x,T,x.x,M,x.x,N,c--c,m,*hh<CR><LF>
 /// ```
-fn do_parse_bwc(i: &str) -> Result<BwcData, Error> {
+fn do_parse_bwc(i: &str) -> Result<BwcData, Error<'_>> {
     // 1. UTC Time or observation
     let (i, fix_time) = opt(parse_hms)(i)?;
     let (i, _) = char(',')(i)?;
@@ -103,7 +103,7 @@ fn do_parse_bwc(i: &str) -> Result<BwcData, Error> {
 /// # Parse BWC message
 ///
 /// See: <https://gpsd.gitlab.io/gpsd/NMEA.html#_bwc_bearing_distance_to_waypoint_great_circle>
-pub fn parse_bwc(sentence: NmeaSentence) -> Result<BwcData, Error> {
+pub fn parse_bwc(sentence: NmeaSentence<'_>) -> Result<BwcData, Error<'_>> {
     if sentence.message_id != SentenceType::BWC {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::BWC,

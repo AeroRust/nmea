@@ -40,7 +40,7 @@ pub struct ZtgData {
     pub waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 
-fn do_parse_ztg(i: &str) -> Result<ZtgData, Error> {
+fn do_parse_ztg(i: &str) -> Result<ZtgData, Error<'_>> {
     // 1. UTC Time or observation
     let (i, fix_time) = opt(parse_hms)(i)?;
     let (i, _) = char(',')(i)?;
@@ -65,7 +65,7 @@ fn do_parse_ztg(i: &str) -> Result<ZtgData, Error> {
 /// # Parse ZTG message
 ///
 /// See: <https://gpsd.gitlab.io/gpsd/NMEA.html#_ztg_utc_time_to_destination_waypoint>
-pub fn parse_ztg(sentence: NmeaSentence) -> Result<ZtgData, Error> {
+pub fn parse_ztg(sentence: NmeaSentence<'_>) -> Result<ZtgData, Error<'_>> {
     if sentence.message_id != SentenceType::ZTG {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::ZTG,
@@ -81,7 +81,7 @@ mod tests {
     use super::*;
     use crate::{parse::parse_nmea_sentence, Error};
 
-    fn run_parse_ztg(line: &str) -> Result<ZtgData, Error> {
+    fn run_parse_ztg(line: &str) -> Result<ZtgData, Error<'_>> {
         let s = parse_nmea_sentence(line).expect("ZTG sentence initial parse failed");
         assert_eq!(s.checksum, s.calc_checksum());
         parse_ztg(s)

@@ -76,7 +76,7 @@ impl AlmData {
     }
 }
 
-pub fn parse_alm(sentence: NmeaSentence) -> Result<AlmData, Error> {
+pub fn parse_alm(sentence: NmeaSentence<'_>) -> Result<AlmData, Error<'_>> {
     if sentence.message_id != SentenceType::ALM {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::ALM,

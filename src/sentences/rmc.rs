@@ -190,7 +190,7 @@ fn parse_navigation_status(i: &str) -> IResult<&str, RmcNavigationStatus> {
 /// *68        mandatory nmea_checksum
 ///
 /// SiRF chipsets don't return either Mode Indicator or magnetic variation.
-pub fn parse_rmc(sentence: NmeaSentence) -> Result<RmcData, Error> {
+pub fn parse_rmc(sentence: NmeaSentence<'_>) -> Result<RmcData, Error<'_>> {
     if sentence.message_id != SentenceType::RMC {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::RMC,

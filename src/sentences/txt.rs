@@ -15,7 +15,7 @@ use crate::{
 /// 3   02  Text identifier, u-blox GPS receivers specify the severity of the message with this number. 00 = ERROR, 01 = WARNING, 02 = NOTICE, 07 = USER
 /// 4   u-blox AG - www.u-blox.com Any ASCII text
 /// *68        mandatory nmea_checksum
-pub fn parse_txt(s: NmeaSentence) -> Result<TxtData, Error> {
+pub fn parse_txt(s: NmeaSentence<'_>) -> Result<TxtData, Error<'_>> {
     if s.message_id != SentenceType::TXT {
         return Err(Error::WrongSentenceHeader {
             expected: SentenceType::TXT,

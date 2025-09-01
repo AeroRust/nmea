@@ -43,7 +43,7 @@ pub struct AamData {
 }
 
 /// Parse AAM message
-pub fn parse_aam(sentence: NmeaSentence) -> Result<AamData, Error> {
+pub fn parse_aam(sentence: NmeaSentence<'_>) -> Result<AamData, Error<'_>> {
     if sentence.message_id != SentenceType::AAM {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::AAM,
@@ -54,7 +54,7 @@ pub fn parse_aam(sentence: NmeaSentence) -> Result<AamData, Error> {
     }
 }
 
-fn do_parse_aam(i: &str) -> Result<AamData, Error> {
+fn do_parse_aam(i: &str) -> Result<AamData, Error<'_>> {
     let (i, arrival_circle_entered) = one_of("AV")(i)?;
     let arrival_circle_entered = match arrival_circle_entered {
         'A' => Some(true),

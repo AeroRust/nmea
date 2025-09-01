@@ -75,7 +75,7 @@ fn parse_sentence_type(i: &str) -> IResult<&str, SentenceType> {
     })(i)
 }
 
-fn do_parse_nmea_sentence(i: &str) -> IResult<&str, NmeaSentence> {
+fn do_parse_nmea_sentence(i: &str) -> IResult<&str, NmeaSentence<'_>> {
     let (i, talker_id) = preceded(char('$'), take(2usize))(i)?;
     let (i, message_id) = parse_sentence_type(i)?;
     let (i, _) = char(',')(i)?;
@@ -93,7 +93,7 @@ fn do_parse_nmea_sentence(i: &str) -> IResult<&str, NmeaSentence> {
     ))
 }
 
-pub fn parse_nmea_sentence(sentence: &str) -> core::result::Result<NmeaSentence, Error<'_>> {
+pub fn parse_nmea_sentence(sentence: &str) -> core::result::Result<NmeaSentence<'_>, Error<'_>> {
     if sentence.len() > SENTENCE_MAX_LEN {
         Err(Error::SentenceLength(sentence.len()))
     } else {
@@ -184,7 +184,7 @@ impl From<&ParseResult> for SentenceType {
 ///
 /// Apart from errors returned by the message parsing itself, it will return
 /// [`Error::Utf8Decoding`] when the bytes are not a valid UTF-8 string.
-pub fn parse_bytes(sentence_input: &[u8]) -> Result<ParseResult, Error> {
+pub fn parse_bytes(sentence_input: &[u8]) -> Result<ParseResult, Error<'_>> {
     let string = core::str::from_utf8(sentence_input).map_err(|_err| Error::Utf8Decoding)?;
 
     parse_str(string)
@@ -197,7 +197,7 @@ pub fn parse_bytes(sentence_input: &[u8]) -> Result<ParseResult, Error> {
 /// # Errors
 ///
 /// - [`Error::ASCII`] when string contains non-ASCII characters.
-pub fn parse_str(sentence_input: &str) -> Result<ParseResult, Error> {
+pub fn parse_str(sentence_input: &str) -> Result<ParseResult, Error<'_>> {
     if !sentence_input.is_ascii() {
         return Err(Error::ASCII);
     }

@@ -45,7 +45,7 @@ pub struct WncData {
     pub waypoint_id_origin: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 
-pub fn do_parse_wnc(i: &str) -> Result<WncData, Error> {
+pub fn do_parse_wnc(i: &str) -> Result<WncData, Error<'_>> {
     let (i, distance_nautical_miles) = opt(float)(i)?;
     let (i, _) = char(',')(i)?;
     let (i, _) = opt(char('N'))(i)?;
@@ -72,7 +72,7 @@ pub fn do_parse_wnc(i: &str) -> Result<WncData, Error> {
     })
 }
 
-pub fn parse_wnc(sentence: NmeaSentence) -> Result<WncData, Error> {
+pub fn parse_wnc(sentence: NmeaSentence<'_>) -> Result<WncData, Error<'_>> {
     if sentence.message_id != SentenceType::WNC {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::WNC,
@@ -89,7 +89,7 @@ mod tests {
     use crate::{parse::parse_nmea_sentence, Error};
     use approx::assert_relative_eq;
 
-    fn run_parse_wnc(line: &str) -> Result<WncData, Error> {
+    fn run_parse_wnc(line: &str) -> Result<WncData, Error<'_>> {
         let s = parse_nmea_sentence(line).expect("WNC sentence initial parse failed");
         assert_eq!(s.checksum, s.calc_checksum());
         parse_wnc(s)

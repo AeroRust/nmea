@@ -43,7 +43,7 @@ use crate::{parse::NmeaSentence, sentences::utils::array_string, Error, Sentence
 ///
 /// Example: `$GPAPA,A,A,0.10,R,N,V,V,011,M,DEST,011,M*82`
 /// Where the last "M" is the waypoint name
-
+///
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq, Clone)]
@@ -86,7 +86,7 @@ pub enum MagneticTrue {
 }
 
 /// Parse APA message
-pub fn parse_apa(sentence: NmeaSentence) -> Result<ApaData, Error> {
+pub fn parse_apa(sentence: NmeaSentence<'_>) -> Result<ApaData, Error<'_>> {
     if sentence.message_id != SentenceType::APA {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::APA,
@@ -97,7 +97,7 @@ pub fn parse_apa(sentence: NmeaSentence) -> Result<ApaData, Error> {
     }
 }
 
-fn do_parse_apa(i: &str) -> Result<ApaData, Error> {
+fn do_parse_apa(i: &str) -> Result<ApaData, Error<'_>> {
     let (i, status_warning) = one_of("AV")(i)?;
     let status_warning = match status_warning {
         'A' => Some(true),

@@ -61,7 +61,7 @@ impl From<DbkData> for ParseResult {
 /// 5:    0221.6 Depth Fathoms
 /// 6:    F      Units: F = Fathoms
 /// 7:    2E     CRC Checksum of NMEA data
-pub fn parse_dbk(sentence: NmeaSentence) -> Result<DbkData, Error> {
+pub fn parse_dbk(sentence: NmeaSentence<'_>) -> Result<DbkData, Error<'_>> {
     if sentence.message_id != SentenceType::DBK {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::DBK,

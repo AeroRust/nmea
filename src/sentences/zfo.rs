@@ -38,7 +38,7 @@ pub struct ZfoData {
     pub waypoint_id: Option<ArrayString<TEXT_PARAMETER_MAX_LEN>>,
 }
 
-fn do_parse_zfo(i: &str) -> Result<ZfoData, Error> {
+fn do_parse_zfo(i: &str) -> Result<ZfoData, Error<'_>> {
     // 1. UTC Time or observation
     let (i, fix_time) = opt(parse_hms)(i)?;
     let (i, _) = char(',')(i)?;
@@ -63,7 +63,7 @@ fn do_parse_zfo(i: &str) -> Result<ZfoData, Error> {
 /// # Parse ZFO message
 ///
 /// See: <https://gpsd.gitlab.io/gpsd/NMEA.html#_zfo_utc_time_from_origin_waypoint>
-pub fn parse_zfo(sentence: NmeaSentence) -> Result<ZfoData, Error> {
+pub fn parse_zfo(sentence: NmeaSentence<'_>) -> Result<ZfoData, Error<'_>> {
     if sentence.message_id != SentenceType::ZFO {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::ZFO,
@@ -79,7 +79,7 @@ mod tests {
     use super::*;
     use crate::{parse::parse_nmea_sentence, Error};
 
-    fn run_parse_zfo(line: &str) -> Result<ZfoData, Error> {
+    fn run_parse_zfo(line: &str) -> Result<ZfoData, Error<'_>> {
         let s = parse_nmea_sentence(line).expect("ZFO sentence initial parse failed");
         assert_eq!(s.checksum, s.calc_checksum());
         parse_zfo(s)

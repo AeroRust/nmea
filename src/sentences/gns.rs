@@ -91,7 +91,7 @@ pub enum NavigationStatus {
 ///                   U = Unsafe
 ///                   V = Not valid for navigation
 /// 8:   *6A          Mandatory NMEA checksum
-pub fn parse_gns(sentence: NmeaSentence) -> Result<GnsData, Error> {
+pub fn parse_gns(sentence: NmeaSentence<'_>) -> Result<GnsData, Error<'_>> {
     if sentence.message_id != SentenceType::GNS {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::GNS,

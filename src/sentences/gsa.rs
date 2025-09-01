@@ -192,7 +192,7 @@ fn do_parse_gsa(i: &str) -> IResult<&str, GsaData> {
 /// - it claims to be a valid sentence (A flag) when it isn't
 ///
 /// Alarmingly, it's possible this error may be generic to SiRFstarIII
-pub fn parse_gsa(sentence: NmeaSentence) -> Result<GsaData, Error> {
+pub fn parse_gsa(sentence: NmeaSentence<'_>) -> Result<GsaData, Error<'_>> {
     if sentence.message_id != SentenceType::GSA {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::GSA,

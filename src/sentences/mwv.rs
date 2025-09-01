@@ -64,7 +64,7 @@ pub enum MwvWindSpeedUnits {
 /// 4:  N             Wind speed units (Knots)
 /// 5:  A             Data is OK
 /// 6:  *16           Mandatory NMEA checksum
-pub fn parse_mwv(sentence: NmeaSentence) -> Result<MwvData, Error> {
+pub fn parse_mwv(sentence: NmeaSentence<'_>) -> Result<MwvData, Error<'_>> {
     if sentence.message_id != SentenceType::MWV {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::MWV,

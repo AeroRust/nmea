@@ -62,7 +62,7 @@ pub struct VhwData {
 /// Each is considered as a pair of a float value and a single character,
 /// and if the float value exists but the single character is not correct, it is treated as `None`.
 /// For example, if 1 is "100.5" and 2 is not "T", then heading_true is `None`.
-pub fn parse_vhw(sentence: NmeaSentence) -> Result<VhwData, Error> {
+pub fn parse_vhw(sentence: NmeaSentence<'_>) -> Result<VhwData, Error<'_>> {
     if sentence.message_id == SentenceType::VHW {
         Ok(do_parse_vhw(sentence.data)?.1)
     } else {

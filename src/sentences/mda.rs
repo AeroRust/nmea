@@ -71,7 +71,7 @@ pub struct MdaData {
 /// 20. M
 /// 21. *16        Mandatory NMEA checksum
 ///
-pub fn parse_mda(sentence: NmeaSentence) -> Result<MdaData, Error> {
+pub fn parse_mda(sentence: NmeaSentence<'_>) -> Result<MdaData, Error<'_>> {
     if sentence.message_id != SentenceType::MDA {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::MDA,

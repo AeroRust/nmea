@@ -41,7 +41,7 @@ pub struct HdtData {
 /// The only data field is true heading in degrees.
 /// The following field is required to be 'T' indicating a true heading.
 /// It is followed by a mandatory nmea_checksum.
-pub fn parse_hdt(sentence: NmeaSentence) -> Result<HdtData, Error> {
+pub fn parse_hdt(sentence: NmeaSentence<'_>) -> Result<HdtData, Error<'_>> {
     if sentence.message_id != SentenceType::HDT {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::HDT,

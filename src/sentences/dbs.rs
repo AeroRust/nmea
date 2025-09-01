@@ -41,7 +41,7 @@ impl From<DbsData> for ParseResult {
     }
 }
 
-pub fn parse_dbs(sentence: NmeaSentence) -> Result<DbsData, Error> {
+pub fn parse_dbs(sentence: NmeaSentence<'_>) -> Result<DbsData, Error<'_>> {
     if sentence.message_id != SentenceType::DBS {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::DBS,
@@ -52,7 +52,7 @@ pub fn parse_dbs(sentence: NmeaSentence) -> Result<DbsData, Error> {
     }
 }
 
-fn do_parse_dbs(i: &str) -> Result<DbsData, Error> {
+fn do_parse_dbs(i: &str) -> Result<DbsData, Error<'_>> {
     let (i, water_depth_feet) = opt(float)(i)?;
     let (i, _) = char(',')(i)?;
     let (i, _) = char('f')(i)?;

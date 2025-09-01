@@ -49,7 +49,7 @@ pub enum MtwUnit {
 /// 1:  17.9         Temperature, degrees
 /// 2:  C            Unit of Measurement, (only) Celsius
 /// 3:  *16          Mandatory NMEA checksum
-pub fn parse_mtw(sentence: NmeaSentence) -> Result<MtwData, Error> {
+pub fn parse_mtw(sentence: NmeaSentence<'_>) -> Result<MtwData, Error<'_>> {
     if sentence.message_id != SentenceType::MTW {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::MTW,

@@ -60,7 +60,7 @@ fn do_parse_pgrmz(i: &str) -> IResult<&str, PgrmzData> {
 /// Example:
 ///
 /// `$PGRMZ,2282,f,3*21`
-pub fn parse_pgrmz(sentence: NmeaSentence) -> Result<PgrmzData, Error> {
+pub fn parse_pgrmz(sentence: NmeaSentence<'_>) -> Result<PgrmzData, Error<'_>> {
     if sentence.message_id != SentenceType::RMZ {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::RMZ,

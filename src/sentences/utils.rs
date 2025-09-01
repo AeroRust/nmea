@@ -213,7 +213,7 @@ where
 /// If `&str` length > `MAX_LEN` it returns a [`Error::ParameterLength`] error.
 pub(crate) fn array_string<const MAX_LEN: usize>(
     string: &str,
-) -> Result<ArrayString<MAX_LEN>, Error> {
+) -> Result<ArrayString<MAX_LEN>, Error<'_>> {
     ArrayString::from(string).map_err(|_| Error::ParameterLength {
         max_length: MAX_LEN,
         parameter_length: string.len(),

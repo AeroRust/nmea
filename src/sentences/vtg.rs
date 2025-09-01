@@ -87,7 +87,7 @@ fn do_parse_vtg(i: &str) -> IResult<&str, VtgData> {
 /// x.x,M = Track, degrees Magnetic
 /// x.x,N = Speed, knots
 /// x.x,K = Speed, Km/hr
-pub fn parse_vtg(sentence: NmeaSentence) -> Result<VtgData, Error> {
+pub fn parse_vtg(sentence: NmeaSentence<'_>) -> Result<VtgData, Error<'_>> {
     if sentence.message_id != SentenceType::VTG {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::VTG,
@@ -103,7 +103,7 @@ mod tests {
     use super::*;
     use crate::{parse::parse_nmea_sentence, Error};
 
-    fn run_parse_vtg(line: &str) -> Result<VtgData, Error> {
+    fn run_parse_vtg(line: &str) -> Result<VtgData, Error<'_>> {
         let s = parse_nmea_sentence(line).expect("VTG sentence initial parse failed");
         assert_eq!(s.checksum, s.calc_checksum());
         parse_vtg(s)

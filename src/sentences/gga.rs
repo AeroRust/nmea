@@ -98,7 +98,7 @@ fn do_parse_gga(i: &str) -> IResult<&str, GgaData> {
 /// ellipsoid, in Meters
 /// (empty field) time in seconds since last DGPS update
 /// (empty field) DGPS station ID number (0000-1023)
-pub fn parse_gga(sentence: NmeaSentence) -> Result<GgaData, Error> {
+pub fn parse_gga(sentence: NmeaSentence<'_>) -> Result<GgaData, Error<'_>> {
     if sentence.message_id != SentenceType::GGA {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::GGA,

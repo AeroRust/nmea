@@ -85,7 +85,7 @@ fn do_parse_gbs(i: &str) -> IResult<&str, GbsData> {
 /// # Parse BOD message
 ///
 /// See: <https://gpsd.gitlab.io/gpsd/NMEA.html#_gbs_gps_satellite_fault_detection>
-pub fn parse_gbs(sentence: NmeaSentence) -> Result<GbsData, Error> {
+pub fn parse_gbs(sentence: NmeaSentence<'_>) -> Result<GbsData, Error<'_>> {
     if sentence.message_id != SentenceType::GBS {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::GBS,

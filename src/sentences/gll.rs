@@ -55,7 +55,7 @@ pub struct GllData {
 /// | 7     | data status | Data status: A = Data valid, V = Data invalid
 /// | 8     | mode ind    | Positioning system mode indicator, see `PosSystemIndicator`
 /// | 9     | *xx         | Check sum
-pub fn parse_gll(sentence: NmeaSentence) -> Result<GllData, Error> {
+pub fn parse_gll(sentence: NmeaSentence<'_>) -> Result<GllData, Error<'_>> {
     if sentence.message_id != SentenceType::GLL {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::GLL,

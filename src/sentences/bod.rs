@@ -37,7 +37,7 @@ pub struct BodData {
 ///        |   | |   | |    |    |
 /// $--BOD,x.x,T,x.x,M,c--c,c--c*hh<CR><LF>
 /// ```
-fn do_parse_bod(i: &str) -> Result<BodData, Error> {
+fn do_parse_bod(i: &str) -> Result<BodData, Error<'_>> {
     // 1. Bearing Degrees, True
     let (i, bearing_true) = opt(map_parser(take_until(","), float))(i)?;
     let (i, _) = char(',')(i)?;
@@ -77,7 +77,7 @@ fn do_parse_bod(i: &str) -> Result<BodData, Error> {
 /// # Parse BOD message
 ///
 /// See: <https://gpsd.gitlab.io/gpsd/NMEA.html#_bod_bearing_waypoint_to_waypoint>
-pub fn parse_bod(sentence: NmeaSentence) -> Result<BodData, Error> {
+pub fn parse_bod(sentence: NmeaSentence<'_>) -> Result<BodData, Error<'_>> {
     if sentence.message_id != SentenceType::BOD {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::BOD,

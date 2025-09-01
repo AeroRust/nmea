@@ -101,7 +101,7 @@ impl ZdaData {
 /// Note: some devices, like the u-blox ANTARIS 4h, are known to ship ZDAs
 /// with some fields blank under poorly-understood circumstances (probably
 /// when they don't have satellite lock yet).
-pub fn parse_zda(sentence: NmeaSentence) -> Result<ZdaData, Error> {
+pub fn parse_zda(sentence: NmeaSentence<'_>) -> Result<ZdaData, Error<'_>> {
     if sentence.message_id != SentenceType::ZDA {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::ZDA,

@@ -19,7 +19,7 @@ use nom::{character::complete::char, combinator::opt, number::complete::float, I
 /// 7. Standard deviation (meters) of longitude error
 /// 8. Standard deviation (meters) of altitude error
 /// 9. Checksum
-
+///
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
@@ -73,7 +73,7 @@ fn do_parse_gst(i: &str) -> IResult<&str, GstData> {
         },
     ))
 }
-pub fn parse_gst(sentence: NmeaSentence) -> Result<GstData, Error> {
+pub fn parse_gst(sentence: NmeaSentence<'_>) -> Result<GstData, Error<'_>> {
     if sentence.message_id != SentenceType::GST {
         Err(Error::WrongSentenceHeader {
             expected: SentenceType::GST,
@@ -89,7 +89,7 @@ mod tests {
     use super::*;
     use crate::{parse::parse_nmea_sentence, Error};
 
-    fn run_parse_gst(line: &str) -> Result<GstData, Error> {
+    fn run_parse_gst(line: &str) -> Result<GstData, Error<'_>> {
         let s = parse_nmea_sentence(line).expect("GST sentence initial parse failed");
         assert_eq!(s.checksum, s.calc_checksum());
         parse_gst(s)
