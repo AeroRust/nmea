@@ -1,9 +1,11 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use std::hint::black_box;
+
+use criterion::{Criterion, criterion_group, criterion_main};
 
 use nmea::Error;
 use nom::{
-    bytes::complete::*, character::complete::*, combinator::*, number::complete::*,
-    sequence::preceded, Parser as _,
+    Parser as _, bytes::complete::*, character::complete::*, combinator::*, number::complete::*,
+    sequence::preceded,
 };
 
 #[allow(dead_code)]
@@ -54,7 +56,7 @@ fn parsing_combinators_benchmark(c: &mut Criterion) {
     });
 }
 
-fn parse_bod_discard_comma(i: &str) -> Result<MockBodData, Error<'_>> {
+fn parse_bod_discard_comma(i: &str) -> Result<MockBodData<'_>, Error<'_>> {
     // 1. Bearing Degrees, True
     let (i, bearing_true) = opt(map_parser(take_until(","), float)).parse(i)?;
     let (i, _) = char(',').parse(i)?;
@@ -88,7 +90,7 @@ fn parse_bod_discard_comma(i: &str) -> Result<MockBodData, Error<'_>> {
     })
 }
 
-fn parse_bod_with_preceded(i: &str) -> Result<MockBodData, Error<'_>> {
+fn parse_bod_with_preceded(i: &str) -> Result<MockBodData<'_>, Error<'_>> {
     // 1. Bearing Degrees, True
     let (i, bearing_true) = opt(map_parser(take_until(","), float)).parse(i)?;
 

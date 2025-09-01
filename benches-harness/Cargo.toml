@@ -1,14 +1,14 @@
 [package]
 name = "benches-harness"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 publish = false
 
-rust-version = "1.70"
+rust-version = "1.87"
 
 [dev-dependencies]
-criterion = { version = "0.5" }
-nom = { version = "7.1", default-features = false }
+criterion = { version = "0.7" }
+nom = { version = "8", default-features = false }
 nmea = { path = "../" }
 
 [[bench]]
