@@ -13,6 +13,7 @@ pub enum FixType {
     Estimated,
     Manual,
     Simulation,
+    WAAS,
 }
 
 impl FixType {
@@ -20,7 +21,12 @@ impl FixType {
     pub fn is_valid(self) -> bool {
         match self {
             FixType::Simulation | FixType::Manual | FixType::Estimated | FixType::Invalid => false,
-            FixType::DGps | FixType::Gps | FixType::Rtk | FixType::FloatRtk | FixType::Pps => true,
+            FixType::DGps
+            | FixType::Gps
+            | FixType::Rtk
+            | FixType::FloatRtk
+            | FixType::Pps
+            | FixType::WAAS => true,
         }
     }
 }
@@ -37,6 +43,7 @@ impl From<char> for FixType {
             '6' => FixType::Estimated,
             '7' => FixType::Manual,
             '8' => FixType::Simulation,
+            '9' => FixType::WAAS,
             _ => FixType::Invalid,
         }
     }

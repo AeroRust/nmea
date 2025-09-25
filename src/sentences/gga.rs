@@ -50,7 +50,7 @@ fn do_parse_gga(i: &str) -> IResult<&str, GgaData> {
     let (i, _) = char(',').parse(i)?;
     let (i, lat_lon) = parse_lat_lon(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, fix_quality) = one_of("012345678").parse(i)?;
+    let (i, fix_quality) = one_of("0123456789").parse(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, fix_satellites) = opt(number::<u32>).parse(i)?;
     let (i, _) = char(',').parse(i)?;
