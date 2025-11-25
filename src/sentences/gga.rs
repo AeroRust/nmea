@@ -109,6 +109,21 @@ pub fn parse_gga(sentence: NmeaSentence<'_>) -> Result<GgaData, Error<'_>> {
     }
 }
 
+/// Parse GGAE message (Enhanced GGA with higher precision)
+///
+/// Enhanced version of GGA with higher precision coordinates.
+/// Uses the same parsing logic as standard GGA.
+pub fn parse_ggae(sentence: NmeaSentence<'_>) -> Result<GgaData, Error<'_>> {
+    if sentence.message_id != SentenceType::GGAE {
+        Err(Error::WrongSentenceHeader {
+            expected: SentenceType::GGAE,
+            found: sentence.message_id,
+        })
+    } else {
+        Ok(do_parse_gga(sentence.data)?.1)
+    }
+}
+
 #[cfg(not(feature = "std"))]
 #[cfg(feature = "serde")]
 mod serde_naive_time {
@@ -327,5 +342,23 @@ mod tests {
         let gga: GgaData = serde_json::from_str(&serialized).unwrap();
 
         assert_eq!(data.fix_time, gga.fix_time);
+    }
+
+    #[test]
+    fn test_parse_ggae_enhanced() {
+        // Checksum calculated: GPGGAE,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,, = 0x33
+        let ggae = "$GPGGAE,092750.000,5321.6802,N,00630.3372,W,1,8,1.03,61.7,M,55.2,M,,*33";
+        let s = parse_nmea_sentence(ggae).unwrap();
+        assert_eq!(s.checksum, s.calc_checksum());
+        let data = parse_ggae(s).unwrap();
+        assert_eq!(
+            data.fix_time,
+            Some(NaiveTime::from_hms_milli_opt(9, 27, 50, 0).expect("invalid time"))
+        );
+        assert_eq!(data.fix_type.unwrap(), FixType::Gps);
+        assert_relative_eq!(data.latitude.unwrap(), 53. + 21.6802 / 60.);
+        assert_relative_eq!(data.longitude.unwrap(), -(6. + 30.3372 / 60.));
+        assert_eq!(data.fix_satellites.unwrap(), 8);
+        assert_relative_eq!(data.hdop.unwrap(), 1.03);
     }
 }

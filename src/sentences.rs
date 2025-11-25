@@ -50,7 +50,7 @@ pub use {
     faa_mode::{FaaMode, FaaModes},
     fix_type::FixType,
     gbs::{GbsData, parse_gbs},
-    gga::{GgaData, parse_gga},
+    gga::{GgaData, parse_gga, parse_ggae},
     gll::{GllData, parse_gll},
     gns::{GnsData, parse_gns},
     gnss_type::GnssType,
@@ -61,7 +61,7 @@ pub use {
     mda::{MdaData, parse_mda},
     mtw::{MtwData, parse_mtw},
     mwv::{MwvData, parse_mwv},
-    rmc::{RmcData, parse_rmc},
+    rmc::{RmcData, parse_rmc, parse_rmce},
     rmz::{PgrmzData, parse_pgrmz},
     ttm::{
         TtmAngle, TtmData, TtmDistanceUnit, TtmReference, TtmStatus, TtmTypeOfAcquisition,

@@ -254,6 +254,10 @@ impl<'a> Nmea {
                 self.merge_gga_data(gga);
                 Ok(SentenceType::GGA)
             }
+            ParseResult::GGAE(gga) => {
+                self.merge_gga_data(gga);
+                Ok(SentenceType::GGAE)
+            }
             ParseResult::GSV(gsv) => {
                 self.merge_gsv_data(gsv)?;
                 Ok(SentenceType::GSV)
@@ -261,6 +265,10 @@ impl<'a> Nmea {
             ParseResult::RMC(rmc) => {
                 self.merge_rmc_data(rmc);
                 Ok(SentenceType::RMC)
+            }
+            ParseResult::RMCE(rmc) => {
+                self.merge_rmc_data(rmc);
+                Ok(SentenceType::RMCE)
             }
             ParseResult::GNS(gns) => {
                 self.merge_gns_data(gns);
@@ -331,6 +339,17 @@ impl<'a> Nmea {
                 self.merge_rmc_data(rmc_data);
                 self.sentences_for_this_time.insert(SentenceType::RMC);
             }
+            ParseResult::RMCE(rmc_data) => {
+                if rmc_data.status_of_fix == RmcStatusOfFix::Invalid {
+                    self.clear_position_info();
+                    return Ok(FixType::Invalid);
+                }
+                if !self.update_fix_time(rmc_data.fix_time) {
+                    return Ok(FixType::Invalid);
+                }
+                self.merge_rmc_data(rmc_data);
+                self.sentences_for_this_time.insert(SentenceType::RMCE);
+            }
             ParseResult::GNS(gns_data) => {
                 let fix_type: FixType = gns_data.faa_modes.into();
                 if !fix_type.is_valid() {
@@ -356,6 +375,20 @@ impl<'a> Nmea {
                 }
                 self.merge_gga_data(gga_data);
                 self.sentences_for_this_time.insert(SentenceType::GGA);
+            }
+            ParseResult::GGAE(gga_data) => {
+                match gga_data.fix_type {
+                    Some(FixType::Invalid) | None => {
+                        self.clear_position_info();
+                        return Ok(FixType::Invalid);
+                    }
+                    _ => { /*nothing*/ }
+                }
+                if !self.update_fix_time(gga_data.fix_time) {
+                    return Ok(FixType::Invalid);
+                }
+                self.merge_gga_data(gga_data);
+                self.sentences_for_this_time.insert(SentenceType::GGAE);
             }
             ParseResult::GLL(gll_data) => {
                 if !self.update_fix_time(gll_data.fix_time) {
@@ -895,6 +928,12 @@ define_sentence_type_enum! {
         ///
         /// Type: `GPS`
         GGA,
+        /// GGAE - Enhanced Global Positioning System Fix Data
+        ///
+        /// u-blox proprietary extension with higher precision coordinates
+        ///
+        /// Type: `Vendor extensions`
+        GGAE,
         /// GLC - Geographic Position, Loran-C
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_glc_geographic_position_loran_c>
@@ -1065,6 +1104,12 @@ define_sentence_type_enum! {
         ///
         /// Type: `Navigation`
         RMC,
+        /// RMCE - Enhanced Recommended Minimum Navigation Information
+        ///
+        /// u-blox proprietary extension with higher precision coordinates
+        ///
+        /// Type: `Vendor extensions`
+        RMCE,
         /// PGRMZ - Garmin Altitude
         ///
         /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_pgrmz_garmin_altitude>

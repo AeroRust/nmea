@@ -70,6 +70,13 @@ fn parse_checksum(i: &str) -> IResult<&str, u8> {
 }
 
 fn parse_sentence_type(i: &str) -> IResult<&str, SentenceType> {
+    // Try 4-character sentence types first (vendor-specific extensions like RMCE, GGAE)
+    if i.len() >= 4 {
+        if let Ok(sentence_type) = SentenceType::try_from(&i[..4]) {
+            return Ok((&i[4..], sentence_type));
+        }
+    }
+    // Fall back to standard 3-character sentence types
     map_res(take(3usize), |sentence_type: &str| {
         SentenceType::try_from(sentence_type).map_err(|_| "Unknown sentence type")
     })
@@ -128,6 +135,8 @@ pub enum ParseResult {
     MTW(MtwData),
     MWV(MwvData),
     RMC(RmcData),
+    RMCE(RmcData),
+    GGAE(GgaData),
     TTM(TtmData),
     TXT(TxtData),
     VHW(VhwData),
@@ -164,6 +173,8 @@ impl From<&ParseResult> for SentenceType {
             ParseResult::MTW(_) => SentenceType::MTW,
             ParseResult::MWV(_) => SentenceType::MWV,
             ParseResult::RMC(_) => SentenceType::RMC,
+            ParseResult::RMCE(_) => SentenceType::RMCE,
+            ParseResult::GGAE(_) => SentenceType::GGAE,
             ParseResult::TTM(_) => SentenceType::TTM,
             ParseResult::TXT(_) => SentenceType::TXT,
             ParseResult::VHW(_) => SentenceType::VHW,
@@ -375,6 +386,24 @@ pub fn parse_str(sentence_input: &str) -> Result<ParseResult, Error<'_>> {
                 cfg_if! {
                     if #[cfg(feature = "RMC")] {
                         parse_rmc(nmea_sentence).map(ParseResult::RMC)
+                    } else {
+                        return Err(Error::DisabledSentence);
+                    }
+                }
+            }
+            SentenceType::RMCE => {
+                cfg_if! {
+                    if #[cfg(feature = "RMCE")] {
+                        parse_rmce(nmea_sentence).map(ParseResult::RMCE)
+                    } else {
+                        return Err(Error::DisabledSentence);
+                    }
+                }
+            }
+            SentenceType::GGAE => {
+                cfg_if! {
+                    if #[cfg(feature = "GGAE")] {
+                        parse_ggae(nmea_sentence).map(ParseResult::GGAE)
                     } else {
                         return Err(Error::DisabledSentence);
                     }
