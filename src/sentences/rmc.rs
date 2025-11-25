@@ -202,6 +202,21 @@ pub fn parse_rmc(sentence: NmeaSentence<'_>) -> Result<RmcData, Error<'_>> {
     }
 }
 
+/// Parse RMCE message (Enhanced RMC with higher precision)
+///
+/// Enhanced version of RMC with higher precision coordinates.
+/// Uses the same parsing logic as standard RMC.
+pub fn parse_rmce(sentence: NmeaSentence<'_>) -> Result<RmcData, Error<'_>> {
+    if sentence.message_id != SentenceType::RMCE {
+        Err(Error::WrongSentenceHeader {
+            expected: SentenceType::RMCE,
+            found: sentence.message_id,
+        })
+    } else {
+        Ok(do_parse_rmc(sentence.data)?.1)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use approx::assert_relative_eq;
@@ -386,5 +401,25 @@ mod tests {
         assert_relative_eq!(magnetic_variation.unwrap(), 0.0);
         assert_eq!(faa_mode, Some(FaaMode::Manual));
         assert_eq!(nav_status, Some(RmcNavigationStatus::Estimated));
+    }
+
+    #[test]
+    fn parse_rmce_enhanced() {
+        // Checksum calculated: GPRMCE,225446.33,A,4916.45,N,12311.12,W,000.5,054.7,191194,020.3,E,A = 0x6E
+        let rmce = "$GPRMCE,225446.33,A,4916.45,N,12311.12,W,000.5,054.7,191194,020.3,E,A*6E";
+        let s = parse_nmea_sentence(rmce).unwrap();
+        assert_eq!(s.checksum, s.calc_checksum());
+        let rmc_data = parse_rmce(s).unwrap();
+        assert_eq!(
+            rmc_data.fix_time,
+            Some(NaiveTime::from_hms_milli_opt(22, 54, 46, 330).expect("invalid time"))
+        );
+        assert_eq!(
+            rmc_data.fix_date,
+            Some(NaiveDate::from_ymd_opt(1994, 11, 19).expect("invalid time"))
+        );
+        assert_relative_eq!(rmc_data.lat.unwrap(), 49.0 + 16.45 / 60.);
+        assert_relative_eq!(rmc_data.lon.unwrap(), -(123.0 + 11.12 / 60.));
+        assert_eq!(rmc_data.faa_mode, Some(FaaMode::Autonomous));
     }
 }
