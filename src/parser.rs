@@ -1,6 +1,6 @@
 //! The [`Nmea`] parser.
 
-use core::{fmt, mem, ops::BitOr};
+use core::{fmt, ops::BitOr};
 
 use chrono::{NaiveDate, NaiveTime};
 use heapless::{Deque, Vec};
@@ -286,10 +286,20 @@ impl<'a> Nmea {
     }
 
     fn new_tick(&mut self) {
-        let old = mem::take(self);
-        self.satellites_scan = old.satellites_scan;
-        self.required_sentences_for_nav = old.required_sentences_for_nav;
-        self.last_fix_time = old.last_fix_time;
+        self.fix_time = None;
+        self.fix_date = None;
+        self.fix_type = None;
+        self.latitude = None;
+        self.longitude = None;
+        self.altitude = None;
+        self.speed_over_ground = None;
+        self.true_course = None;
+        self.num_of_fix_satellites = None;
+        self.hdop = None;
+        self.vdop = None;
+        self.pdop = None;
+        self.geoid_separation = None;
+        self.fix_satellites_prns = None;
     }
 
     fn clear_position_info(&mut self) {
