@@ -1,9 +1,6 @@
 use core::fmt;
 
-use crate::{
-    SentenceType,
-    sentences::{GnssType, gnss_type::GnssSystemId},
-};
+use crate::{SentenceType, sentences::GnssType};
 
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq)]
@@ -44,10 +41,6 @@ pub enum Error<'a> {
     /// The current sentences is parsable but the feature has been disabled.
     // TODO: Add sentences and data?!
     DisabledSentence,
-    SystemIdMismatch {
-        talker_sys_id: GnssSystemId,
-        tail_sys_id: GnssSystemId,
-    },
 }
 
 impl<'a> From<nom::Err<nom::error::Error<&'a str>>> for Error<'a> {
@@ -111,13 +104,6 @@ impl fmt::Display for Error<'_> {
             Error::DisabledSentence => {
                 write!(f, "Sentence is parsable but it's feature is disabled",)
             }
-            Error::SystemIdMismatch {
-                talker_sys_id,
-                tail_sys_id,
-            } => write!(
-                f,
-                "System ID Mismatch: Talker ID implies '{talker_sys_id}', but payload specifies '{tail_sys_id}'"
-            ),
         }
     }
 }
