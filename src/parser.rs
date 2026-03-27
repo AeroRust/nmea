@@ -253,8 +253,12 @@ impl<'a> Nmea {
             Some(last) => last == &gsa.talker_id && !is_accumulating_talker,
         };
 
-        if should_reset && self.fix_satellites_prns.is_none() {
-            self.fix_satellites_prns = Some(Vec::new());
+        if should_reset {
+            if let Some(prns) = &mut self.fix_satellites_prns {
+                prns.clear();
+            } else {
+                self.fix_satellites_prns = Some(Vec::new());
+            }
         }
 
         self.last_gsa_talker_id = Some(gsa.talker_id.clone());
