@@ -1,7 +1,10 @@
 use approx::assert_relative_eq;
 use chrono::NaiveTime;
 use helpers::format_satellites;
-use nmea::{sentences::fix_type::FixType, *};
+use nmea::{
+    sentences::{fix_type::FixType, gnss_type::GnssSystemId},
+    *,
+};
 
 mod helpers;
 
@@ -472,6 +475,37 @@ fn test_gll() {
     assert_eq!(44, nmea.fix_timestamp().unwrap().second());
 }
 
+fn sort_prns(v: &mut Vec<(Option<GnssSystemId>, u32)>) {
+    v.sort_by(|a, b| {
+        let a_key = (a.0.map(|s| s as u8), a.1);
+        let b_key = (b.0.map(|s| s as u8), b.1);
+        a_key.cmp(&b_key)
+    });
+}
+
+fn collect_prns(nmea: &Nmea) -> Vec<(Option<GnssSystemId>, u32)> {
+    nmea.fix_satellites_prns
+        .as_ref()
+        .unwrap()
+        .iter()
+        .cloned()
+        .collect()
+}
+
+fn assert_prns_eq(nmea: &Nmea, mut expected: Vec<(Option<GnssSystemId>, u32)>, cycle: usize) {
+    assert!(
+        nmea.gsa_cycle_complete,
+        "Cycle {cycle}: expected completed GSA cycle"
+    );
+
+    let mut actual = collect_prns(nmea);
+
+    sort_prns(&mut expected);
+    sort_prns(&mut actual);
+
+    assert_eq!(actual, expected, "Cycle {cycle}: PRN mismatch");
+}
+
 // From MediaTek Airoha AG3352b GNSS
 #[test]
 #[cfg(all(feature = "GGA", feature = "GSA", feature = "GSV", feature = "RMC"))]
@@ -481,8 +515,9 @@ fn test_gngsa_single_cycle_multi_constellation_accumulation() {
     let mut nmea = Nmea::default();
 
     // A complete cycle from a multi-constellation receiver.
-    // Four GNGSA sentences arrive back-to-back, one per constellation
-    // (GPS=1, GLONASS=2, Galileo=3, BeiDou=4), followed by fix sentences.
+    // Four GNGSA sentences arrive back-to-back, one per constellation:
+    // GPS=1, GLONASS=2, Galileo=3, BeiDou=4
+    // followed by a GGA fix sentence which finalizes the cycle.
     let sentences = [
         "$GNGSA,A,3,04,01,03,31,06,02,,,,,,,1.12,0.79,0.79,1*03",
         "$GNGSA,A,3,78,,,,,,,,,,,,1.12,0.79,0.79,2*0F",
@@ -495,35 +530,35 @@ fn test_gngsa_single_cycle_multi_constellation_accumulation() {
         nmea.parse(s).unwrap();
     }
 
-    // GGA is the first non-GSA after the sequence, so cycle should be complete
+    // GGA is the first non-GSA after the sequence,
+    // so cycle should now be considered complete.
     assert!(nmea.gsa_cycle_complete);
 
-    let prns = nmea.fix_satellites_prns.as_ref().unwrap();
+    let expected = vec![
+        // GPS (system_id=1 - GnssSystemId::Gps)
+        (Some(GnssSystemId::Gps), 4),
+        (Some(GnssSystemId::Gps), 1),
+        (Some(GnssSystemId::Gps), 3),
+        (Some(GnssSystemId::Gps), 31),
+        (Some(GnssSystemId::Gps), 6),
+        (Some(GnssSystemId::Gps), 2),
+        // GLONASS (system_id=2 - GnssSystemId::Glonass)
+        (Some(GnssSystemId::Glonass), 78),
+        // Galileo (system_id=3 - GnssSystemId::Galileo)
+        (Some(GnssSystemId::Galileo), 3),
+        (Some(GnssSystemId::Galileo), 8),
+        (Some(GnssSystemId::Galileo), 15),
+        // BeiDou (system_id=4 - GnssSystemId::Beidou)
+        (Some(GnssSystemId::Beidou), 34),
+        (Some(GnssSystemId::Beidou), 21),
+        (Some(GnssSystemId::Beidou), 19),
+        (Some(GnssSystemId::Beidou), 22),
+    ];
 
-    // GPS (system_id=1 - GnssSystemId::Gps)
-    assert!(prns.contains(&(Some(GnssSystemId::Gps), 4)));
-    assert!(prns.contains(&(Some(GnssSystemId::Gps), 1)));
-    assert!(prns.contains(&(Some(GnssSystemId::Gps), 3)));
-    assert!(prns.contains(&(Some(GnssSystemId::Gps), 31)));
-    assert!(prns.contains(&(Some(GnssSystemId::Gps), 6)));
-    assert!(prns.contains(&(Some(GnssSystemId::Gps), 2)));
+    // Total: 6 + 1 + 3 + 4 = 14 satellites
+    // This must match the GGA reported fix satellite count.
+    assert_prns_eq(&nmea, expected, 1);
 
-    // GLONASS (system_id=2 - GnssSystemId::Glonass)
-    assert!(prns.contains(&(Some(GnssSystemId::Glonass), 78)));
-
-    // Galileo (system_id=3 - GnssSystemId::Galileo)
-    assert!(prns.contains(&(Some(GnssSystemId::Galileo), 3)));
-    assert!(prns.contains(&(Some(GnssSystemId::Galileo), 8)));
-    assert!(prns.contains(&(Some(GnssSystemId::Galileo), 15)));
-
-    // BeiDou (system_id=4 - GnssSystemId::Beidou)
-    assert!(prns.contains(&(Some(GnssSystemId::Beidou), 34)));
-    assert!(prns.contains(&(Some(GnssSystemId::Beidou), 21)));
-    assert!(prns.contains(&(Some(GnssSystemId::Beidou), 19)));
-    assert!(prns.contains(&(Some(GnssSystemId::Beidou), 22)));
-
-    // Total: 6 + 1 + 3 + 4 = 14, matching the GGA fix satellites count
-    assert_eq!(prns.len(), 14);
     assert_eq!(nmea.num_of_fix_satellites.unwrap(), 14);
 }
 
@@ -537,83 +572,123 @@ fn test_gngsa_single_cycle_multi_constellation_accumulation() {
     feature = "GLL"
 ))]
 fn test_gngsa_multi_cycle_multi_constellation_accumulation() {
-    use nmea::sentences::gnss_type::GnssSystemId;
+    let mut nmea = Nmea::default();
 
-    let multi_constellation_gn_talker_log = [
-        // Cycle 1: 201153
+    // Cycle 1
+    for s in [
         "$GNGGA,201153.000,5543.5012,N,01221.2129,E,1,15,0.77,68.8,M,41.7,M,,*4F",
         "$GNGLL,5543.5012,N,01221.2129,E,201153.000,A,A*4A",
         "$GNGSA,A,3,04,01,03,19,28,31,06,02,,,,,1.11,0.77,0.80,1*0A",
-        "$GNGSA,A,3,,,,,,,,,,,,,1.11,0.77,0.80,2*0B", // GLONASS: no PRNs
+        "$GNGSA,A,3,,,,,,,,,,,,,1.11,0.77,0.80,2*0B",
         "$GNGSA,A,3,03,08,15,,,,,,,,,,1.11,0.77,0.80,3*05",
         "$GNGSA,A,3,34,21,44,22,,,,,,,,,1.11,0.77,0.80,4*09",
         "$GNRMC,201153.000,A,5543.5012,N,01221.2129,E,0.00,175.67,070326,,,A,V*05",
-        // Cycle 2: 201154
+    ] {
+        nmea.parse(s).unwrap();
+    }
+    assert!(nmea.gsa_cycle_complete, "Cycle should complete");
+
+    assert_prns_eq(
+        &nmea,
+        vec![
+            // GPS
+            (Some(GnssSystemId::Gps), 4),
+            (Some(GnssSystemId::Gps), 1),
+            (Some(GnssSystemId::Gps), 3),
+            (Some(GnssSystemId::Gps), 19),
+            (Some(GnssSystemId::Gps), 28),
+            (Some(GnssSystemId::Gps), 31),
+            (Some(GnssSystemId::Gps), 6),
+            (Some(GnssSystemId::Gps), 2),
+            // Galileo
+            (Some(GnssSystemId::Galileo), 3),
+            (Some(GnssSystemId::Galileo), 8),
+            (Some(GnssSystemId::Galileo), 15),
+            // BeiDou
+            (Some(GnssSystemId::Beidou), 34),
+            (Some(GnssSystemId::Beidou), 21),
+            (Some(GnssSystemId::Beidou), 44),
+            (Some(GnssSystemId::Beidou), 22),
+        ],
+        1,
+    );
+
+    // Cycle 2
+    for s in [
         "$GNGGA,201154.000,5543.5022,N,01221.2136,E,1,16,0.76,69.0,M,41.7,M,,*4E",
         "$GNGLL,5543.5022,N,01221.2136,E,201154.000,A,A*40",
         "$GNGSA,A,3,04,01,19,03,31,28,06,02,,,,,1.10,0.76,0.80,1*0A",
-        "$GNGSA,A,3,,,,,,,,,,,,,1.10,0.76,0.80,2*0B", // GLONASS: no PRNs
+        "$GNGSA,A,3,,,,,,,,,,,,,1.10,0.76,0.80,2*0B",
         "$GNGSA,A,3,15,08,03,,,,,,,,,,1.10,0.76,0.80,3*05",
         "$GNGSA,A,3,12,34,21,44,22,,,,,,,,1.10,0.76,0.80,4*0A",
         "$GNRMC,201154.000,A,5543.5022,N,01221.2136,E,0.00,21.34,070326,,,A,V*39",
-        // Cycle 3: 201209 (GLONASS has PRNs)
+    ] {
+        nmea.parse(s).unwrap();
+    }
+    assert!(nmea.gsa_cycle_complete, "Cycle should complete");
+
+    assert_prns_eq(
+        &nmea,
+        vec![
+            // GPS
+            (Some(GnssSystemId::Gps), 4),
+            (Some(GnssSystemId::Gps), 1),
+            (Some(GnssSystemId::Gps), 19),
+            (Some(GnssSystemId::Gps), 3),
+            (Some(GnssSystemId::Gps), 31),
+            (Some(GnssSystemId::Gps), 28),
+            (Some(GnssSystemId::Gps), 6),
+            (Some(GnssSystemId::Gps), 2),
+            // Galileo
+            (Some(GnssSystemId::Galileo), 15),
+            (Some(GnssSystemId::Galileo), 8),
+            (Some(GnssSystemId::Galileo), 3),
+            // BeiDou
+            (Some(GnssSystemId::Beidou), 12),
+            (Some(GnssSystemId::Beidou), 34),
+            (Some(GnssSystemId::Beidou), 21),
+            (Some(GnssSystemId::Beidou), 44),
+            (Some(GnssSystemId::Beidou), 22),
+        ],
+        2,
+    );
+
+    // Cycle 3
+    for s in [
         "$GNGGA,201209.000,5543.4995,N,01221.2299,E,1,14,0.79,75.9,M,41.7,M,,*4E",
         "$GNGLL,5543.4995,N,01221.2299,E,201209.000,A,A*49",
         "$GNGSA,A,3,04,01,03,31,06,02,,,,,,,1.12,0.79,0.79,1*03",
-        "$GNGSA,A,3,78,,,,,,,,,,,,1.12,0.79,0.79,2*0F", // GLONASS: PRN 78
+        "$GNGSA,A,3,78,,,,,,,,,,,,1.12,0.79,0.79,2*0F",
         "$GNGSA,A,3,03,08,15,,,,,,,,,,1.12,0.79,0.79,3*0E",
         "$GNGSA,A,3,34,21,19,22,,,,,,,,,1.12,0.79,0.79,4*0A",
         "$GNRMC,201209.000,A,5543.4995,N,01221.2299,E,3.65,87.89,070326,,,A,V*3A",
-    ];
-
-    let mut nmea = Nmea::default();
-
-    for s in &multi_constellation_gn_talker_log {
+    ] {
         nmea.parse(s).unwrap();
     }
+    assert!(nmea.gsa_cycle_complete, "Cycle should complete");
 
-    // After the final RMC, gsa_cycle_complete should be true
-    // (RMC is the non-GSA sentence that closes the last GSA sequence)
-    // Actually the RMC comes after GSV in the real data, but in this
-    // condensed version it directly follows the GSA sequence
-    assert!(nmea.gsa_cycle_complete);
-
-    let prns = nmea.fix_satellites_prns.as_ref().unwrap();
-
-    // Cycle 3: GPS=6, GLONASS=1(78), Galileo=3, BeiDou=4 = 14 total
-    assert_eq!(prns.len(), 14);
-
-    // GPS satellites
-    assert!(prns.contains(&(Some(GnssSystemId::Gps), 4)));
-    assert!(prns.contains(&(Some(GnssSystemId::Gps), 1)));
-    assert!(prns.contains(&(Some(GnssSystemId::Gps), 3)));
-    assert!(prns.contains(&(Some(GnssSystemId::Gps), 31)));
-    assert!(prns.contains(&(Some(GnssSystemId::Gps), 6)));
-    assert!(prns.contains(&(Some(GnssSystemId::Gps), 2)));
-
-    // GLONASS: only PRN 78, not the empty cycle 1/2 GLONASS sentences
-    assert!(prns.contains(&(Some(GnssSystemId::Glonass), 78)));
-    assert_eq!(
-        prns.iter()
-            .filter(|(s, _)| *s == Some(GnssSystemId::Glonass))
-            .count(),
-        1
+    assert_prns_eq(
+        &nmea,
+        vec![
+            // GPS
+            (Some(GnssSystemId::Gps), 4),
+            (Some(GnssSystemId::Gps), 1),
+            (Some(GnssSystemId::Gps), 3),
+            (Some(GnssSystemId::Gps), 31),
+            (Some(GnssSystemId::Gps), 6),
+            (Some(GnssSystemId::Gps), 2),
+            // GLONASS
+            (Some(GnssSystemId::Glonass), 78),
+            // Galileo
+            (Some(GnssSystemId::Galileo), 3),
+            (Some(GnssSystemId::Galileo), 8),
+            (Some(GnssSystemId::Galileo), 15),
+            // BeiDou
+            (Some(GnssSystemId::Beidou), 34),
+            (Some(GnssSystemId::Beidou), 21),
+            (Some(GnssSystemId::Beidou), 19),
+            (Some(GnssSystemId::Beidou), 22),
+        ],
+        3,
     );
-
-    // Galileo
-    assert!(prns.contains(&(Some(GnssSystemId::Galileo), 3)));
-    assert!(prns.contains(&(Some(GnssSystemId::Galileo), 8)));
-    assert!(prns.contains(&(Some(GnssSystemId::Galileo), 15)));
-
-    // BeiDou
-    assert!(prns.contains(&(Some(GnssSystemId::Beidou), 34)));
-    assert!(prns.contains(&(Some(GnssSystemId::Beidou), 21)));
-    assert!(prns.contains(&(Some(GnssSystemId::Beidou), 19)));
-    assert!(prns.contains(&(Some(GnssSystemId::Beidou), 22)));
-
-    // Verify cycle 1 PRNs are gone (reset correctly)
-    // PRN 44 (BeiDou) was in cycle 1 and 2 but not cycle 3
-    assert!(!prns.contains(&(Some(GnssSystemId::Beidou), 44)));
-    // PRN 28 (GPS) was in cycle 1 but not cycle 3
-    assert!(!prns.contains(&(Some(GnssSystemId::Gps), 28)));
 }
