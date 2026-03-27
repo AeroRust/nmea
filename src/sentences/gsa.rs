@@ -4,10 +4,10 @@ use nom::{
     branch::alt,
     bytes::complete::take_while1,
     character::complete::{char, one_of},
-    combinator::{all_consuming, opt, value},
+    combinator::{all_consuming, opt},
     error::{ErrorKind, ParseError},
     number::complete::float,
-    sequence::terminated,
+    sequence::{preceded, terminated},
 };
 
 use crate::{
@@ -151,7 +151,20 @@ fn do_parse_gsa_tail(i: &str) -> IResult<&str, GsaTail> {
     let (i, hdop) = float(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, vdop) = float(i)?;
-    Ok((i, (prns, Some(pdop), Some(hdop), Some(vdop), None)))
+
+    // Optionally parse the system ID if it exists at the end
+    let (i, sys_id) = opt(preceded(char(','), number::<u8>)).parse(i)?;
+
+    Ok((
+        i,
+        (
+            prns,
+            Some(pdop),
+            Some(hdop),
+            Some(vdop),
+            sys_id.and_then(|id| GnssSystemId::try_from(id).ok()),
+        ),
+    ))
 }
 
 fn is_comma(x: char) -> bool {
@@ -159,31 +172,15 @@ fn is_comma(x: char) -> bool {
 }
 
 fn do_parse_empty_gsa_tail(i: &str) -> IResult<&str, GsaTail> {
-    value(
-        (Vec::new(), None, None, None, None),
-        all_consuming(take_while1(is_comma)),
-    )
-    .parse(i)
-}
+    // Consume all the empty commas
+    let (i, _) = take_while1(is_comma)(i)?;
 
-fn do_parse_gsa_tail_with_system_id(i: &str) -> IResult<&str, GsaTail> {
-    let (i, prns) = gsa_prn_fields_parse(i)?;
-    let (i, pdop) = float(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, hdop) = float(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, vdop) = float(i)?;
-    let (i, _) = char(',')(i)?;
-    let (i, gnss_id) = number::<u8>(i)?;
+    // Optionally grab the system ID, ensuring there's no junk left over
+    let (i, sys_id) = all_consuming(opt(number::<u8>)).parse(i)?;
 
-    let system_id = match gnss_id {
-        1 => Some(GnssSystemId::Gps),
-        2 => Some(GnssSystemId::Glonass),
-        3 => Some(GnssSystemId::Galileo),
-        4 => Some(GnssSystemId::Beidou),
-        _ => None,
-    };
-    Ok((i, (prns, Some(pdop), Some(hdop), Some(vdop), system_id)))
+    let system_id = sys_id.and_then(|id| GnssSystemId::try_from(id).ok());
+
+    Ok((i, (Vec::new(), None, None, None, system_id)))
 }
 
 fn do_parse_gsa(i: &str, talker_id: heapless::String<2>) -> IResult<&str, GsaData> {
@@ -191,12 +188,7 @@ fn do_parse_gsa(i: &str, talker_id: heapless::String<2>) -> IResult<&str, GsaDat
     let (i, _) = char(',').parse(i)?;
     let (i, mode2) = one_of("123").parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, mut tail) = alt((
-        do_parse_empty_gsa_tail,
-        do_parse_gsa_tail_with_system_id,
-        do_parse_gsa_tail,
-    ))
-    .parse(i)?;
+    let (i, mut tail) = alt((do_parse_empty_gsa_tail, do_parse_gsa_tail)).parse(i)?;
 
     Ok((
         i,
@@ -357,6 +349,7 @@ mod tests {
             "$GNGSA,A,3,23,02,27,10,08,,,,,,,,3.45,1.87,2.89,1*01",
             "$GNGSA,A,3,,,,,,,,,,,,,3.45,1.87,2.89,4*0B",
             "$GPGSA,A,1,,,,*32",
+            "$GNGSA,A,1,,,,,,,,,,,,,,,,1*1D",
         ];
         for line in &gsa_examples {
             println!("we parse line '{line}'");
