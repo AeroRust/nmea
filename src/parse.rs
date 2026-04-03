@@ -136,6 +136,7 @@ pub enum ParseResult {
     ZDA(ZdaData),
     ZFO(ZfoData),
     ZTG(ZtgData),
+    XDR(XdrData),
     PGRMZ(PgrmzData),
     /// A message that is not supported by the crate and cannot be parsed.
     Unsupported(SentenceType),
@@ -174,6 +175,7 @@ impl From<&ParseResult> for SentenceType {
             ParseResult::PGRMZ(_) => SentenceType::RMZ,
             ParseResult::ZDA(_) => SentenceType::ZDA,
             ParseResult::DPT(_) => SentenceType::DPT,
+            ParseResult::XDR(_) => SentenceType::XDR,
             ParseResult::Unsupported(sentence_type) => *sentence_type,
         }
     }
@@ -465,6 +467,15 @@ pub fn parse_str(sentence_input: &str) -> Result<ParseResult, Error<'_>> {
                 cfg_if! {
                     if #[cfg(feature = "DPT")] {
                         parse_dpt(nmea_sentence).map(ParseResult::DPT)
+                    } else {
+                        return Err(Error::DisabledSentence);
+                    }
+                }
+            }
+            SentenceType::XDR => {
+                cfg_if! {
+                    if #[cfg(feature = "XDR")] {
+                        parse_xdr(nmea_sentence).map(ParseResult::XDR)
                     } else {
                         return Err(Error::DisabledSentence);
                     }
