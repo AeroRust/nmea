@@ -7,7 +7,7 @@ use heapless::{Deque, Vec};
 
 use crate::{
     Error, ParseResult, parse_str,
-    sentences::{rmc::RmcStatusOfFix, *},
+    sentences::{gnss_type::GnssSystemId, gsa::MAX_PRNS, rmc::RmcStatusOfFix, *},
 };
 
 #[cfg(feature = "serde")]
@@ -54,13 +54,15 @@ pub struct Nmea {
     pub pdop: Option<f32>,
     /// Geoid separation in meters
     pub geoid_separation: Option<f32>,
-    pub fix_satellites_prns: Option<Vec<u32, 18>>,
+    pub fix_satellites_prns: Option<Vec<(Option<GnssSystemId>, u32), MAX_PRNS>>,
     satellites_scan: [SatsPack; GnssType::COUNT],
     required_sentences_for_nav: SentenceMask,
     #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     last_fix_time: Option<NaiveTime>,
     last_txt: Option<TxtData>,
     sentences_for_this_time: SentenceMask,
+    pub gsa_cycle_complete: bool,
+    last_gsa_talker_id: Option<heapless::String<2>>,
 }
 
 impl<'a> Nmea {
@@ -206,8 +208,72 @@ impl<'a> Nmea {
         self.geoid_separation = gns_data.geoid_separation;
     }
 
+    /// Detects GSA cycle boundaries and updates [`Self::gsa_cycle_complete`].
+    ///
+    /// GSA sentences arrive in sequences (one per constellation) followed by
+    /// a fix sentence that closes the cycle:
+    ///
+    /// ```text
+    /// $GPGSA,...   | GPS satellites used
+    /// $GLGSA,...   | GLONASS satellites used
+    /// $GAGSA,...   | Galileo satellites used
+    /// $GPGGA,...   | fix sentence: GSA cycle is now complete
+    /// ```
+    ///
+    /// Must be called on every parsed result before the match in both
+    /// [`Nmea::parse`] and [`Nmea::parse_for_fix`].
+    ///
+    /// `gsa_cycle_complete` is set to `true` on the first non-GSA sentence
+    /// after a GSA sequence, indicating that the accumulated satellite data
+    /// for the current epoch is stable and safe to read. It is `false` at all
+    /// other times.
+    fn update_gsa_state(&mut self, result: &ParseResult) {
+        if matches!(result, ParseResult::GSA(_)) {
+            self.gsa_cycle_complete = false;
+        } else if self.last_gsa_talker_id.is_some() {
+            // First non-GSA after a GSA sequence: the sequence just ended.
+            // Signal that fix_satellites_prns is now stable, and reset tracking
+            // so the next GSA sequence starts with a clean accumulator.
+            self.gsa_cycle_complete = true;
+            self.last_gsa_talker_id = None;
+        } else {
+            // Non-GSA with no preceding GSA sequence: nothing accumulated.
+            self.gsa_cycle_complete = false;
+        }
+    }
+
     fn merge_gsa_data(&mut self, gsa: GsaData) {
-        self.fix_satellites_prns = Some(gsa.fix_sats_prn);
+        // Reset if this is the first GSA, or if system_id matches the last one
+        // (same constellation repeating means new cycle), except for GN-talker (None system_id)
+        // which always accumulates.
+        let is_accumulating_talker = matches!(gsa.talker_id.as_str(), "GN" | "PQ"); // "PQ" (Qualcomm vendor) behaves the same per gpsd
+
+        let should_reset = match &self.last_gsa_talker_id {
+            None => true,
+            Some(last) => last == &gsa.talker_id && !is_accumulating_talker,
+        };
+
+        if should_reset {
+            if let Some(prns) = &mut self.fix_satellites_prns {
+                prns.clear();
+            } else {
+                self.fix_satellites_prns = Some(Vec::new());
+            }
+        }
+
+        self.last_gsa_talker_id = Some(gsa.talker_id.clone());
+
+        if let Some(prns) = &mut self.fix_satellites_prns {
+            for prn in gsa.fix_sats_prn {
+                let sat = (gsa.system_id, prn);
+                if !prns.contains(&sat) {
+                    // SAFETY: The maximum PRNS is set to the realistic maximum + 10 for headroom
+                    // if we exceed that, it should be increased further.
+                    prns.push(sat).expect("prns exceeds maximum");
+                }
+            }
+        }
+
         self.hdop = gsa.hdop;
         self.vdop = gsa.vdop;
         self.pdop = gsa.pdop;
@@ -245,7 +311,10 @@ impl<'a> Nmea {
     ///
     /// The type of sentence is returned if implemented and valid.
     pub fn parse(&mut self, sentence: &'a str) -> Result<SentenceType, Error<'a>> {
-        match parse_str(sentence)? {
+        let result = parse_str(sentence)?;
+        self.update_gsa_state(&result);
+
+        match result {
             ParseResult::VTG(vtg) => {
                 self.merge_vtg_data(vtg);
                 Ok(SentenceType::VTG)
@@ -298,7 +367,10 @@ impl<'a> Nmea {
     }
 
     pub fn parse_for_fix(&mut self, xs: &'a str) -> Result<FixType, Error<'a>> {
-        match parse_str(xs)? {
+        let result = parse_str(xs)?;
+        self.update_gsa_state(&result);
+
+        match result {
             ParseResult::GSA(gsa) => {
                 self.merge_gsa_data(gsa);
                 return Ok(FixType::Invalid);
