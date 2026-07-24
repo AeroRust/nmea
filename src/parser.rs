@@ -1,6 +1,6 @@
 //! The [`Nmea`] parser.
 
-use core::{fmt, mem, ops::BitOr};
+use core::{fmt, ops::BitOr};
 
 use chrono::{NaiveDate, NaiveTime};
 use heapless::{Deque, Vec};
@@ -355,10 +355,48 @@ impl<'a> Nmea {
     }
 
     fn new_tick(&mut self) {
-        let old = mem::take(self);
-        self.satellites_scan = old.satellites_scan;
-        self.required_sentences_for_nav = old.required_sentences_for_nav;
-        self.last_fix_time = old.last_fix_time;
+        let Self {
+            fix_time,
+            fix_date,
+            fix_type,
+            latitude,
+            longitude,
+            altitude,
+            speed_over_ground,
+            true_course,
+            num_of_fix_satellites,
+            hdop,
+            vdop,
+            pdop,
+            geoid_separation,
+            fix_satellites_prns,
+            satellites_scan: _,
+            required_sentences_for_nav: _,
+            last_fix_time: _,
+            last_txt,
+            sentences_for_this_time,
+            gsa_cycle_complete,
+            last_gsa_talker_id,
+        } = self;
+
+        *fix_time = None;
+        *fix_date = None;
+        *fix_type = None;
+        *latitude = None;
+        *longitude = None;
+        *altitude = None;
+        *speed_over_ground = None;
+        *true_course = None;
+        *num_of_fix_satellites = None;
+        *hdop = None;
+        *vdop = None;
+        *pdop = None;
+        *geoid_separation = None;
+        *fix_satellites_prns = None;
+        *last_txt = None;
+        *sentences_for_this_time = Default::default();
+        *gsa_cycle_complete = false;
+        *last_gsa_talker_id = None;
     }
 
     fn clear_position_info(&mut self) {
@@ -1428,9 +1466,12 @@ mod tests {
     fn test_checksum() {
         let valid = "$GNGSA,A,1,,,,,,,,,,,,,99.99,99.99,99.99*2E";
         let invalid = "$GNZDA,165118.00,13,05,2016,00,00*71";
-        assert_eq!(checksum(valid[1..valid.len() - 3].as_bytes().iter()), 0x2E);
+        assert_eq!(
+            checksum(&mut valid.as_bytes()[1..valid.len() - 3].iter()),
+            0x2E
+        );
         assert_ne!(
-            checksum(invalid[1..invalid.len() - 3].as_bytes().iter()),
+            checksum(&mut invalid.as_bytes()[1..invalid.len() - 3].iter()),
             0x71
         );
     }
