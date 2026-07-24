@@ -475,7 +475,7 @@ fn test_gll() {
     assert_eq!(44, nmea.fix_timestamp().unwrap().second());
 }
 
-fn sort_prns(v: &mut Vec<(Option<GnssSystemId>, u32)>) {
+fn sort_prns(v: &mut [(Option<GnssSystemId>, u32)]) {
     v.sort_by(|a, b| {
         let a_key = (a.0.map(|s| s as u8), a.1);
         let b_key = (b.0.map(|s| s as u8), b.1);

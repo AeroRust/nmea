@@ -1428,9 +1428,12 @@ mod tests {
     fn test_checksum() {
         let valid = "$GNGSA,A,1,,,,,,,,,,,,,99.99,99.99,99.99*2E";
         let invalid = "$GNZDA,165118.00,13,05,2016,00,00*71";
-        assert_eq!(checksum(valid[1..valid.len() - 3].as_bytes().iter()), 0x2E);
+        assert_eq!(
+            checksum(&mut valid.as_bytes()[1..valid.len() - 3].iter()),
+            0x2E
+        );
         assert_ne!(
-            checksum(invalid[1..invalid.len() - 3].as_bytes().iter()),
+            checksum(&mut invalid.as_bytes()[1..invalid.len() - 3].iter()),
             0x71
         );
     }
