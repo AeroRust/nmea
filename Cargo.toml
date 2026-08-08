@@ -3,7 +3,7 @@ members = [".", "benches-harness"]
 
 [package]
 name = "nmea"
-version = "0.7.0"
+version = "0.8.0"
 
 authors = [
   "Felix Obenhuber <felix@obenhuber.de>",
