@@ -90,7 +90,7 @@ radar = ["TTM"]
 ## Water
 water = ["DBK", "DBS", "DPT", "MTW", "VHW"]
 ## Vendor-specific messages
-vendor-specific = ["RMZ"]
+vendor-specific = ["RMZ", "RMCE", "GGAE"]
 ## Other
 other = ["HDT", "MDA", "MWV", "TXT", "ZDA"]
 
@@ -179,6 +179,14 @@ MWV = []
 ## * Recommended Minimum Navigation Information
 ## (feature: `GNSS`)
 RMC = []
+
+## RMCE - Enhanced Recommended Minimum Navigation Information (u-blox vendor specific)
+## (feature: `vendor-specific`)
+RMCE = []
+
+## GGAE - Enhanced Global Positioning System Fix Data (u-blox vendor specific)
+## (feature: `vendor-specific`)
+GGAE = []
 
 ## PGRMZ - Garmin Altitude (Vendor specific)
 ## (feature: `vendor-specific`)
