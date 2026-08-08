@@ -16,6 +16,11 @@ use crate::{
     sentences::{gnss_type::GnssSystemId, utils::number},
 };
 
+/// Satellites used for the current fix, accumulated across all GSA sentences
+/// in a cycle. Sized to accommodate all supported constellations + 10 for headroom:
+/// GPS(12) + GLONASS(12) + Galileo(14) + BeiDou(12) + QZSS/SBAS(12) = 62 + 10
+pub const MAX_PRNS: usize = 72;
+
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -55,12 +60,16 @@ pub enum GsaMode2 {
 pub struct GsaData {
     pub mode1: GsaMode1,
     pub mode2: GsaMode2,
-    pub fix_sats_prn: Vec<u32, 18>,
+    pub fix_sats_prn: Vec<u32, MAX_PRNS>,
     pub pdop: Option<f32>,
     pub hdop: Option<f32>,
     pub vdop: Option<f32>,
     /// NMEA 4.1+ System ID: 1=GPS, 2=GLONASS, 3=Galileo, 4=BDS
     pub system_id: Option<GnssSystemId>,
+    /// Two-character talker ID from the sentence header, e.g. `"GP"`, `"GL"`, `"GN"`.
+    /// Used to detect GSA cycle boundaries: a repeated talker signals a new cycle,
+    /// except for `"GN"` and `"PQ"` which emit one GSA per constellation and always accumulate.
+    pub talker_id: heapless::String<2>,
 }
 
 /// This function is take from `nom`, see `nom::multi::many0` (requires `alloc`)
@@ -174,7 +183,7 @@ fn do_parse_empty_gsa_tail(i: &str) -> IResult<&str, GsaTail> {
     Ok((i, (Vec::new(), None, None, None, system_id)))
 }
 
-fn do_parse_gsa(i: &str) -> IResult<&str, GsaData> {
+fn do_parse_gsa(i: &str, talker_id: heapless::String<2>) -> IResult<&str, GsaData> {
     let (i, mode1) = one_of("MA").parse(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, mode2) = one_of("123").parse(i)?;
@@ -196,7 +205,7 @@ fn do_parse_gsa(i: &str) -> IResult<&str, GsaData> {
                 _ => unreachable!(),
             },
             fix_sats_prn: {
-                let mut fix_sats_prn = Vec::<u32, 18>::new();
+                let mut fix_sats_prn = Vec::<u32, MAX_PRNS>::new();
                 for sat in tail.0.iter().flatten() {
                     fix_sats_prn.push(*sat).unwrap()
                 }
@@ -207,6 +216,7 @@ fn do_parse_gsa(i: &str) -> IResult<&str, GsaData> {
             hdop: tail.2,
             vdop: tail.3,
             system_id: tail.4,
+            talker_id,
         },
     ))
 }
@@ -266,7 +276,10 @@ pub fn parse_gsa(sentence: NmeaSentence<'_>) -> Result<GsaData, Error<'_>> {
         });
     }
 
-    let (_, mut gsa_data) = do_parse_gsa(sentence.data)?;
+    // SAFETY: talker_id is always exactly 2 ASCII chars
+    let talker_id = heapless::String::<2>::try_from(sentence.talker_id).unwrap();
+
+    let (_, mut gsa_data) = do_parse_gsa(sentence.data, talker_id)?;
 
     // Derive system ID from the talker prefix
     let system_id_from_talker = match sentence.talker_id {
@@ -323,6 +336,7 @@ mod tests {
                 hdop: Some(2.1),
                 vdop: Some(2.2),
                 system_id: Some(GnssSystemId::Gps),
+                talker_id: heapless::String::try_from("GP").unwrap(),
             },
             gsa
         );
