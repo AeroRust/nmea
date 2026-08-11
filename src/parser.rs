@@ -310,6 +310,7 @@ impl<'a> Nmea {
     /// - and other
     ///
     /// The type of sentence is returned if implemented and valid.
+    // MARK: parse which currently works based on strings
     pub fn parse(&mut self, sentence: &'a str) -> Result<SentenceType, Error<'a>> {
         let result = parse_str(sentence)?;
         self.update_gsa_state(&result);
