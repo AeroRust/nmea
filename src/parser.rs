@@ -499,6 +499,7 @@ impl<'a> Nmea {
             | ParseResult::ZDA(_)
             | ParseResult::ZFO(_)
             | ParseResult::WNC(_)
+            | ParseResult::XDR(_)
             | ParseResult::ZTG(_) => return Ok(FixType::Invalid),
 
             ParseResult::Unsupported(_) => {
