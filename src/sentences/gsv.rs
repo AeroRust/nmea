@@ -3,6 +3,7 @@ use nom::{
     IResult, Parser as _,
     character::complete::char,
     combinator::{cond, opt, rest_len},
+    number::complete::float,
 };
 
 use crate::{
@@ -21,16 +22,18 @@ use crate::{
 /// $--GSV,x,x,x,x,x,x,x,...*hh<CR><LF>
 /// ```
 ///
-/// Field Number:
-/// 1. total number of GSV sentences to be transmitted in this group
-/// 2. Sentence number, 1-9 of this GSV message within current group
-/// 3. total number of satellites in view (leading zeros sent)
-/// 4. satellite ID or PRN number (leading zeros sent)
-/// 5. elevation in degrees (-90 to 90) (leading zeros sent)
-/// 6. azimuth in degrees to true north (000 to 359) (leading zeros sent)
-/// 7. SNR in dB (00-99) (leading zeros sent) more satellite info quadruples like 4-7 n-1) Signal ID (NMEA 4.11)
-///
-///    n. checksum
+/// | Field | Description |
+/// |------:|-------------|
+/// | `1` | total number of GSV sentences to be transmitted in this group |
+/// | `2` | Sentence number, 1-9 of this GSV message within current group |
+/// | `3` | total number of satellites in view (leading zeros sent) |
+/// | `4` | satellite ID or PRN number (leading zeros sent) |
+/// | `5` | elevation in degrees (-90 to 90); some receivers emit fractional values |
+/// | `6` | azimuth in degrees to true north (0 to 359); some receivers emit fractional values |
+/// | `7` | SNR in dB (0 to 99); some receivers emit fractional values |
+/// | `4-7` | may repeat for up to four satellites per sentence |
+/// | `n-1` | Signal ID (NMEA 4.10+), when present |
+/// | `n` | checksum |
 ///
 /// Example:
 ///
@@ -40,16 +43,20 @@ use crate::{
 ///
 /// `$GPGSV,3,3,11,22,42,067,42,24,14,311,43,27,05,244,00,,,,*4D`
 ///
+/// Some receivers, including the Quectel BG96, emit fractional elevation,
+/// azimuth, and SNR values. These fields are therefore parsed as floating-point
+/// values.
+///
 /// Some GPS receivers may emit more than 12 quadruples (more than three `GPGSV` sentences),
-/// even though NMEA-0813 doesn’t allow this. (The extras might be `WAAS` satellites, for example.)
+/// even though NMEA-0183 doesn’t allow this. (The extras might be `WAAS` satellites, for example.)
 ///
 /// Receivers may also report quads for satellites they aren’t tracking, in which case the `SNR` field will be null;
 /// we don’t know whether this is formally allowed or not.
 ///
 /// Example: `$GLGSV,3,3,09,88,07,028*51`
 ///
-/// Note: NMEA 4.10+ systems (`u-blox 9`, `Quectel LCD79`) may emit an extra field,
-/// `Signal ID`, just before the checksum. See the description of `Signal ID`'s above.
+/// Note: NMEA 4.10+ systems may emit an extra `Signal ID` field just before the
+/// checksum. Signal ID is not currently parsed or represented in `GsvData`.
 ///
 /// Note: `$GNGSV` uses `PRN` in field 4. Other `$GxGSV` use the `satellite ID` in field 4.
 /// Jackson Labs, Quectel, Telit, and others get this wrong, in various conflicting ways.
@@ -68,20 +75,21 @@ pub struct GsvData {
 fn parse_gsv_sat_info(i: &str) -> IResult<&str, Satellite> {
     let (i, prn) = number::<u32>(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, elevation) = opt(number::<i32>).parse(i)?;
+    let (i, elevation) = opt(float).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, azimuth) = opt(number::<i32>).parse(i)?;
+    let (i, azimuth) = opt(float).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, snr) = opt(number::<i32>).parse(i)?;
+    let (i, snr) = opt(float).parse(i)?;
     let (i, _) = cond(rest_len(i)?.1 > 0, char(',')).parse(i)?;
+
     Ok((
         i,
         Satellite {
             gnss_type: GnssType::Galileo,
             prn,
-            elevation: elevation.map(|v| v as f32),
-            azimuth: azimuth.map(|v| v as f32),
-            snr: snr.map(|v| v as f32),
+            elevation,
+            azimuth,
+            snr,
         },
     ))
 }
@@ -254,5 +262,62 @@ mod tests {
         assert_eq!(data.number_of_sentences, 3);
         assert_eq!(data.sentence_num, 3);
         assert_eq!(data.sats_in_view, 10);
+    }
+
+    #[test]
+    fn test_parse_gsv_decimal_satellite_fields() {
+        let data = parse_gsv(NmeaSentence {
+            talker_id: "GP",
+            message_id: SentenceType::GSV,
+            data: "6,1,24,05,13.4,30.9,26.8,16,64.7,258.8,32.2,18,67.5,83.0,31.6,08,7.7,279.8,,1",
+            checksum: 0x46,
+        })
+        .unwrap();
+
+        assert_eq!(data.gnss_type, GnssType::Gps);
+        assert_eq!(data.number_of_sentences, 6);
+        assert_eq!(data.sentence_num, 1);
+        assert_eq!(data.sats_in_view, 24);
+
+        assert_eq!(
+            data.sats_info[0].clone().unwrap(),
+            Satellite {
+                gnss_type: data.gnss_type,
+                prn: 5,
+                elevation: Some(13.4),
+                azimuth: Some(30.9),
+                snr: Some(26.8),
+            }
+        );
+        assert_eq!(
+            data.sats_info[1].clone().unwrap(),
+            Satellite {
+                gnss_type: GnssType::Gps,
+                prn: 16,
+                elevation: Some(64.7),
+                azimuth: Some(258.8),
+                snr: Some(32.2),
+            }
+        );
+        assert_eq!(
+            data.sats_info[2].clone().unwrap(),
+            Satellite {
+                gnss_type: GnssType::Gps,
+                prn: 18,
+                elevation: Some(67.5),
+                azimuth: Some(83.0),
+                snr: Some(31.6),
+            }
+        );
+        assert_eq!(
+            data.sats_info[3].clone().unwrap(),
+            Satellite {
+                gnss_type: GnssType::Gps,
+                prn: 8,
+                elevation: Some(7.7),
+                azimuth: Some(279.8),
+                snr: None,
+            }
+        );
     }
 }
