@@ -215,6 +215,45 @@ fn test_gsv_signal_id() {
 }
 
 #[test]
+fn test_quectel_gsv_system_id() {
+    let examples = [
+        // Real Quectel BeiDou example from gpsd's driver_nmea0183.c.
+        (
+            "$PQGSV,4,2,15,09,16,120,,10,26,049,,16,07,123,,19,34,212,,0,4*62",
+            GnssType::Beidou,
+        ),
+        // Constructed System ID 5 variant, with its checksum recalculated.
+        (
+            "$PQGSV,4,2,15,09,16,120,,10,26,049,,16,07,123,,19,34,212,,0,5*63",
+            GnssType::Qzss,
+        ),
+    ];
+    for (sentence, gnss_type) in examples {
+        let ParseResult::GSV(data) = parse_str(sentence).unwrap() else {
+            panic!("Expected GSV data");
+        };
+        assert_eq!(data.gnss_type, gnss_type);
+        assert_eq!(data.signal_id, Some(0));
+        assert_eq!(data.sats_info.iter().flatten().count(), 4);
+        assert!(
+            data.sats_info
+                .iter()
+                .flatten()
+                .all(|sat| { sat.gnss_type() == gnss_type && sat.signal_id() == Some(0) })
+        );
+        let mut nmea = Nmea::default();
+        nmea.parse(sentence).unwrap();
+        let satellites = nmea.satellites();
+        assert_eq!(satellites.len(), 4);
+        assert!(
+            satellites
+                .iter()
+                .all(|sat| { sat.gnss_type() == gnss_type && sat.signal_id() == Some(0) })
+        );
+    }
+}
+
+#[test]
 fn test_gsv_real_data() {
     let mut nmea = Nmea::default();
     let real_data = [

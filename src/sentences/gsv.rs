@@ -194,7 +194,22 @@ pub fn parse_gsv(sentence: NmeaSentence<'_>) -> Result<GsvData, Error<'_>> {
             "GQ" | "PQ" | "QZ" => GnssType::Qzss,
             _ => return Err(Error::UnknownGnssType(sentence.talker_id)),
         };
-        let mut res = do_parse_gsv(sentence.data)?.1;
+        let (tail, mut res) = do_parse_gsv(sentence.data)?;
+        let gnss_type = if sentence.talker_id == "PQ" && !tail.is_empty() {
+            let (tail, _) = char(',').parse(tail)?;
+            let (tail, gnss_type) = map(one_of("45"), |system_id| {
+                if system_id == '4' {
+                    GnssType::Beidou
+                } else {
+                    GnssType::Qzss
+                }
+            })
+            .parse(tail)?;
+            let (_, _) = peek(alt((tag(","), eof))).parse(tail)?;
+            gnss_type
+        } else {
+            gnss_type
+        };
         res.gnss_type = gnss_type;
         for sat in res.sats_info.iter_mut().flatten() {
             sat.gnss_type = gnss_type;
@@ -207,6 +222,71 @@ pub fn parse_gsv(sentence: NmeaSentence<'_>) -> Result<GsvData, Error<'_>> {
 mod tests {
     use super::*;
     use crate::parse_nmea_sentence;
+
+    #[test]
+    fn test_quectel_system_id_field() {
+        // Constructed tails test field validation without whole-body strictness.
+        let sentence = NmeaSentence {
+            talker_id: "PQ",
+            message_id: SentenceType::GSV,
+            data: "1,1,01,05,13,030,26,0,4,vendor",
+            checksum: 0,
+        };
+        assert_eq!(parse_gsv(sentence).unwrap().gnss_type, GnssType::Beidou);
+        for data in ["1,1,01,05,13,030,26,0,45", "1,1,01,05,13,030,26,0,3"] {
+            assert!(
+                parse_gsv(NmeaSentence {
+                    data,
+                    talker_id: "PQ",
+                    message_id: SentenceType::GSV,
+                    checksum: 0,
+                })
+                .is_err()
+            );
+        }
+    }
+
+    #[test]
+    fn test_quectel_empty_signal_id_with_system_id() {
+        // Constructed empty Signal-ID field followed by Quectel System ID 4.
+        let data = parse_gsv(NmeaSentence {
+            talker_id: "PQ",
+            message_id: SentenceType::GSV,
+            data: "1,1,01,05,13,030,26,,4",
+            checksum: 0,
+        })
+        .unwrap();
+        assert_eq!(data.signal_id, None);
+        assert_eq!(data.gnss_type, GnssType::Beidou);
+        assert_eq!(data.sats_info.iter().flatten().count(), 1);
+        assert!(
+            data.sats_info
+                .iter()
+                .flatten()
+                .all(|sat| { sat.gnss_type() == GnssType::Beidou && sat.signal_id().is_none() })
+        );
+    }
+
+    #[test]
+    fn test_quectel_without_system_id() {
+        // Constructed Signal-ID-only tail protects the historical PQ fallback.
+        let data = parse_gsv(NmeaSentence {
+            talker_id: "PQ",
+            message_id: SentenceType::GSV,
+            data: "1,1,01,05,13,030,26,0",
+            checksum: 0,
+        })
+        .unwrap();
+        assert_eq!(data.gnss_type, GnssType::Qzss);
+        assert_eq!(data.signal_id, Some(0));
+        assert_eq!(data.sats_info.iter().flatten().count(), 1);
+        assert!(
+            data.sats_info
+                .iter()
+                .flatten()
+                .all(|sat| { sat.gnss_type() == GnssType::Qzss && sat.signal_id() == Some(0) })
+        );
+    }
 
     #[test]
     fn test_signal_id_tail() {
