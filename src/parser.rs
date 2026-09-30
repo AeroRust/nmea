@@ -138,7 +138,8 @@ impl<'a> Nmea {
         }
     }
 
-    /// Returns used satellites
+    /// Returns satellites in view, keeping the most recent observation for each
+    /// GNSS constellation and PRN.
     pub fn satellites(&self) -> Vec<Satellite, 58> {
         let mut ret = Vec::<Satellite, 58>::new();
         let sat_key = |sat: &Satellite| (sat.gnss_type() as u8, sat.prn());
@@ -246,7 +247,7 @@ impl<'a> Nmea {
         // Reset if this is the first GSA, or if system_id matches the last one
         // (same constellation repeating means new cycle), except for GN-talker (None system_id)
         // which always accumulates.
-        let is_accumulating_talker = matches!(gsa.talker_id.as_str(), "GN" | "PQ"); // "PQ" (Qualcomm vendor) behaves the same per gpsd
+        let is_accumulating_talker = matches!(gsa.talker_id.as_str(), "GN" | "PQ"); // "PQ" (Quectel vendor) behaves the same per gpsd
 
         let should_reset = match &self.last_gsa_talker_id {
             None => true,
@@ -558,12 +559,8 @@ impl fmt::Display for Nmea {
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Default)]
 struct SatsPack {
-    /// max number of visible GNSS satellites per hemisphere, assuming global coverage
-    /// GPS: 16
-    /// GLONASS: 12
-    /// BeiDou: 12 + 3 IGSO + 3 GEO
-    /// Galileo: 12
-    /// => 58 total Satellites => max 15 rows of data
+    /// Implementation capacity: 15 sentence rows per constellation, with up to
+    /// four observations per row. `Nmea::satellites()` returns at most 58 entries.
     #[cfg_attr(feature = "serde", serde(with = "serde_deq"))]
     #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     data: Deque<Vec<Option<Satellite>, 4>, 15>,
@@ -620,7 +617,10 @@ mod serde_deq {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, PartialEq)]
-/// Satellite information
+/// An identified satellite observation.
+///
+/// GSV observations without a satellite ID cannot be represented as a
+/// `Satellite` and are discarded by the GSV parser.
 pub struct Satellite {
     pub(crate) gnss_type: GnssType,
     pub(crate) prn: u32,

@@ -24,20 +24,21 @@ use crate::{
 /// $--GSV,x,x,x,x,x,x,x,...*hh<CR><LF>
 /// ```
 ///
+/// Standard NMEA layout:
+///
 /// | Field | Description |
 /// |------:|-------------|
 /// | `1` | total number of GSV sentences to be transmitted in this group |
-/// | `2` | Sentence number, 1-9 of this GSV message within current group |
-/// | `3` | total number of satellites in view (leading zeros sent) |
-/// | `4` | satellite ID or PRN number (leading zeros sent) |
-/// | `5` | elevation in degrees (-90 to 90); some receivers emit fractional values |
-/// | `6` | azimuth in degrees to true north (0 to 359); some receivers emit fractional values |
-/// | `7` | SNR in dB (0 to 99); some receivers emit fractional values |
-/// | `4-7` | may repeat for up to four satellites per sentence |
-/// | `n-1` | Signal ID (NMEA 4.10+), when present |
-/// | `n` | checksum |
+/// | `2` | sentence number within the current GSV group |
+/// | `3` | total number of satellites in view |
+/// | `4` | satellite ID or PRN number |
+/// | `5` | elevation in degrees (-90 to 90) |
+/// | `6` | azimuth in degrees to true north (0 to 359) |
+/// | `7` | SNR in dB (0 to 99) |
+/// | `4-7` | satellite fields may repeat for up to four satellites per sentence |
+/// | final field | Signal ID (NMEA 4.10+), one hexadecimal digit, when present |
 ///
-/// Example:
+/// Examples:
 ///
 /// `$GPGSV,3,1,11,03,03,111,00,04,15,270,00,06,01,010,00,13,06,292,00*74`
 ///
@@ -45,23 +46,58 @@ use crate::{
 ///
 /// `$GPGSV,3,3,11,22,42,067,42,24,14,311,43,27,05,244,00,,,,*4D`
 ///
+/// ## Receiver variations
+///
+/// Real receivers do not always follow the nominal GSV format exactly.
+///
 /// Some receivers, including the Quectel BG96, emit fractional elevation,
 /// azimuth, and SNR values. These fields are therefore parsed as floating-point
 /// values.
 ///
-/// Some GPS receivers may emit more than 12 quadruples (more than three `GPGSV` sentences),
-/// even though NMEA-0183 doesn’t allow this. (The extras might be `WAAS` satellites, for example.)
+/// Some receivers emit more than 12 satellite observations, requiring more than
+/// three GSV sentences in a group.
 ///
-/// Receivers may also report quads for satellites they aren’t tracking, in which case the `SNR` field will be null;
-/// we don’t know whether this is formally allowed or not.
+/// Individual measurement fields may be empty. For example, a receiver may know
+/// the satellite ID and SNR while elevation and azimuth are unavailable:
 ///
-/// Example: `$GLGSV,3,3,09,88,07,028*51`
+/// `12,,,24.9`
 ///
-/// Note: NMEA 4.10+ systems may emit an extra `Signal ID` field just before the
-/// checksum. This raw hexadecimal ID applies to every satellite in the sentence.
+/// An entirely empty satellite slot is also accepted.
 ///
-/// Note: `$GNGSV` uses `PRN` in field 4. Other `$GxGSV` use the `satellite ID` in field 4.
-/// Jackson Labs, Quectel, Telit, and others get this wrong, in various conflicting ways.
+/// Some receivers emit malformed observations in which the satellite ID itself
+/// is missing while other measurement fields are present. The Quectel BG96 has
+/// been observed to emit this while acquiring satellites, for example:
+///
+/// `$GLGSV,1,1,01,,,,26.9,1*6A`
+///
+/// Such an observation cannot be represented as a [`Satellite`] because its
+/// satellite ID is unknown. The observation is therefore discarded, but its
+/// complete four-field slot is still consumed so parsing remains aligned with
+/// following sentence-level fields such as the Signal ID.
+///
+/// ## NMEA 4.10+ Signal ID
+///
+/// NMEA 4.10+ GSV sentences may contain a Signal ID after the satellite fields
+/// and before the checksum. The field is one hexadecimal digit and applies to
+/// every satellite observation in the sentence.
+///
+/// The raw value is preserved as `0x0..=0xF`; it is not translated to a
+/// receiver-specific signal identifier.
+///
+/// Standard NMEA 4.10+ tails have the form:
+///
+/// `...,satellite fields,Signal ID`
+///
+/// Quectel `$PQGSV` may additionally append a proprietary System ID:
+///
+/// `...,satellite fields,Signal ID,System ID`
+///
+/// For `$PQGSV`, System ID `4` selects BeiDou and `5` selects QZSS. If the
+/// System ID is omitted, this parser preserves the historical QZSS
+/// classification of the `PQ` talker.
+///
+/// Receivers vary in whether the satellite identifier is described as a
+/// satellite ID, SVID, or PRN.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, PartialEq)]
@@ -163,21 +199,22 @@ fn do_parse_gsv(i: &str) -> IResult<&str, GsvData> {
 /// 46          Signal-to-noise ratio in decibels
 /// <repeat for up to 4 satellites per sentence>
 ///
-/// Can occur with talker IDs:
+/// Supported talker IDs:
 /// - BD (Beidou),
 /// - GA (Galileo),
 /// - GB (Beidou),
 /// - GI (NavIC - India)
 /// - GL (GLONASS),
-/// - GN (GLONASS, any combination GNSS),
 /// - GP (GPS, SBAS, QZSS),
 /// - GQ (QZSS)
-/// - PQ (QZSS)
+/// - PQ (Quectel proprietary; BeiDou or QZSS according to trailing System ID)
 /// - QZ (QZSS)
 ///
-/// GL may be (incorrectly) used when GSVs are mixed containing
-/// GLONASS, GN may be (incorrectly) used when GSVs contain GLONASS
-/// only.  Usage is inconsistent.
+/// `GNGSV` is currently unsupported because this crate's GSV model assumes one
+/// constellation per sentence and stores its observations in one constellation
+/// bucket. `GN` may contain multiple constellations and requires per-satellite
+/// constellation resolution. Some receivers use talker IDs inconsistently,
+/// including `GL` for mixed constellations.
 pub fn parse_gsv(sentence: NmeaSentence<'_>) -> Result<GsvData, Error<'_>> {
     if sentence.message_id != SentenceType::GSV {
         Err(Error::WrongSentenceHeader {
