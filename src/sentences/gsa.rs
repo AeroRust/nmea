@@ -291,13 +291,13 @@ pub fn parse_gsa(sentence: NmeaSentence<'_>) -> Result<GsaData, Error<'_>> {
     };
 
     // Validation
-    if let (Some(talker_sys_id), Some(tail_sys_id)) = (system_id_from_talker, gsa_data.system_id) {
-        if talker_sys_id != tail_sys_id {
-            return Err(Error::SystemIdMismatch {
-                talker_sys_id,
-                tail_sys_id,
-            });
-        }
+    if let (Some(talker_sys_id), Some(tail_sys_id)) = (system_id_from_talker, gsa_data.system_id)
+        && talker_sys_id != tail_sys_id
+    {
+        return Err(Error::SystemIdMismatch {
+            talker_sys_id,
+            tail_sys_id,
+        });
     }
 
     // Fallback: Use talker ID if the trailing system ID was omitted

@@ -17,10 +17,10 @@ impl From<FaaModes> for FixType {
         if fix_type.is_valid() {
             return fix_type;
         }
-        if let Some(fix_type2) = modes.sys_state1.map(FixType::from) {
-            if fix_type2.is_valid() {
-                return fix_type2;
-            }
+        if let Some(fix_type2) = modes.sys_state1.map(FixType::from)
+            && fix_type2.is_valid()
+        {
+            return fix_type2;
         }
         fix_type
     }
