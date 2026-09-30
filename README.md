@@ -38,6 +38,7 @@ Supported sentences (alphabetically ordered):
 - `VHW` - Water speed and heading (feature: `water`)
 - `VTG` - * Track made good and Ground speed (feature: `GNSS`)
 - `WNC` - Distance - Waypoint to waypoint (feature: `waypoint`)
+- `XDR` - Transducer Measurements (feature: `other`)
 - `ZDA` - Time & Date - UTC, day, month, year and local time zone (feature: `other`)
 - `ZFO` - UTC & Time from origin Waypoint (feature: `waypoint`)
 - `ZTG` - UTC & Time to Destination Waypoint (feature: `waypoint`)
