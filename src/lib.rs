@@ -32,6 +32,7 @@
 mod error;
 pub(crate) mod parse;
 mod parser;
+pub mod stream;
 
 pub mod sentences;
 
