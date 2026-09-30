@@ -1,8 +1,10 @@
 use heapless::Vec;
 use nom::{
     IResult, Parser as _,
-    character::complete::char,
-    combinator::{cond, opt, rest_len},
+    branch::alt,
+    bytes::complete::tag,
+    character::complete::{char, one_of},
+    combinator::{cond, eof, map, opt, peek, rest_len},
     number::complete::float,
 };
 
@@ -56,7 +58,7 @@ use crate::{
 /// Example: `$GLGSV,3,3,09,88,07,028*51`
 ///
 /// Note: NMEA 4.10+ systems may emit an extra `Signal ID` field just before the
-/// checksum. Signal ID is not currently parsed or represented in `GsvData`.
+/// checksum. This raw hexadecimal ID applies to every satellite in the sentence.
 ///
 /// Note: `$GNGSV` uses `PRN` in field 4. Other `$GxGSV` use the `satellite ID` in field 4.
 /// Jackson Labs, Quectel, Telit, and others get this wrong, in various conflicting ways.
@@ -68,12 +70,20 @@ pub struct GsvData {
     pub number_of_sentences: u16,
     pub sentence_num: u16,
     pub sats_in_view: u16,
-    // see SatPack in lib.rs
+    /// Raw NMEA 4.10+ Signal ID, encoded as one hexadecimal digit on the wire.
+    /// Returned as `0x0..=0xF` (wire `B` becomes `Some(11)`), without translation
+    /// to a u-blox signal ID. `None` means absent or empty, `Some(0)` means
+    /// "all signals". Other meanings depend on `gnss_type`.
+    pub signal_id: Option<u8>,
+    /// Up to four satellite observations from this GSV sentence.
+    ///
+    /// Empty slots, and observations without a satellite ID, are represented as
+    /// `None`. A satellite ID is required to construct a [`Satellite`].
     pub sats_info: Vec<Option<Satellite>, 4>,
 }
 
-fn parse_gsv_sat_info(i: &str) -> IResult<&str, Satellite> {
-    let (i, prn) = number::<u32>(i)?;
+fn parse_gsv_sat_info(i: &str) -> IResult<&str, Option<Satellite>> {
+    let (i, prn) = opt(number::<u32>).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, elevation) = opt(float).parse(i)?;
     let (i, _) = char(',').parse(i)?;
@@ -84,13 +94,14 @@ fn parse_gsv_sat_info(i: &str) -> IResult<&str, Satellite> {
 
     Ok((
         i,
-        Satellite {
+        prn.map(|prn| Satellite {
             gnss_type: GnssType::Galileo,
             prn,
             elevation,
             azimuth,
             snr,
-        },
+            signal_id: None,
+        }),
     ))
 }
 
@@ -107,10 +118,22 @@ fn do_parse_gsv(i: &str) -> IResult<&str, GsvData> {
     let (i, sats) = (0..4).try_fold((i, sats), |(i, mut sats), sat_index| {
         let (i, sat) = opt(parse_gsv_sat_info).parse(i)?;
 
-        sats.insert(sat_index, sat).unwrap();
-
+        sats.insert(sat_index, sat.flatten()).unwrap();
         Ok((i, sats))
     })?;
+
+    // Validate just this field and preserve the remainder for receiver extensions.
+    let (i, signal_id) = if i.is_empty() || i.starts_with(',') {
+        (i, None)
+    } else {
+        let (i, digit) = one_of("0123456789ABCDEFabcdef").parse(i)?;
+        let (i, _) = peek(alt((tag(","), eof))).parse(i)?;
+        (i, Some(digit.to_digit(16).unwrap() as u8))
+    };
+    let mut sats = sats;
+    for sat in sats.iter_mut().flatten() {
+        sat.signal_id = signal_id;
+    }
 
     Ok((
         i,
@@ -119,6 +142,7 @@ fn do_parse_gsv(i: &str) -> IResult<&str, GsvData> {
             number_of_sentences,
             sentence_num,
             sats_in_view,
+            signal_id,
             sats_info: sats,
         },
     ))
@@ -172,10 +196,8 @@ pub fn parse_gsv(sentence: NmeaSentence<'_>) -> Result<GsvData, Error<'_>> {
         };
         let mut res = do_parse_gsv(sentence.data)?.1;
         res.gnss_type = gnss_type;
-        for sat in &mut res.sats_info {
-            if let Some(v) = (*sat).as_mut() {
-                v.gnss_type = gnss_type;
-            }
+        for sat in res.sats_info.iter_mut().flatten() {
+            sat.gnss_type = gnss_type;
         }
         Ok(res)
     }
@@ -184,9 +206,49 @@ pub fn parse_gsv(sentence: NmeaSentence<'_>) -> Result<GsvData, Error<'_>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::parse_nmea_sentence;
+
+    #[test]
+    fn test_signal_id_tail() {
+        // Constructed variants of the documented padded sentence.
+        for (input, expected_id) in [
+            (
+                "3,3,11,22,42,067,42,24,14,311,43,27,05,244,00,,,,,B",
+                Some(11),
+            ),
+            (
+                "3,3,11,22,42,067,42,24,14,311,43,27,05,244,00,,,,,0",
+                Some(0),
+            ),
+        ] {
+            let (_, data) = do_parse_gsv(input).unwrap();
+            assert_eq!(data.signal_id, expected_id);
+            assert_eq!(data.sats_info.iter().flatten().count(), 3);
+            assert!(data.sats_info[3].is_none());
+            assert!(
+                data.sats_info
+                    .iter()
+                    .flatten()
+                    .all(|sat| sat.signal_id() == expected_id)
+            );
+        }
+        // Reject a multi-character Signal ID, without rejecting unknown fields
+        // after a valid Signal ID.
+        assert!(do_parse_gsv("1,1,01,05,13,030,26,10").is_err());
+        let (remaining, data) = do_parse_gsv("1,1,01,05,13,030,26,1,vendor").unwrap();
+        assert_eq!(data.signal_id, Some(1));
+        assert_eq!(remaining, ",vendor");
+    }
 
     #[test]
     fn test_parse_gsv_full() {
+        // Legacy padded sentence from the GSV documentation above.
+        let (remaining, padded) =
+            do_parse_gsv("3,3,11,22,42,067,42,24,14,311,43,27,05,244,00,,,,").unwrap();
+        assert!(remaining.is_empty());
+        assert_eq!(padded.signal_id, None);
+        assert_eq!(padded.sats_info.iter().flatten().count(), 3);
+
         let data = parse_gsv(NmeaSentence {
             talker_id: "GP",
             message_id: SentenceType::GSV,
@@ -198,6 +260,7 @@ mod tests {
         assert_eq!(data.number_of_sentences, 2);
         assert_eq!(data.sentence_num, 1);
         assert_eq!(data.sats_in_view, 8);
+        assert_eq!(data.signal_id, None);
         assert_eq!(
             data.sats_info[0].clone().unwrap(),
             Satellite {
@@ -206,6 +269,7 @@ mod tests {
                 elevation: None,
                 azimuth: Some(83.),
                 snr: Some(46.),
+                signal_id: None,
             }
         );
         assert_eq!(
@@ -216,6 +280,7 @@ mod tests {
                 elevation: Some(17.),
                 azimuth: Some(308.),
                 snr: None,
+                signal_id: None,
             }
         );
         assert_eq!(
@@ -226,6 +291,7 @@ mod tests {
                 elevation: Some(7.),
                 azimuth: Some(344.),
                 snr: Some(39.),
+                signal_id: None,
             }
         );
         assert_eq!(
@@ -236,6 +302,7 @@ mod tests {
                 elevation: Some(22.),
                 azimuth: Some(228.),
                 snr: None,
+                signal_id: None,
             }
         );
 
@@ -278,6 +345,7 @@ mod tests {
         assert_eq!(data.number_of_sentences, 6);
         assert_eq!(data.sentence_num, 1);
         assert_eq!(data.sats_in_view, 24);
+        assert_eq!(data.signal_id, Some(1));
 
         assert_eq!(
             data.sats_info[0].clone().unwrap(),
@@ -287,6 +355,7 @@ mod tests {
                 elevation: Some(13.4),
                 azimuth: Some(30.9),
                 snr: Some(26.8),
+                signal_id: Some(1),
             }
         );
         assert_eq!(
@@ -297,6 +366,7 @@ mod tests {
                 elevation: Some(64.7),
                 azimuth: Some(258.8),
                 snr: Some(32.2),
+                signal_id: Some(1),
             }
         );
         assert_eq!(
@@ -307,6 +377,7 @@ mod tests {
                 elevation: Some(67.5),
                 azimuth: Some(83.0),
                 snr: Some(31.6),
+                signal_id: Some(1),
             }
         );
         assert_eq!(
@@ -317,7 +388,47 @@ mod tests {
                 elevation: Some(7.7),
                 azimuth: Some(279.8),
                 snr: None,
+                signal_id: Some(1),
             }
         );
+    }
+
+    #[test]
+    fn test_bg96_missing_satellite_id_preserves_signal_id() {
+        // Captured from a Quectel BG96 while acquiring satellites.
+        //
+        // $GLGSV,1,1,01,,,,26.9,1*6A
+        //              | | | |  |
+        //              | | | |  +---- NMEA 4.10 Signal ID = 1
+        //              | | | +------- SNR/CN0 = 26.9
+        //              | | +--------- azimuth unavailable
+        //              | +----------- elevation unavailable
+        //              +------------- satellite ID unavailable
+        //
+        // The BG96 advertises one GLONASS satellite in view but emits an SNR without
+        // identifying the satellite. Since the PRN is missing, this observation cannot
+        // be represented as a Satellite and is discarded.
+        //
+        // The malformed satellite fields must still be consumed as one complete GSV
+        // satellite tuple. Otherwise parsing loses field alignment and the following
+        // sentence-level Signal ID is missed (or could be mistaken for satellite data).
+        //
+        // This matters beyond this exact sentence: a GSV message may contain other
+        // valid satellite observations whose Signal ID should still be preserved.
+        //
+        // Expected result:
+        // - the sentence parses successfully,
+        // - no Satellite observation is returned,
+        // - Signal ID 1 is preserved.
+        let sentence = parse_nmea_sentence("$GLGSV,1,1,01,,,,26.9,1*6A").unwrap();
+
+        let data = parse_gsv(sentence).unwrap();
+
+        assert_eq!(data.gnss_type, GnssType::Glonass);
+        assert_eq!(data.number_of_sentences, 1);
+        assert_eq!(data.sentence_num, 1);
+        assert_eq!(data.sats_in_view, 1);
+        assert_eq!(data.signal_id, Some(1));
+        assert!(data.sats_info.iter().all(Option::is_none));
     }
 }
