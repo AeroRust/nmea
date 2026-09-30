@@ -627,6 +627,7 @@ pub struct Satellite {
     pub(crate) elevation: Option<f32>,
     pub(crate) azimuth: Option<f32>,
     pub(crate) snr: Option<f32>,
+    pub(crate) signal_id: Option<u8>,
 }
 
 impl Satellite {
@@ -650,18 +651,27 @@ impl Satellite {
     pub fn snr(&self) -> Option<f32> {
         self.snr
     }
+    /// Raw NMEA 4.10+ Signal ID from this observation's GSV sentence.
+    /// The wire field is one hexadecimal digit, returned as `0x0..=0xF`
+    /// (wire `B` becomes `Some(11)`), without translation to a u-blox signal ID.
+    /// `None` means absent or empty, `Some(0)` means "all signals".
+    /// Other meanings depend on [`Self::gnss_type`].
+    pub fn signal_id(&self) -> Option<u8> {
+        self.signal_id
+    }
 }
 
 impl fmt::Display for Satellite {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "{}: {} elv: {} ath: {} snr: {}",
+            "{}: {} elv: {} ath: {} snr: {} signal: {:?}",
             self.gnss_type,
             self.prn,
             format_args!("{:?}", self.elevation),
             format_args!("{:?}", self.azimuth),
             format_args!("{:?}", self.snr),
+            self.signal_id,
         )
     }
 }
@@ -670,8 +680,8 @@ impl fmt::Debug for Satellite {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "[{:?},{:?},{:?},{:?},{:?}]",
-            self.gnss_type, self.prn, self.elevation, self.azimuth, self.snr
+            "[{:?},{:?},{:?},{:?},{:?},{:?}]",
+            self.gnss_type, self.prn, self.elevation, self.azimuth, self.snr, self.signal_id
         )
     }
 }

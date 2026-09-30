@@ -2,7 +2,10 @@ use approx::assert_relative_eq;
 use chrono::NaiveTime;
 use helpers::format_satellites;
 use nmea::{
-    sentences::{fix_type::FixType, gnss_type::GnssSystemId},
+    sentences::{
+        fix_type::FixType,
+        gnss_type::{GnssSystemId, GnssType},
+    },
     *,
 };
 
@@ -137,6 +140,78 @@ fn test_gsv() {
         ],
         format_satellites(nmea.satellites())
     );
+}
+
+#[test]
+fn test_gsv_signal_id() {
+    // From a Quectel BG96
+    let sentences = [
+        "$GPGSV,6,1,24,05,13.4,30.9,26.8,16,64.7,258.8,32.2,18,67.5,83.0,31.6,08,7.7,279.8,,1*46",
+        "$GPGSV,6,2,24,10,8.4,165.9,,13,1.4,50.6,,15,5.6,80.2,,20,5.6,56.3,,1*58",
+        "$GPGSV,6,3,24,23,33.8,139.2,,26,49.9,195.5,,27,38.0,277.0,,29,15.5,95.6,,1*53",
+        "$GPGSV,6,4,24,31,4.9,215.2,,33,,,33.9,38,,,33.7,39,,,34.0,1*7D",
+        "$GPGSV,6,5,24,40,,,33.8,41,,,33.8,42,,,33.9,46,,,35.1,1*6A",
+        "$GPGSV,6,6,24,48,,,33.7,49,,,34.2,50,,,34.8,51,,,34.1,1*69",
+        "$GAGSV,3,1,12,02,14.8,144.8,,04,7.7,15.5,,06,3.5,38.0,,09,,,,7*43",
+        "$GAGSV,3,2,12,15,32.3,210.9,,19,3.5,324.8,,21,3.5,313.6,,27,51.3,291.1,,7*75",
+        "$GAGSV,3,3,12,28,6.3,351.6,,30,65.4,187.0,,34,74.5,132.2,,36,32.3,53.4,,7*72",
+    ];
+    let mut nmea = Nmea::default();
+    for (idx, sentence) in sentences.iter().enumerate() {
+        let (gnss_type, signal_id, sentence_num, number_of_sentences, sats_in_view) = if idx < 6 {
+            (GnssType::Gps, 1, idx + 1, 6, 24)
+        } else {
+            (GnssType::Galileo, 7, idx - 5, 3, 12)
+        };
+        let ParseResult::GSV(data) = parse_str(sentence).unwrap() else {
+            panic!("Expected GSV data");
+        };
+        assert_eq!(data.gnss_type, gnss_type);
+        assert_eq!(data.signal_id, Some(signal_id));
+        assert_eq!(data.sentence_num, sentence_num as u16);
+        assert_eq!(data.number_of_sentences, number_of_sentences);
+        assert_eq!(data.sats_in_view, sats_in_view);
+        assert_eq!(data.sats_info.iter().flatten().count(), 4);
+        assert!(
+            data.sats_info
+                .iter()
+                .flatten()
+                .all(|sat| { sat.gnss_type() == gnss_type && sat.signal_id() == Some(signal_id) })
+        );
+        nmea.parse(sentence).unwrap();
+    }
+
+    let satellites = nmea.satellites();
+    assert_eq!(satellites.len(), 36);
+    assert_eq!(
+        satellites
+            .iter()
+            .filter(|sat| sat.gnss_type() == GnssType::Gps)
+            .count(),
+        24
+    );
+    assert_eq!(
+        satellites
+            .iter()
+            .filter(|sat| sat.gnss_type() == GnssType::Galileo)
+            .count(),
+        12
+    );
+    for sat in &satellites {
+        let expected_signal_id = match sat.gnss_type() {
+            GnssType::Gps => 1,
+            GnssType::Galileo => 7,
+            _ => panic!("Unexpected constellation"),
+        };
+        assert_eq!(sat.signal_id(), Some(expected_signal_id));
+    }
+    let sat = satellites
+        .iter()
+        .find(|sat| sat.gnss_type() == GnssType::Galileo && sat.prn() == 9)
+        .unwrap();
+    assert_eq!(sat.elevation(), None);
+    assert_eq!(sat.azimuth(), None);
+    assert_eq!(sat.snr(), None);
 }
 
 #[test]
