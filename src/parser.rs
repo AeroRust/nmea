@@ -138,7 +138,8 @@ impl<'a> Nmea {
         }
     }
 
-    /// Returns used satellites
+    /// Returns satellites in view, keeping the most recent observation for each
+    /// GNSS constellation and PRN.
     pub fn satellites(&self) -> Vec<Satellite, 58> {
         let mut ret = Vec::<Satellite, 58>::new();
         let sat_key = |sat: &Satellite| (sat.gnss_type() as u8, sat.prn());
@@ -246,7 +247,7 @@ impl<'a> Nmea {
         // Reset if this is the first GSA, or if system_id matches the last one
         // (same constellation repeating means new cycle), except for GN-talker (None system_id)
         // which always accumulates.
-        let is_accumulating_talker = matches!(gsa.talker_id.as_str(), "GN" | "PQ"); // "PQ" (Qualcomm vendor) behaves the same per gpsd
+        let is_accumulating_talker = matches!(gsa.talker_id.as_str(), "GN" | "PQ"); // "PQ" (Quectel vendor) behaves the same per gpsd
 
         let should_reset = match &self.last_gsa_talker_id {
             None => true,
@@ -558,12 +559,8 @@ impl fmt::Display for Nmea {
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Default)]
 struct SatsPack {
-    /// max number of visible GNSS satellites per hemisphere, assuming global coverage
-    /// GPS: 16
-    /// GLONASS: 12
-    /// BeiDou: 12 + 3 IGSO + 3 GEO
-    /// Galileo: 12
-    /// => 58 total Satellites => max 15 rows of data
+    /// Implementation capacity: 15 sentence rows per constellation, with up to
+    /// four observations per row. `Nmea::satellites()` returns at most 58 entries.
     #[cfg_attr(feature = "serde", serde(with = "serde_deq"))]
     #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
     data: Deque<Vec<Option<Satellite>, 4>, 15>,
@@ -620,13 +617,17 @@ mod serde_deq {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, PartialEq)]
-/// Satellite information
+/// An identified satellite observation.
+///
+/// GSV observations without a satellite ID cannot be represented as a
+/// `Satellite` and are discarded by the GSV parser.
 pub struct Satellite {
     pub(crate) gnss_type: GnssType,
     pub(crate) prn: u32,
     pub(crate) elevation: Option<f32>,
     pub(crate) azimuth: Option<f32>,
     pub(crate) snr: Option<f32>,
+    pub(crate) signal_id: Option<u8>,
 }
 
 impl Satellite {
@@ -650,18 +651,27 @@ impl Satellite {
     pub fn snr(&self) -> Option<f32> {
         self.snr
     }
+    /// Raw NMEA 4.10+ Signal ID from this observation's GSV sentence.
+    /// The wire field is one hexadecimal digit, returned as `0x0..=0xF`
+    /// (wire `B` becomes `Some(11)`), without translation to a u-blox signal ID.
+    /// `None` means absent or empty, `Some(0)` means "all signals".
+    /// Other meanings depend on [`Self::gnss_type`].
+    pub fn signal_id(&self) -> Option<u8> {
+        self.signal_id
+    }
 }
 
 impl fmt::Display for Satellite {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "{}: {} elv: {} ath: {} snr: {}",
+            "{}: {} elv: {} ath: {} snr: {} signal: {:?}",
             self.gnss_type,
             self.prn,
             format_args!("{:?}", self.elevation),
             format_args!("{:?}", self.azimuth),
             format_args!("{:?}", self.snr),
+            self.signal_id,
         )
     }
 }
@@ -670,8 +680,8 @@ impl fmt::Debug for Satellite {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "[{:?},{:?},{:?},{:?},{:?}]",
-            self.gnss_type, self.prn, self.elevation, self.azimuth, self.snr
+            "[{:?},{:?},{:?},{:?},{:?},{:?}]",
+            self.gnss_type, self.prn, self.elevation, self.azimuth, self.snr, self.signal_id
         )
     }
 }
