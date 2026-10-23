@@ -150,7 +150,11 @@ impl<'a> Nmea {
                     match ret.binary_search_by_key(&sat_key(sat), sat_key) {
                         //already set
                         Ok(_pos) => {}
-                        Err(pos) => ret.insert(pos, sat.clone()).unwrap(),
+                        Err(pos) => {
+                            if ret.insert(pos, sat.clone()).is_err() {
+                                panic!("satellite list overflow");
+                            }
+                        }
                     }
                 }
             }
@@ -174,9 +178,9 @@ impl<'a> Nmea {
             let d = &mut self.satellites_scan[data.gnss_type as usize];
             let full_pack_size: usize = data.sentence_num.into();
             d.max_len = full_pack_size.max(d.max_len);
-            d.data
-                .push_back(data.sats_info)
-                .expect("Should not get the more than expected number of satellites");
+            if d.data.push_back(data.sats_info).is_err() {
+                panic!("satellite pack overflow");
+            }
             if d.data.len() > d.max_len {
                 d.data.pop_front();
             }
@@ -269,7 +273,9 @@ impl<'a> Nmea {
                 if !prns.contains(&sat) {
                     // SAFETY: The maximum PRNS is set to the realistic maximum + 10 for headroom
                     // if we exceed that, it should be increased further.
-                    prns.push(sat).expect("prns exceeds maximum");
+                    if prns.push(sat).is_err() {
+                        panic!("PRN list overflow");
+                    }
                 }
             }
         }
