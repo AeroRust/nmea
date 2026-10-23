@@ -154,7 +154,9 @@ fn do_parse_gsv(i: &str) -> IResult<&str, GsvData> {
     let (i, sats) = (0..4).try_fold((i, sats), |(i, mut sats), sat_index| {
         let (i, sat) = opt(parse_gsv_sat_info).parse(i)?;
 
-        sats.insert(sat_index, sat.flatten()).unwrap();
+        if sats.insert(sat_index, sat.flatten()).is_err() {
+            panic!("GSV satellite slot overflow");
+        }
         Ok((i, sats))
     })?;
 
