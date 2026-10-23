@@ -4,7 +4,6 @@ use nom::{
     bytes::complete::{take_until, take_while},
     character::complete::{char, one_of},
     combinator::{map_parser, opt},
-    number::complete::float,
     sequence::preceded,
 };
 
@@ -111,11 +110,11 @@ fn do_parse_gns(i: &str) -> IResult<&str, GnsData> {
     let (i, _) = char(',').parse(i)?;
     let (i, nsattelites) = number::<u16>(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, hdop) = opt(float).parse(i)?;
+    let (i, hdop) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, alt) = opt(float).parse(i)?;
+    let (i, alt) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, geoid_separation) = opt(float).parse(i)?;
+    let (i, geoid_separation) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, _age_of_diff) = take_until(",").parse(i)?; // TODO parse age of diff. corr.
     let (i, _) = char(',').parse(i)?;

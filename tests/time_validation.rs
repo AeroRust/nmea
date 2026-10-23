@@ -6,8 +6,8 @@ use quickcheck::QuickCheck;
 #[test]
 fn nonfinite_seconds_return_the_exact_range_error() {
     for (input, error_input, kind) in [
-        ("1200NaN,tail", "1200NaN,tail", ErrorKind::MapRes),
-        ("1200inf,tail", "1200inf,tail", ErrorKind::MapRes),
+        ("1200NaN,tail", "NaN", ErrorKind::Float),
+        ("1200inf,tail", "inf", ErrorKind::Float),
         ("1200-inf,tail", "-inf", ErrorKind::Float),
     ] {
         assert_eq!(

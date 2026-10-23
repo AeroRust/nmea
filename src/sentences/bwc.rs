@@ -1,9 +1,6 @@
 use arrayvec::ArrayString;
 use chrono::NaiveTime;
-use nom::{
-    Parser as _, bytes::complete::is_not, character::complete::char, combinator::opt,
-    number::complete::float,
-};
+use nom::{Parser as _, bytes::complete::is_not, character::complete::char, combinator::opt};
 
 use crate::{
     Error, SentenceType,
@@ -56,21 +53,21 @@ fn do_parse_bwc(i: &str) -> Result<BwcData, Error<'_>> {
     let (i, _) = char(',').parse(i)?;
 
     // 6. Bearing, degrees True
-    let (i, true_bearing) = opt(float).parse(i)?;
+    let (i, true_bearing) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     // 7. T = True
     let (i, _) = opt(char('T')).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
     // 8. Bearing, degrees Magnetic
-    let (i, magnetic_bearing) = opt(float).parse(i)?;
+    let (i, magnetic_bearing) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     // 9. M = Magnetic
     let (i, _) = opt(char('M')).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
     // 10. Distance, Nautical Miles
-    let (i, distance) = opt(float).parse(i)?;
+    let (i, distance) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     // 11. N = Nautical Miles
     let (i, _) = opt(char('N')).parse(i)?;
