@@ -1,8 +1,5 @@
 use arrayvec::ArrayString;
-use nom::{
-    Parser as _, bytes::complete::is_not, character::complete::char, combinator::opt,
-    number::complete::float,
-};
+use nom::{Parser as _, bytes::complete::is_not, character::complete::char, combinator::opt};
 
 use crate::{
     Error, SentenceType,
@@ -44,14 +41,14 @@ pub struct BwwData {
 
 fn do_parse_bww(i: &str) -> Result<BwwData, Error<'_>> {
     // 1. Bearing, degrees True
-    let (i, true_bearing) = opt(float).parse(i)?;
+    let (i, true_bearing) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     // 2. T = True
     let (i, _) = opt(char('T')).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
     // 3. Bearing, degrees Magnetic
-    let (i, magnetic_bearing) = opt(float).parse(i)?;
+    let (i, magnetic_bearing) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     // 4. M = Magnetic
     let (i, _) = opt(char('M')).parse(i)?;

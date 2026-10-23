@@ -3,12 +3,11 @@ use nom::{
     bytes::complete::is_not,
     character::complete::char,
     combinator::{map_res, opt},
-    number::complete::double,
 };
 
 use crate::{
-    Error, ParseResult, SentenceType,
-    sentences::utils::{parse_float_num, parse_until_end},
+    Error, ParseResult, SentenceType, sentences::float::parse_f64,
+    sentences::utils::parse_until_end,
 };
 
 /// DPT - Depth of Water
@@ -16,7 +15,7 @@ use crate::{
 /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_dpt_depth_of_water>
 /// ```text
 ///        1   2   3   4
-///        |   |   |   |   
+///        |   |   |   |
 /// $--DPT,x.x,x.x,x.x*hh<CR><LF>
 /// ```
 ///
@@ -62,7 +61,7 @@ pub fn parse_dpt(sentence: crate::NmeaSentence<'_>) -> Result<DptData, crate::Er
 }
 
 fn parse_positive_f64(input: &str) -> IResult<&str, f64> {
-    let (input, value) = double(input)?;
+    let (input, value) = crate::sentences::float::float64(input)?;
     if value < 0.0 {
         Err(nom::Err::Failure(nom::error::Error::new(
             input,
@@ -74,7 +73,7 @@ fn parse_positive_f64(input: &str) -> IResult<&str, f64> {
 }
 
 fn take_and_make_f64(input: &str) -> IResult<&str, f64> {
-    map_res(is_not(","), parse_float_num).parse(input)
+    map_res(is_not(","), parse_f64).parse(input)
 }
 
 fn do_parse_dpt(i: &str) -> IResult<&str, DptData> {

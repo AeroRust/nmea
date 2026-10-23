@@ -6,7 +6,6 @@ use nom::{
     bytes::complete::is_not,
     character::complete::{char, one_of},
     combinator::opt,
-    number::complete::float,
 };
 
 use crate::{Error, SentenceType, parse::NmeaSentence, sentences::utils::array_string};
@@ -115,7 +114,7 @@ fn do_parse_apa(i: &str) -> Result<ApaData, Error<'_>> {
     };
     let (i, _) = char(',').parse(i)?;
 
-    let (i, cross_track_error_magnitude) = opt(float).parse(i)?;
+    let (i, cross_track_error_magnitude) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
     let (i, steer_direction) = one_of("LR").parse(i)?;
@@ -150,7 +149,7 @@ fn do_parse_apa(i: &str) -> Result<ApaData, Error<'_>> {
     };
     let (i, _) = char(',').parse(i)?;
 
-    let (i, bearing_origin_destination) = opt(float).parse(i)?;
+    let (i, bearing_origin_destination) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
     let (i, magnetic_true) = one_of("MT").parse(i)?;

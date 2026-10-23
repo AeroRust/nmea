@@ -5,7 +5,6 @@ use nom::{
     bytes::complete::tag,
     character::complete::{char, one_of},
     combinator::{cond, eof, map, opt, peek, rest_len},
-    number::complete::float,
 };
 
 use crate::{
@@ -121,11 +120,11 @@ pub struct GsvData {
 fn parse_gsv_sat_info(i: &str) -> IResult<&str, Option<Satellite>> {
     let (i, prn) = opt(number::<u32>).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, elevation) = opt(float).parse(i)?;
+    let (i, elevation) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, azimuth) = opt(float).parse(i)?;
+    let (i, azimuth) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, snr) = opt(float).parse(i)?;
+    let (i, snr) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = cond(rest_len(i)?.1 > 0, char(',')).parse(i)?;
 
     Ok((

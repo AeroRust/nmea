@@ -4,7 +4,6 @@ use nom::{
     bytes::complete::take_until,
     character::complete::{char, one_of},
     combinator::{map_res, opt},
-    number::complete::float,
 };
 
 use crate::{
@@ -12,7 +11,7 @@ use crate::{
     parse::NmeaSentence,
     sentences::{
         FixType,
-        utils::{number, parse_float_num, parse_hms, parse_lat_lon},
+        utils::{number, parse_hms, parse_lat_lon},
     },
 };
 
@@ -54,13 +53,15 @@ fn do_parse_gga(i: &str) -> IResult<&str, GgaData> {
     let (i, _) = char(',').parse(i)?;
     let (i, fix_satellites) = opt(number::<u32>).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, hdop) = opt(float).parse(i)?;
+    let (i, hdop) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, altitude) = opt(map_res(take_until(","), parse_float_num::<f32>)).parse(i)?;
+    let (i, altitude) =
+        opt(map_res(take_until(","), crate::sentences::float::parse_f32)).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, _) = opt(char('M')).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, geoid_height) = opt(map_res(take_until(","), parse_float_num::<f32>)).parse(i)?;
+    let (i, geoid_height) =
+        opt(map_res(take_until(","), crate::sentences::float::parse_f32)).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, _) = opt(char('M')).parse(i)?;
 

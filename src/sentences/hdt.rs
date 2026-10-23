@@ -5,7 +5,6 @@ use nom::{
     combinator::{map_res, opt},
 };
 
-use super::utils::parse_float_num;
 use crate::{Error, NmeaSentence, SentenceType};
 
 /// HDT - Heading - True
@@ -53,7 +52,8 @@ pub fn parse_hdt(sentence: NmeaSentence<'_>) -> Result<HdtData, Error<'_>> {
 }
 
 fn do_parse_hdt(i: &str) -> IResult<&str, HdtData> {
-    let (i, heading) = opt(map_res(take_until(","), parse_float_num::<f32>)).parse(i)?;
+    let (i, heading) =
+        opt(map_res(take_until(","), crate::sentences::float::parse_f32)).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, _) = char('T').parse(i)?;
     Ok((i, HdtData { heading }))

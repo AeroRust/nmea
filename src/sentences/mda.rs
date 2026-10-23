@@ -1,6 +1,4 @@
-use nom::{
-    IResult, Parser as _, character::complete::char, combinator::opt, number::complete::float,
-};
+use nom::{IResult, Parser as _, character::complete::char, combinator::opt};
 
 use crate::{Error, SentenceType, parse::NmeaSentence};
 
@@ -85,43 +83,43 @@ pub fn parse_mda(sentence: NmeaSentence<'_>) -> Result<MdaData, Error<'_>> {
 }
 
 fn do_parse_mda(i: &str) -> IResult<&str, MdaData> {
-    let (i, pressure_in_hg) = opt(float).parse(i)?;
+    let (i, pressure_in_hg) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, _) = opt(char('I')).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, pressure_bar) = opt(float).parse(i)?;
+    let (i, pressure_bar) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, _) = opt(char('B')).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, air_temp_deg) = opt(float).parse(i)?;
+    let (i, air_temp_deg) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, _) = opt(char('C')).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, water_temp_deg) = opt(float).parse(i)?;
+    let (i, water_temp_deg) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, _) = opt(char('C')).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, rel_humidity) = opt(float).parse(i)?;
+    let (i, rel_humidity) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, abs_humidity) = opt(float).parse(i)?;
+    let (i, abs_humidity) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, dew_point) = opt(float).parse(i)?;
+    let (i, dew_point) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, _) = opt(char('C')).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, wind_direction_true) = opt(float).parse(i)?;
+    let (i, wind_direction_true) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, _) = opt(char('T')).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, wind_direction_magnetic) = opt(float).parse(i)?;
+    let (i, wind_direction_magnetic) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, _) = opt(char('M')).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, wind_speed_knots) = opt(float).parse(i)?;
+    let (i, wind_speed_knots) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, _) = opt(char('N')).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, wind_speed_ms) = opt(float).parse(i)?;
+    let (i, wind_speed_ms) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, _) = opt(char('M')).parse(i)?;
 

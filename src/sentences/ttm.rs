@@ -7,7 +7,7 @@ use nom::{
     error::ErrorKind,
 };
 
-use super::utils::{parse_float_num, parse_hms, parse_number_in_range};
+use super::utils::{parse_hms, parse_number_in_range};
 use crate::{Error, NmeaSentence, SentenceType};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -137,22 +137,26 @@ fn do_parse_ttm(i: &str) -> IResult<&str, TtmData> {
     let (i, target_number) = opt(|i| parse_number_in_range::<u8>(i, 0, 99)).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
-    let (i, target_distance) = opt(map_res(take_until(","), parse_float_num::<f32>)).parse(i)?;
+    let (i, target_distance) =
+        opt(map_res(take_until(","), crate::sentences::float::parse_f32)).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
     let (i, bearing_from_own_ship) = parse_ttm_angle(i)?;
     let (i, _) = char(',').parse(i)?;
 
-    let (i, target_speed) = opt(map_res(take_until(","), parse_float_num::<f32>)).parse(i)?;
+    let (i, target_speed) =
+        opt(map_res(take_until(","), crate::sentences::float::parse_f32)).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
     let (i, target_course) = parse_ttm_angle(i)?;
     let (i, _) = char(',').parse(i)?;
 
-    let (i, distance_of_cpa) = opt(map_res(take_until(","), parse_float_num::<f32>)).parse(i)?;
+    let (i, distance_of_cpa) =
+        opt(map_res(take_until(","), crate::sentences::float::parse_f32)).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
-    let (i, time_to_cpa) = opt(map_res(take_until(","), parse_float_num::<f32>)).parse(i)?;
+    let (i, time_to_cpa) =
+        opt(map_res(take_until(","), crate::sentences::float::parse_f32)).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
     let (i, unit_char) = opt(one_of("KNS")).parse(i)?;
@@ -222,7 +226,7 @@ fn do_parse_ttm(i: &str) -> IResult<&str, TtmData> {
 }
 
 fn parse_ttm_angle(i: &str) -> IResult<&str, Option<TtmAngle>> {
-    let (i, angle) = opt(map_res(take_until(","), parse_float_num::<f32>)).parse(i)?;
+    let (i, angle) = opt(map_res(take_until(","), crate::sentences::float::parse_f32)).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
     let (i, reference) = opt(one_of("RT")).parse(i)?;

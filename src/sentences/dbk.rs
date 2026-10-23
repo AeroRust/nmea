@@ -2,7 +2,6 @@ use nom::{
     IResult, Parser as _,
     character::complete::{char, one_of},
     combinator::opt,
-    number::complete::double,
     sequence::preceded,
 };
 
@@ -73,13 +72,13 @@ pub fn parse_dbk(sentence: NmeaSentence<'_>) -> Result<DbkData, Error<'_>> {
 }
 
 fn do_parse_dbk(i: &str) -> IResult<&str, DbkData> {
-    let (i, depth_feet_value) = opt(double).parse(i)?;
+    let (i, depth_feet_value) = opt(crate::sentences::float::float64).parse(i)?;
     let (i, _) = preceded(char(','), one_of("f")).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, depth_meters_value) = opt(double).parse(i)?;
+    let (i, depth_meters_value) = opt(crate::sentences::float::float64).parse(i)?;
     let (i, _) = preceded(char(','), one_of("M")).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, depth_fathoms_value) = opt(double).parse(i)?;
+    let (i, depth_fathoms_value) = opt(crate::sentences::float::float64).parse(i)?;
     let (i, _) = preceded(char(','), one_of("F")).parse(i)?;
     Ok((
         i,

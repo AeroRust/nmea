@@ -6,7 +6,6 @@ use nom::{
     character::complete::{char, one_of},
     combinator::{all_consuming, map_res, opt},
     error::{ErrorKind, ParseError},
-    number::complete::float,
     sequence::{preceded, terminated},
 };
 
@@ -160,11 +159,11 @@ type GsaTail = (
 
 fn do_parse_gsa_tail(i: &str) -> IResult<&str, GsaTail> {
     let (i, prns) = gsa_prn_fields_parse(i)?;
-    let (i, pdop) = float(i)?;
+    let (i, pdop) = crate::sentences::float::float32(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, hdop) = float(i)?;
+    let (i, hdop) = crate::sentences::float::float32(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, vdop) = float(i)?;
+    let (i, vdop) = crate::sentences::float::float32(i)?;
 
     // Optionally parse the system ID if it exists at the end
     let (i, sys_id) = opt(preceded(

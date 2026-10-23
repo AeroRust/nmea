@@ -1,7 +1,5 @@
 use chrono::NaiveTime;
-use nom::{
-    IResult, Parser as _, character::complete::char, combinator::opt, number::complete::float,
-};
+use nom::{IResult, Parser as _, character::complete::char, combinator::opt};
 
 use crate::{
     Error, SentenceType,
@@ -51,7 +49,7 @@ fn do_parse_gbs(i: &str) -> IResult<&str, GbsData> {
     let (i, _) = char(',').parse(i)?;
 
     // 4. Expected 1-sigma error in altitude (meters)
-    let (i, alt_error) = opt(float).parse(i)?;
+    let (i, alt_error) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
     // 5. ID of most likely failed satellite (1 to 138)
@@ -59,14 +57,14 @@ fn do_parse_gbs(i: &str) -> IResult<&str, GbsData> {
     let (i, _) = char(',').parse(i)?;
 
     // 6. Probability of missed detection for most likely failed satellite
-    let (i, missed_probability) = opt(float).parse(i)?;
+    let (i, missed_probability) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
     // 7. Estimate of bias in meters on most likely failed satellite
-    let (i, bias_estimate) = opt(float).parse(i)?;
+    let (i, bias_estimate) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     // 8. Standard deviation of bias estimate
-    let (i, bias_standard_deviation) = opt(float).parse(i)?;
+    let (i, bias_standard_deviation) = opt(crate::sentences::float::float32).parse(i)?;
     // 9. Checksum
 
     Ok((

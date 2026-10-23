@@ -1,8 +1,5 @@
 use arrayvec::ArrayString;
-use nom::{
-    Parser as _, bytes::complete::is_not, character::complete::char, combinator::opt,
-    number::complete::float,
-};
+use nom::{Parser as _, bytes::complete::is_not, character::complete::char, combinator::opt};
 
 use super::utils::array_string;
 use crate::{
@@ -47,11 +44,11 @@ pub struct WncData {
 }
 
 pub fn do_parse_wnc(i: &str) -> Result<WncData, Error<'_>> {
-    let (i, distance_nautical_miles) = opt(float).parse(i)?;
+    let (i, distance_nautical_miles) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, _) = opt(char('N')).parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, distance_kilometers) = opt(float).parse(i)?;
+    let (i, distance_kilometers) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, _) = opt(char('K')).parse(i)?;
     let (i, _) = char(',').parse(i)?;

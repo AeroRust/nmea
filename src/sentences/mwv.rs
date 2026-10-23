@@ -2,7 +2,6 @@ use nom::{
     IResult, Parser as _,
     character::complete::{char, one_of},
     combinator::opt,
-    number::complete::float,
     sequence::preceded,
 };
 
@@ -76,7 +75,7 @@ pub fn parse_mwv(sentence: NmeaSentence<'_>) -> Result<MwvData, Error<'_>> {
 }
 
 fn do_parse_mwv(i: &str) -> IResult<&str, MwvData> {
-    let (i, direction) = opt(float).parse(i)?;
+    let (i, direction) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, reference_type) = opt(preceded(char(','), one_of("RT"))).parse(i)?;
     let reference_type = reference_type.map(|ch| match ch {
         'R' => MwvReference::Relative,
@@ -84,7 +83,7 @@ fn do_parse_mwv(i: &str) -> IResult<&str, MwvData> {
         _ => unreachable!(),
     });
     let (i, _) = char(',').parse(i)?;
-    let (i, speed) = opt(float).parse(i)?;
+    let (i, speed) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, wind_speed_type) = opt(preceded(char(','), one_of("KMNS"))).parse(i)?;
     let wind_speed_type = wind_speed_type.map(|ch| match ch {
         'K' => MwvWindSpeedUnits::KilometersPerHour,
