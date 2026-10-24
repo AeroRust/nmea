@@ -4,7 +4,7 @@ use nom::{
     branch::alt,
     bytes::complete::take_while1,
     character::complete::{char, one_of},
-    combinator::{all_consuming, opt},
+    combinator::{all_consuming, map_res, opt},
     error::{ErrorKind, ParseError},
     number::complete::float,
     sequence::{preceded, terminated},
@@ -164,18 +164,13 @@ fn do_parse_gsa_tail(i: &str) -> IResult<&str, GsaTail> {
     let (i, vdop) = float(i)?;
 
     // Optionally parse the system ID if it exists at the end
-    let (i, sys_id) = opt(preceded(char(','), number::<u8>)).parse(i)?;
-
-    Ok((
-        i,
-        (
-            prns,
-            Some(pdop),
-            Some(hdop),
-            Some(vdop),
-            sys_id.and_then(|id| GnssSystemId::try_from(id).ok()),
-        ),
+    let (i, sys_id) = opt(preceded(
+        char(','),
+        map_res(number::<u8>, GnssSystemId::try_from),
     ))
+    .parse(i)?;
+
+    Ok((i, (prns, Some(pdop), Some(hdop), Some(vdop), sys_id)))
 }
 
 fn is_comma(x: char) -> bool {
@@ -187,9 +182,8 @@ fn do_parse_empty_gsa_tail(i: &str) -> IResult<&str, GsaTail> {
     let (i, _) = take_while1(is_comma)(i)?;
 
     // Optionally grab the system ID, ensuring there's no junk left over
-    let (i, sys_id) = all_consuming(opt(number::<u8>)).parse(i)?;
-
-    let system_id = sys_id.and_then(|id| GnssSystemId::try_from(id).ok());
+    let (i, system_id) =
+        all_consuming(opt(map_res(number::<u8>, GnssSystemId::try_from))).parse(i)?;
 
     Ok((i, (Vec::new(), None, None, None, system_id)))
 }
@@ -290,7 +284,8 @@ pub fn parse_gsa(sentence: NmeaSentence<'_>) -> Result<GsaData, Error<'_>> {
     // SAFETY: talker_id is always exactly 2 ASCII chars
     let talker_id = heapless::String::<2>::try_from(sentence.talker_id).unwrap();
 
-    let (_, mut gsa_data) = do_parse_gsa(sentence.data, talker_id)?;
+    let (_, mut gsa_data) =
+        all_consuming(|input| do_parse_gsa(input, talker_id.clone())).parse(sentence.data)?;
 
     // Derive system ID from the talker prefix
     let system_id_from_talker = match sentence.talker_id {
