@@ -2,10 +2,11 @@ use core::str;
 
 use nom::{
     IResult, Parser as _,
-    bytes::complete::{take, take_until},
+    branch::alt,
+    bytes::complete::{tag, take, take_until, take_while_m_n},
     character::complete::char,
-    combinator::map_res,
-    sequence::preceded,
+    combinator::{all_consuming, map_res, opt},
+    sequence::{preceded, terminated},
 };
 
 use cfg_if::cfg_if;
@@ -66,7 +67,14 @@ fn parse_hex(data: &str) -> Result<u8, &'static str> {
 }
 
 fn parse_checksum(i: &str) -> IResult<&str, u8> {
-    map_res(preceded(char('*'), take(2usize)), parse_hex).parse(i)
+    map_res(
+        preceded(
+            char('*'),
+            take_while_m_n(2, 2, |character: char| character.is_ascii_hexdigit()),
+        ),
+        parse_hex,
+    )
+    .parse(i)
 }
 
 fn parse_sentence_type(i: &str) -> IResult<&str, SentenceType> {
@@ -94,11 +102,18 @@ fn do_parse_nmea_sentence(i: &str) -> IResult<&str, NmeaSentence<'_>> {
     ))
 }
 
+/// Parse one complete sentence, optionally terminated by LF, CRLF or CR.
+/// Additional input after the checksum or line terminator is rejected.
 pub fn parse_nmea_sentence(sentence: &str) -> core::result::Result<NmeaSentence<'_>, Error<'_>> {
     if sentence.len() > SENTENCE_MAX_LEN {
         Err(Error::SentenceLength(sentence.len()))
     } else {
-        Ok(do_parse_nmea_sentence(sentence)?.1)
+        Ok(all_consuming(terminated(
+            do_parse_nmea_sentence,
+            opt(alt((tag("\r\n"), tag("\n"), tag("\r")))),
+        ))
+        .parse(sentence)?
+        .1)
     }
 }
 
@@ -193,7 +208,7 @@ pub fn parse_bytes(sentence_input: &[u8]) -> Result<ParseResult, Error<'_>> {
 
 /// Parse a NMEA 0183 sentence from a string slice and extract data from it.
 ///
-/// Should not contain `\r\n` ending.
+/// Accepts one optional LF, CRLF or CR terminator, as specified by [`parse_nmea_sentence`].
 ///
 /// # Errors
 ///

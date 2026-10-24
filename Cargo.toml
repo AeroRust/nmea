@@ -35,9 +35,6 @@ chrono = { version = "0.4", default-features = false }
 heapless = "0.9"
 nom = { version = "8", default-features = false }
 
-# we include num-traits only when `std` is not enabled
-# because of `fract()` and `trunc()` methods
-num-traits = { version = "0.2", default-features = false, features = ["libm"] }
 cfg-if = "1"
 serde = { version = "1.0", default-features = false, optional = true }
 serde_with = { version = "3", default-features = false, optional = true }

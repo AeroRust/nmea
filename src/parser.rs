@@ -264,9 +264,10 @@ impl<'a> Nmea {
 
         self.last_gsa_talker_id = Some(gsa.talker_id.clone());
 
+        let system_id = gsa.effective_system_id();
         if let Some(prns) = &mut self.fix_satellites_prns {
             for prn in gsa.fix_sats_prn {
-                let sat = (gsa.system_id, prn);
+                let sat = (system_id, prn);
                 if !prns.contains(&sat) {
                     // SAFETY: The maximum PRNS is set to the realistic maximum + 10 for headroom
                     // if we exceed that, it should be increased further.

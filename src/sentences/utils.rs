@@ -5,117 +5,107 @@ use chrono::{Duration, NaiveDate, NaiveTime};
 use nom::{
     IResult, Parser as _,
     branch::alt,
-    bytes::complete::{tag, take, take_until, take_while},
+    bytes::complete::{tag, take, take_until, take_while, take_while_m_n},
     character::complete::{char, digit1, one_of},
-    combinator::{all_consuming, eof, map, map_parser, map_res},
-    number::complete::{double, float},
-    sequence::terminated,
+    combinator::{all_consuming, eof, map, map_parser, map_res, opt, recognize},
+    number::complete::float,
+    sequence::{preceded, terminated},
 };
-
-#[cfg(not(feature = "std"))]
-#[allow(unused_imports)]
-use num_traits::float::FloatCore;
 
 use crate::Error;
 
+/// Parse a complete `hhmmss[.fraction]` field before its comma delimiter.
+/// Fractions beyond nanosecond precision are truncated.
 pub fn parse_hms(i: &str) -> IResult<&str, NaiveTime> {
-    map_res(
-        (
-            map_res(take(2usize), parse_num::<u32>),
-            map_res(take(2usize), parse_num::<u32>),
-            map_parser(take_until(","), double),
-        ),
-        |(hour, minutes, sec)| -> core::result::Result<NaiveTime, &'static str> {
-            if sec.is_sign_negative() {
-                return Err("Invalid time: second is negative");
-            }
-            if hour >= 24 {
-                return Err("Invalid time: hour >= 24");
-            }
-            if minutes >= 60 {
-                return Err("Invalid time: min >= 60");
-            }
-            if sec >= 60. {
-                return Err("Invalid time: sec >= 60");
-            }
-            NaiveTime::from_hms_nano_opt(
-                hour,
-                minutes,
-                sec.trunc() as u32,
-                (sec.fract() * 1_000_000_000f64).round() as u32,
-            )
-            .ok_or("Invalid time")
-        },
+    const NANOSECOND_DIGITS: usize = 9;
+    const DECIMAL_BASE: u32 = 10;
+    let two_digits = || {
+        map_res(
+            take_while_m_n(2, 2, |character: char| character.is_ascii_digit()),
+            parse_num::<u32>,
+        )
+    };
+    map_parser(
+        take_until(","),
+        all_consuming(map_res(
+            (
+                two_digits(),
+                two_digits(),
+                two_digits(),
+                opt(preceded(char('.'), digit1)),
+            ),
+            |(hours, minutes, seconds, fraction): (_, _, _, Option<&str>)| {
+                let nanoseconds = fraction
+                    .unwrap_or("")
+                    .bytes()
+                    .map(|byte| u32::from(byte - b'0'))
+                    .chain(core::iter::repeat(0))
+                    .take(NANOSECOND_DIGITS)
+                    .fold(0, |value, digit| value * DECIMAL_BASE + digit);
+                NaiveTime::from_hms_nano_opt(hours, minutes, seconds, nanoseconds)
+                    .ok_or("Invalid time")
+            },
+        )),
     )
     .parse(i)
 }
-
-/// The number of milliseconds in a second.
-const MILLISECS_PER_SECOND: u32 = 1000;
-/// The number of milliseconds in a minute.
-const MILLISECS_PER_MINUTE: u32 = 60000;
-/// The number of milliseconds in a hour.
-const MILLISECS_PER_HOUR: u32 = 3600000;
 
 /// Parses values like `125619,` and `125619.5,` to [`Duration`]
 pub fn parse_duration_hms(i: &str) -> IResult<&str, Duration> {
-    map_res(
-        (
-            map_res(take(2usize), parse_num::<u8>),
-            map_res(take(2usize), parse_num::<u8>),
-            map_parser(take_until(","), float),
-        ),
-        |(hours, minutes, seconds)| -> core::result::Result<Duration, &'static str> {
-            if hours >= 24 {
-                return Err("Invalid time: hours >= 24");
-            }
-            if minutes >= 60 {
-                return Err("Invalid time: minutes >= 60");
-            }
-            if !seconds.is_finite() {
-                return Err("Invalid time: seconds is not finite");
-            }
-            if seconds < 0.0 {
-                return Err("Invalid time: seconds is negative");
-            }
-            if seconds >= 60. {
-                return Err("Invalid time: seconds >= 60");
-            }
-
-            // We don't have to use checked operations as above checks limits number of milliseconds
-            // to value within i64 bounds.
-            Ok(Duration::milliseconds(
-                i64::from(hours) * i64::from(MILLISECS_PER_HOUR)
-                    + i64::from(minutes) * i64::from(MILLISECS_PER_MINUTE)
-                    + (seconds.trunc() as i64) * i64::from(MILLISECS_PER_SECOND)
-                    + (seconds.fract() * 1_000f32).round() as i64,
-            ))
-        },
-    )
-    .parse(i)
+    map(parse_hms, |time| time.signed_duration_since(NaiveTime::MIN)).parse(i)
 }
 
 pub fn do_parse_lat_lon(i: &str) -> IResult<&str, (f64, f64)> {
-    let (i, lat_deg) = map_res(take(2usize), parse_num::<u8>).parse(i)?;
-    let (i, lat_min) = double(i)?;
+    let (i, lat) = parse_coordinate(i, CoordinateAxis::Latitude)?;
     let (i, _) = char(',').parse(i)?;
     let (i, lat_dir) = one_of("NS").parse(i)?;
     let (i, _) = char(',').parse(i)?;
-    let (i, lon_deg) = map_res(take(3usize), parse_num::<u8>).parse(i)?;
-    let (i, lon_min) = double(i)?;
+    let (i, lon) = parse_coordinate(i, CoordinateAxis::Longitude)?;
     let (i, _) = char(',').parse(i)?;
     let (i, lon_dir) = one_of("EW").parse(i)?;
 
-    let mut lat = f64::from(lat_deg) + lat_min / 60.;
-    if lat_dir == 'S' {
-        lat = -lat;
-    }
-    let mut lon = f64::from(lon_deg) + lon_min / 60.;
-    if lon_dir == 'W' {
-        lon = -lon;
-    }
+    Ok((
+        i,
+        (
+            if lat_dir == 'S' { -lat } else { lat },
+            if lon_dir == 'W' { -lon } else { lon },
+        ),
+    ))
+}
 
-    Ok((i, (lat, lon)))
+#[derive(Clone, Copy)]
+enum CoordinateAxis {
+    Latitude,
+    Longitude,
+}
+
+fn parse_coordinate(i: &str, axis: CoordinateAxis) -> IResult<&str, f64> {
+    let (degree_digits, maximum_degrees) = match axis {
+        CoordinateAxis::Latitude => (2, 90),
+        CoordinateAxis::Longitude => (3, 180),
+    };
+    let decimal_digits =
+        |count| take_while_m_n(count, count, |character: char| character.is_ascii_digit());
+    map_res(
+        (
+            map_res(decimal_digits(degree_digits), parse_num::<u16>),
+            recognize((decimal_digits(2), opt((char('.'), digit1)))),
+        ),
+        |(degrees, minutes)| {
+            let (whole_minutes, fraction) = minutes.split_once('.').unwrap_or((minutes, ""));
+            let whole_minutes = parse_num::<u8>(whole_minutes)?;
+            if degrees > maximum_degrees
+                || whole_minutes >= 60
+                || (degrees == maximum_degrees
+                    && (whole_minutes != 0 || fraction.bytes().any(|byte| byte != b'0')))
+            {
+                return Err("Invalid geographic coordinate");
+            }
+            let minutes = parse_num::<f64>(minutes)?;
+            Ok(f64::from(degrees) + minutes / 60.0)
+        },
+    )
+    .parse(i)
 }
 
 /// Parses the variation between magnetic north and true north.
@@ -385,34 +375,18 @@ mod tests {
         let (_, lat_lon) = parse_lat_lon(",,,,").unwrap();
         assert!(lat_lon.is_none());
 
-        let lat_lon = parse_lat_lon("51.5074,0.1278");
-        let err_expected = nom::error::Error::new("0.1278", nom::error::ErrorKind::OneOf);
-        let err = lat_lon.unwrap_err();
-        assert_eq!(err, nom::Err::Error(err_expected));
-
-        let lat_lon = parse_lat_lon("1234.567,N,09876.543,W");
-        assert!(lat_lon.is_ok());
-
         let lat_lon = parse_lat_lon("0000.000,S,00000.000,E");
         assert!(lat_lon.is_ok());
 
-        let lat_lon = parse_lat_lon("1234.567,S,09876.543,E");
-        assert!(lat_lon.is_ok());
-
-        let lat_lon = parse_lat_lon("1234.567,S,09876.543,E");
-        assert!(lat_lon.is_ok());
-
-        let lat_lon = parse_lat_lon("40.7128,");
-        assert!(lat_lon.is_err());
-
-        let lat_lon = parse_lat_lon(", -74.0060");
-        let err_expected = nom::error::Error::new(", -74.0060", nom::error::ErrorKind::MapRes);
-        let err = lat_lon.unwrap_err();
-        assert_eq!(err, nom::Err::Error(err_expected));
-
-        let lat_lon = parse_lat_lon("abc,def");
-        let err_expected = nom::error::Error::new("abc,def", nom::error::ErrorKind::MapRes);
-        let err = lat_lon.unwrap_err();
-        assert_eq!(err, nom::Err::Error(err_expected));
+        for input in [
+            "51.5074,0.1278",
+            "1234.567,N,09876.543,W",
+            "1234.567,S,09876.543,E",
+            "40.7128,",
+            ", -74.0060",
+            "abc,def",
+        ] {
+            assert!(parse_lat_lon(input).is_err(), "accepted {input}");
+        }
     }
 }

@@ -54,6 +54,8 @@ pub enum GsaMode2 {
 /// 2 = GLONASS L1 OF, L2 OF
 /// 3 = Galileo E1C, E1B, E5 bl, E5 bQ
 /// 4 = BeiDou B1I D1, B1I D2, B2I D1, B2I D12
+/// 5 = QZSS
+/// 6 = NavIC
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, PartialEq)]
@@ -64,7 +66,8 @@ pub struct GsaData {
     pub pdop: Option<f32>,
     pub hdop: Option<f32>,
     pub vdop: Option<f32>,
-    /// NMEA 4.1+ System ID: 1=GPS, 2=GLONASS, 3=Galileo, 4=BDS
+    /// Explicit NMEA System ID: 1=GPS, 2=GLONASS, 3=Galileo, 4=BDS, 5=QZSS, 6=NavIC.
+    /// `None` means the trailing ID was omitted, regardless of the talker.
     pub system_id: Option<GnssSystemId>,
     /// Two-character talker ID from the sentence header, e.g. `"GP"`, `"GL"`, `"GN"`.
     /// Used to detect GSA cycle boundaries: a repeated talker signals a new cycle,
@@ -72,14 +75,33 @@ pub struct GsaData {
     pub talker_id: heapless::String<2>,
 }
 
+impl GsaData {
+    /// Resolve the explicit System ID, using the talker only when that ID is absent.
+    pub fn effective_system_id(&self) -> Option<GnssSystemId> {
+        self.system_id.or_else(|| self.talker_system_id())
+    }
+
+    fn talker_system_id(&self) -> Option<GnssSystemId> {
+        match self.talker_id.as_str() {
+            "GA" => Some(GnssSystemId::Galileo),
+            "GP" => Some(GnssSystemId::Gps),
+            "GL" => Some(GnssSystemId::Glonass),
+            "BD" | "GB" => Some(GnssSystemId::Beidou),
+            "GQ" | "QZ" => Some(GnssSystemId::Qzss),
+            "GI" => Some(GnssSystemId::NavIC),
+            _ => None,
+        }
+    }
+}
+
 /// This function is take from `nom`, see `nom::multi::many0` (requires `alloc`)
 /// with one difference - we use a [`heapless::Vec`]
 /// because we want `no_std` & no `alloc`.
 ///
-/// If you try to parse more than 18 items, it will silently drop them
+/// Parsing more than [`MAX_PRNS`] items returns an error.
 pub fn many0<I, F>(
     f: F,
-) -> impl Parser<I, Output = Vec<<F as Parser<I>>::Output, 18>, Error = <F as Parser<I>>::Error>
+) -> impl Parser<I, Output = Vec<<F as Parser<I>>::Output, MAX_PRNS>, Error = <F as Parser<I>>::Error>
 where
     I: Clone + Input,
     F: Parser<I>,
@@ -98,11 +120,12 @@ where
     F: Parser<I>,
     // <F as Parser<I>>::Output: core::fmt::Debug,
 {
-    type Output = Vec<<F as Parser<I>>::Output, 18>;
+    type Output = Vec<<F as Parser<I>>::Output, MAX_PRNS>;
     type Error = <F as Parser<I>>::Error;
 
     fn process<OM: OutputMode>(&mut self, mut i: I) -> PResult<OM, I, Self::Output, Self::Error> {
-        let mut acc = OM::Output::bind(Vec::<_, 18>::new);
+        let mut acc = OM::Output::bind(Vec::<_, MAX_PRNS>::new);
+        let mut count = 0;
         loop {
             let len = i.input_len();
             let process_result = self
@@ -121,6 +144,13 @@ where
                     }
 
                     i = i1;
+                    if count == MAX_PRNS {
+                        return Err(Err::Failure(<F as Parser<I>>::Error::from_error_kind(
+                            i,
+                            ErrorKind::TooLarge,
+                        )));
+                    }
+                    count += 1;
 
                     acc = OM::Output::combine(acc, o, |mut acc, o| {
                         let _ = acc.push(o);
@@ -132,16 +162,16 @@ where
     }
 }
 
-fn gsa_prn_fields_parse(i: &str) -> IResult<&str, Vec<Option<u32>, 18>> {
+fn gsa_prn_fields_parse(i: &str) -> IResult<&str, Vec<Option<u32>, MAX_PRNS>> {
     many0(terminated(opt(number::<u32>), char(','))).parse(i)
 }
 
 type GsaTail = (
-    Vec<Option<u32>, 18>,
+    Vec<Option<u32>, MAX_PRNS>,
     Option<f32>,
     Option<f32>,
     Option<f32>,
-    Option<GnssSystemId>,
+    Option<u8>,
 );
 
 fn do_parse_gsa_tail(i: &str) -> IResult<&str, GsaTail> {
@@ -155,16 +185,7 @@ fn do_parse_gsa_tail(i: &str) -> IResult<&str, GsaTail> {
     // Optionally parse the system ID if it exists at the end
     let (i, sys_id) = opt(preceded(char(','), number::<u8>)).parse(i)?;
 
-    Ok((
-        i,
-        (
-            prns,
-            Some(pdop),
-            Some(hdop),
-            Some(vdop),
-            sys_id.and_then(|id| GnssSystemId::try_from(id).ok()),
-        ),
-    ))
+    Ok((i, (prns, Some(pdop), Some(hdop), Some(vdop), sys_id)))
 }
 
 fn is_comma(x: char) -> bool {
@@ -178,12 +199,10 @@ fn do_parse_empty_gsa_tail(i: &str) -> IResult<&str, GsaTail> {
     // Optionally grab the system ID, ensuring there's no junk left over
     let (i, sys_id) = all_consuming(opt(number::<u8>)).parse(i)?;
 
-    let system_id = sys_id.and_then(|id| GnssSystemId::try_from(id).ok());
-
-    Ok((i, (Vec::new(), None, None, None, system_id)))
+    Ok((i, (Vec::new(), None, None, None, sys_id)))
 }
 
-fn do_parse_gsa(i: &str, talker_id: heapless::String<2>) -> IResult<&str, GsaData> {
+fn do_parse_gsa(i: &str, talker_id: heapless::String<2>) -> IResult<&str, (GsaData, Option<u8>)> {
     let (i, mode1) = one_of("MA").parse(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, mode2) = one_of("123").parse(i)?;
@@ -192,32 +211,35 @@ fn do_parse_gsa(i: &str, talker_id: heapless::String<2>) -> IResult<&str, GsaDat
 
     Ok((
         i,
-        GsaData {
-            mode1: match mode1 {
-                'M' => GsaMode1::Manual,
-                'A' => GsaMode1::Automatic,
-                _ => unreachable!(),
+        (
+            GsaData {
+                mode1: match mode1 {
+                    'M' => GsaMode1::Manual,
+                    'A' => GsaMode1::Automatic,
+                    _ => unreachable!(),
+                },
+                mode2: match mode2 {
+                    '1' => GsaMode2::NoFix,
+                    '2' => GsaMode2::Fix2D,
+                    '3' => GsaMode2::Fix3D,
+                    _ => unreachable!(),
+                },
+                fix_sats_prn: {
+                    let mut fix_sats_prn = Vec::<u32, MAX_PRNS>::new();
+                    for sat in tail.0.iter().flatten() {
+                        fix_sats_prn.push(*sat).unwrap()
+                    }
+                    tail.0.clear();
+                    fix_sats_prn
+                },
+                pdop: tail.1,
+                hdop: tail.2,
+                vdop: tail.3,
+                system_id: None,
+                talker_id,
             },
-            mode2: match mode2 {
-                '1' => GsaMode2::NoFix,
-                '2' => GsaMode2::Fix2D,
-                '3' => GsaMode2::Fix3D,
-                _ => unreachable!(),
-            },
-            fix_sats_prn: {
-                let mut fix_sats_prn = Vec::<u32, MAX_PRNS>::new();
-                for sat in tail.0.iter().flatten() {
-                    fix_sats_prn.push(*sat).unwrap()
-                }
-                tail.0.clear();
-                fix_sats_prn
-            },
-            pdop: tail.1,
-            hdop: tail.2,
-            vdop: tail.3,
-            system_id: tail.4,
-            talker_id,
-        },
+            tail.4,
+        ),
     ))
 }
 
@@ -279,16 +301,12 @@ pub fn parse_gsa(sentence: NmeaSentence<'_>) -> Result<GsaData, Error<'_>> {
     // SAFETY: talker_id is always exactly 2 ASCII chars
     let talker_id = heapless::String::<2>::try_from(sentence.talker_id).unwrap();
 
-    let (_, mut gsa_data) = do_parse_gsa(sentence.data, talker_id)?;
-
-    // Derive system ID from the talker prefix
-    let system_id_from_talker = match sentence.talker_id {
-        "GA" => Some(GnssSystemId::Galileo),
-        "GP" => Some(GnssSystemId::Gps),
-        "GL" => Some(GnssSystemId::Glonass),
-        "BD" | "GB" => Some(GnssSystemId::Beidou),
-        _ => None,
-    };
+    let (_, (mut gsa_data, raw_system_id)) =
+        all_consuming(|input| do_parse_gsa(input, talker_id.clone())).parse(sentence.data)?;
+    gsa_data.system_id = raw_system_id
+        .map(|id| GnssSystemId::try_from(id).map_err(|()| Error::UnknownSystemId(id)))
+        .transpose()?;
+    let system_id_from_talker = gsa_data.talker_system_id();
 
     // Validation
     if let (Some(talker_sys_id), Some(tail_sys_id)) = (system_id_from_talker, gsa_data.system_id)
@@ -299,9 +317,6 @@ pub fn parse_gsa(sentence: NmeaSentence<'_>) -> Result<GsaData, Error<'_>> {
             tail_sys_id,
         });
     }
-
-    // Fallback: Use talker ID if the trailing system ID was omitted
-    gsa_data.system_id = gsa_data.system_id.or(system_id_from_talker);
 
     Ok(gsa_data)
 }
@@ -321,6 +336,15 @@ mod tests {
 
         let (_, ret) = gsa_prn_fields_parse(",,5,6,").unwrap();
         assert_eq!(ret, &[None, None, Some(5), Some(6)],);
+
+        assert_eq!(
+            gsa_prn_fields_parse(&"1,".repeat(MAX_PRNS))
+                .unwrap()
+                .1
+                .len(),
+            MAX_PRNS
+        );
+        assert!(gsa_prn_fields_parse(&"1,".repeat(MAX_PRNS + 1)).is_err());
     }
 
     #[test]
@@ -335,7 +359,7 @@ mod tests {
                 pdop: Some(3.6),
                 hdop: Some(2.1),
                 vdop: Some(2.2),
-                system_id: Some(GnssSystemId::Gps),
+                system_id: None,
                 talker_id: heapless::String::try_from("GP").unwrap(),
             },
             gsa

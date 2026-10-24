@@ -64,6 +64,8 @@ impl From<GnssSystemId> for GnssType {
             GnssSystemId::Glonass => Self::Glonass,
             GnssSystemId::Galileo => Self::Galileo,
             GnssSystemId::Beidou => Self::Beidou,
+            GnssSystemId::Qzss => Self::Qzss,
+            GnssSystemId::NavIC => Self::NavIC,
         }
     }
 }
@@ -79,6 +81,10 @@ define_enum_with_count!(
         Galileo,
         /// BeiDou Navigation Satellite System (BDS) from China.
         Beidou,
+        /// Quasi-Zenith Satellite System (QZSS) from Japan.
+        Qzss,
+        /// Navigation Indian Constellation (NavIC) from India.
+        NavIC,
     }
 );
 
@@ -89,6 +95,8 @@ impl fmt::Display for GnssSystemId {
             Self::Galileo => write!(f, "Galileo"),
             Self::Gps => write!(f, "GPS"),
             Self::Glonass => write!(f, "GLONASS"),
+            Self::Qzss => write!(f, "QZSS"),
+            Self::NavIC => write!(f, "NavIC"),
         }
     }
 }
@@ -102,6 +110,8 @@ impl TryFrom<u8> for GnssSystemId {
             2 => Ok(Self::Glonass),
             3 => Ok(Self::Galileo),
             4 => Ok(Self::Beidou),
+            5 => Ok(Self::Qzss),
+            6 => Ok(Self::NavIC),
             _ => Err(()),
         }
     }

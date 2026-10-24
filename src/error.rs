@@ -48,6 +48,8 @@ pub enum Error<'a> {
         talker_sys_id: GnssSystemId,
         tail_sys_id: GnssSystemId,
     },
+    /// The explicit GSA System ID is unsupported.
+    UnknownSystemId(u8),
 }
 
 impl<'a> From<nom::Err<nom::error::Error<&'a str>>> for Error<'a> {
@@ -118,6 +120,7 @@ impl fmt::Display for Error<'_> {
                 f,
                 "System ID Mismatch: Talker ID implies '{talker_sys_id}', but payload specifies '{tail_sys_id}'"
             ),
+            Error::UnknownSystemId(id) => write!(f, "Unsupported GSA System ID '{id}'"),
         }
     }
 }
