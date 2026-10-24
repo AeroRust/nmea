@@ -23,9 +23,12 @@ pub fn parse_hms(i: &str) -> IResult<&str, NaiveTime> {
         (
             map_res(take(2usize), parse_num::<u32>),
             map_res(take(2usize), parse_num::<u32>),
-            map_parser(take_until(","), double),
+            map_parser(take_until(","), all_consuming(double)),
         ),
         |(hour, minutes, sec)| -> core::result::Result<NaiveTime, &'static str> {
+            if !sec.is_finite() {
+                return Err("Invalid time: second is not finite");
+            }
             if sec.is_sign_negative() {
                 return Err("Invalid time: second is negative");
             }
@@ -63,7 +66,7 @@ pub fn parse_duration_hms(i: &str) -> IResult<&str, Duration> {
         (
             map_res(take(2usize), parse_num::<u8>),
             map_res(take(2usize), parse_num::<u8>),
-            map_parser(take_until(","), float),
+            map_parser(take_until(","), all_consuming(float)),
         ),
         |(hours, minutes, seconds)| -> core::result::Result<Duration, &'static str> {
             if hours >= 24 {
