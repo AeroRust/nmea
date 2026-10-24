@@ -2,10 +2,11 @@ use core::str;
 
 use nom::{
     IResult, Parser as _,
-    bytes::complete::{take, take_until},
+    branch::alt,
+    bytes::complete::{tag, take, take_until},
     character::complete::char,
-    combinator::map_res,
-    sequence::preceded,
+    combinator::{all_consuming, map_res, opt},
+    sequence::{preceded, terminated},
 };
 
 use cfg_if::cfg_if;
@@ -98,7 +99,12 @@ pub fn parse_nmea_sentence(sentence: &str) -> core::result::Result<NmeaSentence<
     if sentence.len() > SENTENCE_MAX_LEN {
         Err(Error::SentenceLength(sentence.len()))
     } else {
-        Ok(do_parse_nmea_sentence(sentence)?.1)
+        Ok(all_consuming(terminated(
+            do_parse_nmea_sentence,
+            opt(alt((tag("\r\n"), tag("\n"), tag("\r")))),
+        ))
+        .parse(sentence)?
+        .1)
     }
 }
 
@@ -193,7 +199,7 @@ pub fn parse_bytes(sentence_input: &[u8]) -> Result<ParseResult, Error<'_>> {
 
 /// Parse a NMEA 0183 sentence from a string slice and extract data from it.
 ///
-/// Should not contain `\r\n` ending.
+/// Accepts one optional LF, CRLF or CR terminator.
 ///
 /// # Errors
 ///
