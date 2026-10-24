@@ -132,12 +132,23 @@ where
     }
 }
 
-fn gsa_prn_fields_parse(i: &str) -> IResult<&str, Vec<Option<u32>, 18>> {
-    many0(terminated(opt(number::<u32>), char(','))).parse(i)
+fn gsa_prn_fields_parse(mut i: &str) -> IResult<&str, Vec<Option<u32>, MAX_PRNS>> {
+    let mut prns = Vec::new();
+    loop {
+        match terminated(opt(number::<u32>), char(',')).parse(i) {
+            Ok((remaining, prn)) => {
+                prns.push(prn)
+                    .map_err(|_| Err::Failure(nom::error::Error::new(i, ErrorKind::TooLarge)))?;
+                i = remaining;
+            }
+            Err(Err::Error(_)) => return Ok((i, prns)),
+            Err(error) => return Err(error),
+        }
+    }
 }
 
 type GsaTail = (
-    Vec<Option<u32>, 18>,
+    Vec<Option<u32>, MAX_PRNS>,
     Option<f32>,
     Option<f32>,
     Option<f32>,
@@ -321,6 +332,26 @@ mod tests {
 
         let (_, ret) = gsa_prn_fields_parse(",,5,6,").unwrap();
         assert_eq!(ret, &[None, None, Some(5), Some(6)],);
+    }
+
+    #[test]
+    fn gsa_prn_capacity_preserves_every_field_and_rejects_overflow() {
+        let input = format!("{}1.0,0.8,0.6", "1,".repeat(MAX_PRNS));
+        assert_eq!(
+            gsa_prn_fields_parse(&input),
+            Ok((
+                "1.0,0.8,0.6",
+                Vec::from_slice(&[Some(1); MAX_PRNS]).unwrap()
+            )),
+        );
+        let overflow = format!("{}1.0,0.8,0.6", "1,".repeat(MAX_PRNS + 1));
+        assert_eq!(
+            gsa_prn_fields_parse(&overflow),
+            Err(Err::Failure(nom::error::Error::new(
+                "1,1.0,0.8,0.6",
+                ErrorKind::TooLarge
+            ))),
+        );
     }
 
     #[test]
