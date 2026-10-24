@@ -77,24 +77,6 @@ fn test_parse_all_logs() {
                 continue;
             }
 
-            if matches!(
-                line,
-                "$PQGSA,A,2,12,,,,,,,,,,,,1.0,0.7,0.7,5*3E"
-                    | "$PQGSA,A,2,10,11,,,,,,,,,,,1.0,0.7,0.7,5*3C"
-                    | "$PQGSA,A,2,10,11,,,,,,,,,,,1.0,0.8,0.7,5*33"
-            ) {
-                let expected = || {
-                    nmea::Error::ParsingError(nom::Err::Error(nom::error::Error::new(
-                        ",5",
-                        nom::error::ErrorKind::Eof,
-                    )))
-                };
-                assert_eq!(parse_str(line), Err(expected()));
-                assert_eq!(nmea1.parse(line), Err(expected()));
-                assert_eq!(nmea2.parse_for_fix(line), Err(expected()));
-                continue;
-            }
-
             let expect_msg = format!("Parsing of {} at {:?}:{} failed", line, log_path, line_no);
 
             parse_str(line).expect(&expect_msg);

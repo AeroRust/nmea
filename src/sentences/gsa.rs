@@ -54,6 +54,8 @@ pub enum GsaMode2 {
 /// 2 = GLONASS L1 OF, L2 OF
 /// 3 = Galileo E1C, E1B, E5 bl, E5 bQ
 /// 4 = BeiDou B1I D1, B1I D2, B2I D1, B2I D12
+/// 5 = QZSS (NMEA 4.11)
+/// 6 = NavIC (NMEA 4.11)
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, PartialEq)]
@@ -64,7 +66,8 @@ pub struct GsaData {
     pub pdop: Option<f32>,
     pub hdop: Option<f32>,
     pub vdop: Option<f32>,
-    /// NMEA 4.1+ System ID: 1=GPS, 2=GLONASS, 3=Galileo, 4=BDS
+    /// NMEA 4.1+ System ID: 1=GPS, 2=GLONASS, 3=Galileo, 4=BDS, 5=QZSS, 6=NavIC.
+    /// Inferred from a recognized talker when the trailing System ID is absent.
     pub system_id: Option<GnssSystemId>,
     /// Two-character talker ID from the sentence header, e.g. `"GP"`, `"GL"`, `"GN"`.
     /// Used to detect GSA cycle boundaries: a repeated talker signals a new cycle,
