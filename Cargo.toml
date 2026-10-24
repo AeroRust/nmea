@@ -92,7 +92,7 @@ water = ["DBK", "DBS", "DPT", "MTW", "VHW"]
 ## Vendor-specific messages
 vendor-specific = ["RMZ"]
 ## Other
-other = ["HDT", "MDA", "MWV", "TXT", "ZDA"]
+other = ["HDT", "MDA", "MWV", "TXT", "XDR", "ZDA"]
 
 #! ### Supported sentences (alphabetically ordered)
 
@@ -203,6 +203,10 @@ VTG = []
 ## Distance - Waypoint to waypoint
 ## (feature: `waypoint`)
 WNC = []
+
+## Transducer Measurements
+## (feature: `other`)
+XDR = []
 
 ## Time & Date - UTC, day, month, year and local time zone
 ## (feature: `other`)
