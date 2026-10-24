@@ -244,9 +244,8 @@ impl<'a> Nmea {
     }
 
     fn merge_gsa_data(&mut self, gsa: GsaData) {
-        // Reset if this is the first GSA, or if system_id matches the last one
-        // (same constellation repeating means new cycle), except for GN-talker (None system_id)
-        // which always accumulates.
+        // Reset for the first GSA in a sequence or a repeat of the previous talker.
+        // Repeated GN and PQ talkers accumulate because they can describe multiple constellations.
         let is_accumulating_talker = matches!(gsa.talker_id.as_str(), "GN" | "PQ"); // "PQ" (Quectel vendor) behaves the same per gpsd
 
         let should_reset = match &self.last_gsa_talker_id {

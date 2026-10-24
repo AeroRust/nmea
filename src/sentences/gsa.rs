@@ -243,6 +243,11 @@ fn do_parse_gsa(i: &str, talker_id: heapless::String<2>) -> IResult<&str, GsaDat
 /// 15   = PDOP
 /// 16   = HDOP
 /// 17   = VDOP
+/// 18   = Optional System ID, see [`GnssSystemId`].
+///
+/// Without a System ID, the constellation is inferred from `GP`, `GL`, `GA`,
+/// `BD`/`GB`, `GQ`/`QZ` or `GI`. Neither `GN` nor `PQ` implies a constellation.
+/// An explicit ID conflicting with the talker returns [`Error::SystemIdMismatch`].
 ///
 /// Not all documentation specifies the number of PRN fields, it
 /// may be variable. Most doc that specifies says 12 PRNs.
@@ -296,6 +301,8 @@ pub fn parse_gsa(sentence: NmeaSentence<'_>) -> Result<GsaData, Error<'_>> {
         "GP" => Some(GnssSystemId::Gps),
         "GL" => Some(GnssSystemId::Glonass),
         "BD" | "GB" => Some(GnssSystemId::Beidou),
+        "GQ" | "QZ" => Some(GnssSystemId::Qzss),
+        "GI" => Some(GnssSystemId::NavIC),
         _ => None,
     };
 
