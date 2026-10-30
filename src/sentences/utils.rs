@@ -8,7 +8,6 @@ use nom::{
     bytes::complete::{tag, take, take_until, take_while, take_while_m_n},
     character::complete::{char, digit1, one_of},
     combinator::{all_consuming, eof, map, map_parser, map_res, opt, recognize},
-    number::complete::{double, float},
     sequence::terminated,
 };
 
@@ -17,13 +16,14 @@ use nom::{
 use num_traits::float::FloatCore;
 
 use crate::Error;
+use crate::sentences::float::{float32, float64, parse_f64};
 
 pub fn parse_hms(i: &str) -> IResult<&str, NaiveTime> {
     map_res(
         (
             map_res(take(2usize), parse_num::<u32>),
             map_res(take(2usize), parse_num::<u32>),
-            map_parser(take_until(","), all_consuming(double)),
+            map_parser(take_until(","), all_consuming(float64)),
         ),
         |(hour, minutes, sec)| -> core::result::Result<NaiveTime, &'static str> {
             if !sec.is_finite() {
@@ -66,7 +66,7 @@ pub fn parse_duration_hms(i: &str) -> IResult<&str, Duration> {
         (
             map_res(take(2usize), parse_num::<u8>),
             map_res(take(2usize), parse_num::<u8>),
-            map_parser(take_until(","), all_consuming(float)),
+            map_parser(take_until(","), all_consuming(float32)),
         ),
         |(hours, minutes, seconds)| -> core::result::Result<Duration, &'static str> {
             if hours >= 24 {
@@ -144,7 +144,7 @@ fn parse_coordinate(i: &str, axis: CoordinateAxis) -> IResult<&str, f64> {
             {
                 return Err("Invalid geographic coordinate");
             }
-            let minutes = parse_num::<f64>(minutes)?;
+            let minutes = parse_f64(minutes)?;
             Ok(f64::from(degrees) + minutes / 60.0)
         },
     )
@@ -159,7 +159,7 @@ fn parse_coordinate(i: &str, axis: CoordinateAxis) -> IResult<&str, f64> {
 /// "14.2,E" => 14.2 <br>
 /// "14.2,W" => -14.2 <br>
 pub fn do_parse_magnetic_variation(i: &str) -> IResult<&str, f32> {
-    let (i, variation_deg) = float(i)?;
+    let (i, variation_deg) = float32(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, direction) = one_of("EW").parse(i)?;
     let variation_deg = match direction {
@@ -217,10 +217,6 @@ pub(crate) fn parse_date(i: &str) -> IResult<&str, NaiveDate> {
 
 pub(crate) fn parse_num<I: str::FromStr>(data: &str) -> Result<I, &'static str> {
     data.parse::<I>().map_err(|_| "parse of number failed")
-}
-
-pub(crate) fn parse_float_num<T: str::FromStr>(input: &str) -> Result<T, &'static str> {
-    str::parse::<T>(input).map_err(|_| "parse of float number failed")
 }
 
 pub(crate) fn number<T: str::FromStr>(i: &str) -> IResult<&str, T> {
@@ -396,18 +392,6 @@ mod tests {
 
         let result = parse_num::<u8>("12.5");
         let err_expected = "parse of number failed";
-        assert_eq!(result, Err(err_expected));
-    }
-
-    #[test]
-    fn test_parse_float_num() {
-        let result = parse_float_num::<f32>("12.5");
-        assert!(result.is_ok());
-        let result = parse_float_num::<f32>("12");
-        assert!(result.is_ok());
-
-        let result = parse_float_num::<f32>("12.5.5");
-        let err_expected = "parse of float number failed";
         assert_eq!(result, Err(err_expected));
     }
 

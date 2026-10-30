@@ -1,4 +1,4 @@
-use nom::{Parser as _, character::complete::char, combinator::opt, number::complete::float};
+use nom::{Parser as _, character::complete::char, combinator::opt};
 
 use crate::{Error, NmeaSentence, ParseResult, SentenceType};
 
@@ -53,17 +53,17 @@ pub fn parse_dbs(sentence: NmeaSentence<'_>) -> Result<DbsData, Error<'_>> {
 }
 
 fn do_parse_dbs(i: &str) -> Result<DbsData, Error<'_>> {
-    let (i, water_depth_feet) = opt(float).parse(i)?;
+    let (i, water_depth_feet) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, _) = char('f').parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
-    let (i, water_depth_meters) = opt(float).parse(i)?;
+    let (i, water_depth_meters) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     let (i, _) = char('M').parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
-    let (i, water_depth_fathoms) = opt(float).parse(i)?;
+    let (i, water_depth_fathoms) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     let (_, _) = char('F').parse(i)?;
 

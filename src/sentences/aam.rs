@@ -6,7 +6,6 @@ use nom::{
     bytes::complete::is_not,
     character::complete::{char, one_of},
     combinator::opt,
-    number::complete::float,
 };
 
 use crate::{Error, SentenceType, parse::NmeaSentence, sentences::utils::array_string};
@@ -72,7 +71,7 @@ fn do_parse_aam(i: &str) -> Result<AamData, Error<'_>> {
     };
     let (i, _) = char(',').parse(i)?;
 
-    let (i, arrival_circle_radius) = opt(float).parse(i)?;
+    let (i, arrival_circle_radius) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
     let (i, radius_units) = opt(char('N')).parse(i)?;

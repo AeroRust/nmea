@@ -5,8 +5,7 @@ use nom::{
     Parser as _,
     bytes::complete::{is_not, take_until},
     character::complete::char,
-    combinator::{map_parser, opt},
-    number::complete::float,
+    combinator::{map_res, opt},
     sequence::preceded,
 };
 
@@ -40,7 +39,8 @@ pub struct BodData {
 /// ```
 fn do_parse_bod(i: &str) -> Result<BodData, Error<'_>> {
     // 1. Bearing Degrees, True
-    let (i, bearing_true) = opt(map_parser(take_until(","), float)).parse(i)?;
+    let (i, bearing_true) =
+        opt(map_res(take_until(","), crate::sentences::float::parse_f32)).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
     // 2. T = True
@@ -48,7 +48,7 @@ fn do_parse_bod(i: &str) -> Result<BodData, Error<'_>> {
     let (i, _) = char(',').parse(i)?;
 
     // 3. Bearing Degrees, Magnetic
-    let (i, bearing_magnetic) = opt(float).parse(i)?;
+    let (i, bearing_magnetic) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
     // 4. M = Magnetic

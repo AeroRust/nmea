@@ -1,8 +1,6 @@
 use crate::{Error, SentenceType, parse::NmeaSentence, sentences::utils::parse_hms};
 use chrono::NaiveTime;
-use nom::{
-    IResult, Parser as _, character::complete::char, combinator::opt, number::complete::float,
-};
+use nom::{IResult, Parser as _, character::complete::char, combinator::opt};
 
 /// GST - GPS Pseudorange Noise Statistics
 /// ```text
@@ -41,25 +39,25 @@ fn do_parse_gst(i: &str) -> IResult<&str, GstData> {
     let (i, time) = opt(parse_hms).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
-    let (i, rms_sd) = opt(float).parse(i)?;
+    let (i, rms_sd) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
-    let (i, ellipse_semi_major_sd) = opt(float).parse(i)?;
+    let (i, ellipse_semi_major_sd) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
-    let (i, ellipse_semi_minor_sd) = opt(float).parse(i)?;
+    let (i, ellipse_semi_minor_sd) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
-    let (i, err_ellipse_orientation) = opt(float).parse(i)?;
+    let (i, err_ellipse_orientation) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
-    let (i, lat_sd) = opt(float).parse(i)?;
+    let (i, lat_sd) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
-    let (i, long_sd) = opt(float).parse(i)?;
+    let (i, long_sd) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
 
-    let (i, alt_sd) = opt(float).parse(i)?;
+    let (i, alt_sd) = opt(crate::sentences::float::float32).parse(i)?;
 
     Ok((
         i,

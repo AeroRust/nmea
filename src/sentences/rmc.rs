@@ -3,7 +3,6 @@ use nom::{
     IResult, Parser as _,
     character::complete::{anychar, char, one_of},
     combinator::{cond, map_res, opt},
-    number::complete::float,
 };
 
 use crate::{
@@ -114,10 +113,10 @@ fn do_parse_rmc(i: &str) -> IResult<&str, RmcData> {
     let (i, lat_lon) = parse_lat_lon(i)?;
     let (i, _) = char(',').parse(i)?;
     // 7.  Speed over ground, knots
-    let (i, speed_over_ground) = opt(float).parse(i)?;
+    let (i, speed_over_ground) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     // 8.  Track made good, degrees true
-    let (i, true_course) = opt(float).parse(i)?;
+    let (i, true_course) = opt(crate::sentences::float::float32).parse(i)?;
     let (i, _) = char(',').parse(i)?;
     // 9.  Date, `ddmmyy`
     let (i, fix_date) = opt(parse_date).parse(i)?;
