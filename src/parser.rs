@@ -173,10 +173,12 @@ impl<'a> Nmea {
         {
             let d = &mut self.satellites_scan[data.gnss_type as usize];
             let full_pack_size: usize = data.sentence_num.into();
-            d.max_len = full_pack_size.max(d.max_len);
-            d.data
-                .push_back(data.sats_info)
-                .expect("Should not get the more than expected number of satellites");
+            d.max_len = full_pack_size.max(d.max_len).min(d.data.capacity());
+            // Remove the oldest event if the list is somehow full already.
+            if d.data.is_full() {
+                d.data.pop_front();
+            }
+            let _ = d.data.push_back(data.sats_info);
             if d.data.len() > d.max_len {
                 d.data.pop_front();
             }
