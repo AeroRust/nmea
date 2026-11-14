@@ -288,6 +288,43 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_hms_boundaries() {
+        use chrono::Timelike;
+        let (_, time) = parse_hms("000000,").unwrap();
+        assert_eq!((time.hour(), time.minute(), time.second()), (0, 0, 0));
+        let (_, time) = parse_hms("235959.999,").unwrap();
+        assert_eq!((time.hour(), time.minute(), time.second()), (23, 59, 59));
+        assert_eq!(time.nanosecond(), 999_000_000);
+    }
+
+    #[test]
+    fn test_parse_hms_rejects_invalid_time() {
+        let map_res =
+            |input| nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::MapRes));
+        // hour >= 24
+        assert_eq!(parse_hms("240000,"), Err(map_res("240000,")));
+        // minutes >= 60
+        assert_eq!(parse_hms("126000,"), Err(map_res("126000,")));
+        // seconds >= 60 (no leap seconds)
+        assert_eq!(parse_hms("125960,"), Err(map_res("125960,")));
+        // negative seconds
+        assert_eq!(parse_hms("1256-0,"), Err(map_res("1256-0,")));
+        // non-numeric hour / minute
+        assert!(parse_hms("ab5619,").is_err());
+        assert!(parse_hms("12cd19,").is_err());
+        // non-finite or non-numeric seconds
+        assert!(parse_hms("1256inf,").is_err());
+        assert!(parse_hms("1256NaN,").is_err());
+        assert!(parse_hms("1256xx,").is_err());
+        // truncated input
+        assert!(parse_hms("").is_err());
+        assert!(parse_hms("12").is_err());
+        assert!(parse_hms("1256").is_err());
+        // no terminating comma
+        assert!(parse_hms("125619").is_err());
+    }
+
+    #[test]
     fn test_parse_duration_hms() {
         let (_, time) = parse_duration_hms("125619,").unwrap();
         assert_eq!(time.num_hours(), 12);
@@ -305,6 +342,26 @@ mod tests {
             time.num_nanoseconds().unwrap(),
             (12 * 60 * 60 + 56 * 60 + 19) * 1_000_000_000 + 500_000_000
         );
+    }
+
+    #[test]
+    fn test_parse_duration_hms_rejects_invalid_time() {
+        let map_res =
+            |input| nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::MapRes));
+        // hours >= 24
+        assert_eq!(parse_duration_hms("240000,"), Err(map_res("240000,")));
+        // minutes >= 60
+        assert_eq!(parse_duration_hms("126000,"), Err(map_res("126000,")));
+        // seconds >= 60
+        assert_eq!(parse_duration_hms("125960,"), Err(map_res("125960,")));
+        // negative seconds
+        assert_eq!(parse_duration_hms("1256-1,"), Err(map_res("1256-1,")));
+        // non-finite or non-numeric seconds
+        assert!(parse_duration_hms("1256inf,").is_err());
+        assert!(parse_duration_hms("1256NaN,").is_err());
+        // truncated input
+        assert!(parse_duration_hms("").is_err());
+        assert!(parse_duration_hms("1256").is_err());
     }
 
     #[test]
@@ -332,6 +389,68 @@ mod tests {
             date,
             NaiveDate::from_ymd_opt(2082, 12, 31).expect("invalid time")
         );
+    }
+
+    #[test]
+    fn test_parse_date_rejects_invalid_date() {
+        let map_res =
+            |input| nom::Err::Error(nom::error::Error::new(input, nom::error::ErrorKind::MapRes));
+        // month out of range
+        assert_eq!(parse_date("010024"), Err(map_res("010024")));
+        assert_eq!(parse_date("011324"), Err(map_res("011324")));
+        // day out of range
+        assert_eq!(parse_date("000124"), Err(map_res("000124")));
+        assert_eq!(parse_date("320124"), Err(map_res("320124")));
+        // day valid in general but not for the month
+        assert_eq!(parse_date("310424"), Err(map_res("310424")));
+        assert_eq!(parse_date("300224"), Err(map_res("300224")));
+        // 29 February only in leap years
+        assert!(parse_date("290224").is_ok());
+        assert_eq!(parse_date("290223"), Err(map_res("290223")));
+        // non-numeric and truncated input
+        assert!(parse_date("ab0124").is_err());
+        assert!(parse_date("0101").is_err());
+        assert!(parse_date("").is_err());
+    }
+
+    #[test]
+    fn test_do_parse_lat_lon_rejects_out_of_range() {
+        // latitude degrees > 90
+        assert!(do_parse_lat_lon("9100.000,N,01131.324,E").is_err());
+        // latitude exactly 90 is valid, but nothing beyond it
+        assert_eq!(
+            do_parse_lat_lon("9000.000,N,01131.324,E"),
+            Ok(("", (90.0, 11. + 31.324 / 60.)))
+        );
+        assert!(do_parse_lat_lon("9000.001,N,01131.324,E").is_err());
+        // longitude exactly 180 is valid, but nothing beyond it
+        assert_eq!(
+            do_parse_lat_lon("4807.038,N,18000.000,W"),
+            Ok(("", (48. + 7.038 / 60., -180.0)))
+        );
+        assert!(do_parse_lat_lon("4807.038,N,18000.001,E").is_err());
+        assert!(do_parse_lat_lon("4807.038,N,18100.000,E").is_err());
+        // minutes >= 60
+        assert!(do_parse_lat_lon("4860.000,N,01131.324,E").is_err());
+        assert!(do_parse_lat_lon("4807.038,N,01160.000,E").is_err());
+    }
+
+    #[test]
+    fn test_do_parse_lat_lon_rejects_bad_hemisphere() {
+        // wrong letter for the axis
+        assert!(do_parse_lat_lon("4807.038,E,01131.324,E").is_err());
+        assert!(do_parse_lat_lon("4807.038,N,01131.324,N").is_err());
+        // missing hemisphere
+        assert!(do_parse_lat_lon("4807.038,,01131.324,E").is_err());
+        assert!(do_parse_lat_lon("4807.038,N,01131.324,").is_err());
+        // lowercase is not accepted
+        assert!(do_parse_lat_lon("4807.038,n,01131.324,e").is_err());
+    }
+
+    #[test]
+    fn test_parse_until_end() {
+        assert_eq!(parse_until_end("abc,123*"), Ok(("", "abc,123*")));
+        assert_eq!(parse_until_end(""), Ok(("", "")));
     }
 
     #[test]
@@ -393,6 +512,22 @@ mod tests {
         let result = parse_num::<u8>("12.5");
         let err_expected = "parse of number failed";
         assert_eq!(result, Err(err_expected));
+
+        // overflow, sign and empty input
+        assert_eq!(parse_num::<u8>("256"), Err(err_expected));
+        assert_eq!(parse_num::<u8>("-1"), Err(err_expected));
+        assert_eq!(parse_num::<u8>(""), Err(err_expected));
+        assert_eq!(parse_num::<i16>("-1"), Ok(-1));
+    }
+
+    #[test]
+    fn test_number() {
+        assert_eq!(number::<u16>("123,"), Ok((",", 123)));
+        // only digits are consumed, so a sign is not a number
+        assert!(number::<i16>("-1,").is_err());
+        assert!(number::<u8>(",").is_err());
+        // overflow is an error, not a wrap-around
+        assert!(number::<u8>("256,").is_err());
     }
 
     #[test]
