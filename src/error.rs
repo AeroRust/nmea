@@ -48,6 +48,8 @@ pub enum Error<'a> {
         talker_sys_id: GnssSystemId,
         tail_sys_id: GnssSystemId,
     },
+    /// The accumulated satellite list exceeded the fixed capacity.
+    TooManySatellites { max: usize },
 }
 
 impl<'a> From<nom::Err<nom::error::Error<&'a str>>> for Error<'a> {
@@ -118,6 +120,9 @@ impl fmt::Display for Error<'_> {
                 f,
                 "System ID Mismatch: Talker ID implies '{talker_sys_id}', but payload specifies '{tail_sys_id}'"
             ),
+            Error::TooManySatellites { max } => {
+                write!(f, "Too many satellites accumulated, the maximum is {}", max)
+            }
         }
     }
 }
