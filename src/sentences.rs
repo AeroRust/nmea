@@ -29,6 +29,7 @@ pub mod utils;
 pub mod vhw;
 pub mod vtg;
 pub mod wnc;
+pub mod xdr;
 pub mod zda;
 pub mod zfo;
 pub mod ztg;
@@ -72,6 +73,7 @@ pub use {
     vhw::{VhwData, parse_vhw},
     vtg::{VtgData, parse_vtg},
     wnc::{WncData, parse_wnc},
+    xdr::{XdrData, XdrMeasurement, parse_xdr},
     zda::{ZdaData, parse_zda},
     zfo::{ZfoData, parse_zfo},
     ztg::{ZtgData, parse_ztg},
