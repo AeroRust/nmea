@@ -3,6 +3,7 @@ use nom::{
     IResult, Parser as _,
     character::complete::{anychar, char, one_of},
     combinator::opt,
+    sequence::preceded,
 };
 
 use super::{FaaMode, faa_mode::parse_faa_mode, nom_parse_failure};
@@ -77,8 +78,8 @@ fn do_parse_gll(i: &str) -> IResult<&str, GllData> {
         'V' => false,
         _ => unreachable!(),
     };
-    let (i, _) = char(',').parse(i)?;
-    let (rest, mode) = opt(anychar).parse(i)?;
+    let (rest, mode) = opt(preceded(char(','), opt(anychar))).parse(i)?;
+    let mode = mode.flatten();
     let faa_mode = mode
         .map(|mode| parse_faa_mode(mode).ok_or_else(|| nom_parse_failure(i)))
         .transpose()?;
@@ -136,5 +137,26 @@ mod tests {
         let gll_data = parse_gll(s).unwrap();
         assert_eq!(gll_data.fix_time, None);
         assert!(!gll_data.valid);
+    }
+
+    #[test]
+    fn test_parse_gpgll_pre_nmea23_without_faa_mode() {
+        let s = parse_nmea_sentence("$GPGLL,4916.45,N,12311.12,W,225444,A*31").unwrap();
+        assert_eq!(s.checksum, s.calc_checksum());
+        let gll_data = parse_gll(s).unwrap();
+        assert_relative_eq!(gll_data.latitude.unwrap(), 49.0 + (16.45 / 60.0));
+        assert_relative_eq!(gll_data.longitude.unwrap(), -(123.0 + (11.12 / 60.0)));
+        assert_eq!(
+            gll_data.fix_time,
+            Some(NaiveTime::from_hms_milli_opt(22, 54, 44, 0).expect("invalid time"))
+        );
+        assert!(gll_data.valid);
+        assert_eq!(gll_data.faa_mode, None);
+
+        let s_empty_mode = parse_nmea_sentence("$GPGLL,4916.45,N,12311.12,W,225444,A,*1D").unwrap();
+        assert_eq!(s_empty_mode.checksum, s_empty_mode.calc_checksum());
+        let gll_empty_mode = parse_gll(s_empty_mode).unwrap();
+        assert!(gll_empty_mode.valid);
+        assert_eq!(gll_empty_mode.faa_mode, None);
     }
 }
