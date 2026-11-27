@@ -20,6 +20,10 @@ use crate::{
 /// GPS(12) + GLONASS(12) + Galileo(14) + BeiDou(12) + QZSS/SBAS(12) = 62 + 10
 pub const MAX_PRNS: usize = 72;
 
+/// Seven 12-satellite GSA sentences (six system ids plus the aggregate `GN`
+/// talker) give 84 entries; size for that plus headroom.
+pub const MAX_ACCUMULATED_PRNS: usize = 128;
+
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -7,7 +7,7 @@ use heapless::{Deque, Vec};
 
 use crate::{
     Error, ParseResult, parse_str,
-    sentences::{gnss_type::GnssSystemId, gsa::MAX_PRNS, rmc::RmcStatusOfFix, *},
+    sentences::{gnss_type::GnssSystemId, gsa::MAX_ACCUMULATED_PRNS, rmc::RmcStatusOfFix, *},
 };
 
 #[cfg(feature = "serde")]
@@ -54,7 +54,7 @@ pub struct Nmea {
     pub pdop: Option<f32>,
     /// Geoid separation in meters
     pub geoid_separation: Option<f32>,
-    pub fix_satellites_prns: Option<Vec<(Option<GnssSystemId>, u32), MAX_PRNS>>,
+    pub fix_satellites_prns: Option<Vec<(Option<GnssSystemId>, u32), MAX_ACCUMULATED_PRNS>>,
     satellites_scan: [SatsPack; GnssType::COUNT],
     required_sentences_for_nav: SentenceMask,
     #[cfg_attr(feature = "defmt", defmt(Debug2Format))]
@@ -247,7 +247,7 @@ impl<'a> Nmea {
         }
     }
 
-    fn merge_gsa_data(&mut self, gsa: GsaData) {
+    fn merge_gsa_data(&mut self, gsa: GsaData) -> Result<(), Error<'a>> {
         // Reset for the first GSA in a sequence or a repeat of the previous talker.
         // Repeated GN and PQ talkers accumulate because they can describe multiple constellations.
         let is_accumulating_talker = matches!(gsa.talker_id.as_str(), "GN" | "PQ"); // "PQ" (Quectel vendor) behaves the same per gpsd
@@ -271,11 +271,9 @@ impl<'a> Nmea {
             for prn in gsa.fix_sats_prn {
                 let sat = (gsa.system_id, prn);
                 if !prns.contains(&sat) {
-                    // SAFETY: The maximum PRNS is set to the realistic maximum + 10 for headroom
-                    // if we exceed that, it should be increased further.
-                    if prns.push(sat).is_err() {
-                        panic!("PRN list overflow");
-                    }
+                    prns.push(sat).map_err(|_| Error::TooManySatellites {
+                        max: MAX_ACCUMULATED_PRNS,
+                    })?;
                 }
             }
         }
@@ -283,6 +281,7 @@ impl<'a> Nmea {
         self.hdop = gsa.hdop;
         self.vdop = gsa.vdop;
         self.pdop = gsa.pdop;
+        Ok(())
     }
 
     fn merge_vtg_data(&mut self, vtg: VtgData) {
@@ -342,7 +341,7 @@ impl<'a> Nmea {
                 Ok(SentenceType::GNS)
             }
             ParseResult::GSA(gsa) => {
-                self.merge_gsa_data(gsa);
+                self.merge_gsa_data(gsa)?;
                 Ok(SentenceType::GSA)
             }
             ParseResult::GLL(gll) => {
@@ -416,7 +415,7 @@ impl<'a> Nmea {
 
         match result {
             ParseResult::GSA(gsa) => {
-                self.merge_gsa_data(gsa);
+                self.merge_gsa_data(gsa)?;
                 return Ok(FixType::Invalid);
             }
             ParseResult::GSV(gsv_data) => {
